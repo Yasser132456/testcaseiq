@@ -58,6 +58,13 @@ public class AiOutputValidationService {
         }
 
         List<GeneratedTestCaseDto> testCases = generation.testCases() == null ? List.of() : generation.testCases();
+        if (testCases.isEmpty()) {
+            issues.add(AiValidationIssue.error(
+                    "TEST_CASES_REQUIRED",
+                    "Generated test suite must include at least one test case.",
+                    "testCases"
+            ));
+        }
         validateTestCases(testCases, issues);
         validateQaScores(generation.qaValidation(), "qaValidation", issues);
 

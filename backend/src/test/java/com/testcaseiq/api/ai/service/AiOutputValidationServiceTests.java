@@ -20,7 +20,10 @@ import com.testcaseiq.api.ai.dto.GeneratedTestStepDto;
 import com.testcaseiq.api.ai.dto.GeneratedTestSuiteResult;
 import com.testcaseiq.api.ai.dto.QaValidationResult;
 import com.testcaseiq.api.ai.dto.RequirementExtractionResult;
+import com.testcaseiq.api.ai.dto.StoryAnalysisRequest;
 import com.testcaseiq.api.ai.dto.StoryAnalysisResult;
+import com.testcaseiq.api.ai.dto.TestGenerationRequest;
+import com.testcaseiq.api.ai.provider.MockAiGenerationProvider;
 import com.testcaseiq.api.ai.validation.AiOutputValidationService;
 import com.testcaseiq.api.ai.validation.AiValidationIssue;
 import com.testcaseiq.api.ai.validation.AiValidationSeverity;
@@ -29,6 +32,7 @@ import com.testcaseiq.api.domain.enums.CoverageCategory;
 import com.testcaseiq.api.domain.enums.Priority;
 import com.testcaseiq.api.domain.enums.RequirementType;
 import com.testcaseiq.api.domain.enums.RiskLevel;
+import com.testcaseiq.api.domain.enums.StoryType;
 import com.testcaseiq.api.domain.enums.TestCaseType;
 import com.testcaseiq.api.domain.enums.TestLayer;
 
@@ -109,6 +113,38 @@ class AiOutputValidationServiceTests {
         assertThat(result.valid()).isTrue();
         assertThat(result.errors()).isEmpty();
         assertThat(result.warnings()).isEmpty();
+    }
+
+    @Test
+    void mockProviderOutputPassesValidation() {
+        MockAiGenerationProvider provider = new MockAiGenerationProvider();
+        UUID storyId = UUID.randomUUID();
+        StoryAnalysisResult analysis = provider.analyzeStory(new StoryAnalysisRequest(
+                storyId,
+                "Create project",
+                "As a QA lead, I want to create a project so that my team can organize test cases.",
+                StoryType.USER_STORY,
+                List.of()
+        ));
+        GeneratedTestSuiteResult generation = provider.generateTestCases(new TestGenerationRequest(
+                storyId,
+                "Create project",
+                "As a QA lead, I want to create a project so that my team can organize test cases.",
+                analysis.requirements().requirements()
+        ));
+
+        assertThat(validationService.validateStoryAnalysis(analysis).valid()).isTrue();
+        assertThat(validationService.validateTestGeneration(generation).valid()).isTrue();
+    }
+
+    @Test
+    void missingGeneratedTestCasesFails() {
+        var result = validationService.validateTestGeneration(suite(List.of()));
+
+        assertThat(result.valid()).isFalse();
+        assertThat(result.errors())
+                .extracting(AiValidationIssue::code)
+                .contains("TEST_CASES_REQUIRED");
     }
 
     @Test
