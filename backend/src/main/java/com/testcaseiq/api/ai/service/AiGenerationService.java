@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -84,14 +85,14 @@ public class AiGenerationService {
     public GeneratedTestSuiteResult generateTestCases(UUID storyId) {
         Story story = findStory(storyId);
         TestGenerationRequest request = toTestGenerationRequest(story);
-        GeneratedTestSuiteResult result = aiGenerationProvider.generateTestCases(request);
+        GeneratedTestSuiteResult providerResult = aiGenerationProvider.generateTestCases(request);
 
-        persistTestSuite(story, result);
+        TestSuite testSuite = persistTestSuite(story, providerResult);
         story.setStatus(StoryStatus.TESTS_GENERATED);
-        story.addAiJob(completedJob(TEST_GENERATION_JOB_TYPE, request, result));
-        storyRepository.save(story);
+        story.addAiJob(completedJob(TEST_GENERATION_JOB_TYPE, request, providerResult));
+        Story savedStory = storyRepository.save(story);
 
-        return result;
+        return toGeneratedSuiteResult(savedStory, testSuite, providerResult);
     }
 
     @Transactional(readOnly = true)
@@ -181,7 +182,7 @@ public class AiGenerationService {
         return coverageItem;
     }
 
-    private void persistTestSuite(Story story, GeneratedTestSuiteResult result) {
+    private TestSuite persistTestSuite(Story story, GeneratedTestSuiteResult result) {
         Map<String, Requirement> requirementsByReference = story.getRequirements().stream()
                 .filter(requirement -> requirement.getSourceReference() != null)
                 .collect(Collectors.toMap(
@@ -198,6 +199,7 @@ public class AiGenerationService {
                 .forEach(testSuite::addTestCase);
 
         story.addTestSuite(testSuite);
+        return testSuite;
     }
 
     private TestCase toTestCase(GeneratedTestCaseDto dto, Map<String, Requirement> requirementsByReference) {
@@ -301,6 +303,7 @@ public class AiGenerationService {
 
     private GeneratedTestSuiteResult toGeneratedSuiteResult(Story story, TestSuite testSuite) {
         return new GeneratedTestSuiteResult(
+                testSuite.getId(),
                 story.getId(),
                 testSuite.getName(),
                 testSuite.getTestCases().stream()
@@ -312,15 +315,103 @@ public class AiGenerationService {
         );
     }
 
+    private GeneratedTestSuiteResult toGeneratedSuiteResult(
+            Story story,
+            TestSuite testSuite,
+            GeneratedTestSuiteResult source
+    ) {
+        return new GeneratedTestSuiteResult(
+                testSuite.getId(),
+                story.getId(),
+                source.suiteName(),
+                mergeGeneratedTestCases(testSuite.getTestCases(), source.testCases()),
+                source.qaValidation(),
+                source.provider(),
+                source.generatedAt()
+        );
+    }
+
+    private List<GeneratedTestCaseDto> mergeGeneratedTestCases(
+            List<TestCase> persistedTestCases,
+            List<GeneratedTestCaseDto> sourceTestCases
+    ) {
+        return IntStream.range(0, sourceTestCases.size())
+                .mapToObj(index -> mergeGeneratedTestCase(
+                        index < persistedTestCases.size() ? persistedTestCases.get(index) : null,
+                        sourceTestCases.get(index)
+                ))
+                .toList();
+    }
+
+    private GeneratedTestCaseDto mergeGeneratedTestCase(TestCase persisted, GeneratedTestCaseDto source) {
+        if (persisted == null) {
+            return source;
+        }
+
+        return new GeneratedTestCaseDto(
+                persisted.getId(),
+                source.title(),
+                source.description(),
+                source.type(),
+                source.testLayer(),
+                source.priority(),
+                source.riskLevel(),
+                persisted.getReviewStatus(),
+                source.automationCandidate(),
+                source.confidenceScore(),
+                source.bddScenario(),
+                source.linkedRequirementReferences(),
+                mergeGeneratedTestSteps(persisted.getTestSteps(), source.steps()),
+                mergeGeneratedTestData(persisted.getTestDataEntries(), source.testData())
+        );
+    }
+
+    private List<GeneratedTestStepDto> mergeGeneratedTestSteps(
+            List<TestStep> persistedSteps,
+            List<GeneratedTestStepDto> sourceSteps
+    ) {
+        return IntStream.range(0, sourceSteps.size())
+                .mapToObj(index -> {
+                    GeneratedTestStepDto source = sourceSteps.get(index);
+                    TestStep persisted = index < persistedSteps.size() ? persistedSteps.get(index) : null;
+                    return persisted == null
+                            ? source
+                            : new GeneratedTestStepDto(
+                                    persisted.getId(),
+                                    source.order(),
+                                    source.action(),
+                                    source.expectedResult()
+                            );
+                })
+                .toList();
+    }
+
+    private List<GeneratedTestDataDto> mergeGeneratedTestData(
+            List<TestData> persistedTestData,
+            List<GeneratedTestDataDto> sourceTestData
+    ) {
+        return IntStream.range(0, sourceTestData.size())
+                .mapToObj(index -> {
+                    GeneratedTestDataDto source = sourceTestData.get(index);
+                    TestData persisted = index < persistedTestData.size() ? persistedTestData.get(index) : null;
+                    return persisted == null
+                            ? source
+                            : new GeneratedTestDataDto(persisted.getId(), source.name(), source.valueJson());
+                })
+                .toList();
+    }
+
     private GeneratedTestCaseDto toGeneratedTestCase(TestCase testCase) {
         return new GeneratedTestCaseDto(
+                testCase.getId(),
                 testCase.getTitle(),
                 testCase.getDescription(),
                 testCase.getType(),
                 testCase.getTestLayer(),
                 testCase.getPriority(),
                 testCase.getRiskLevel(),
-                false,
+                testCase.getReviewStatus(),
+                testCase.isAutomationCandidate(),
                 0.0,
                 testCase.getExpectedResult(),
                 testCase.getRequirements().stream()
@@ -338,6 +429,7 @@ public class AiGenerationService {
 
     private GeneratedTestStepDto toGeneratedTestStep(TestStep testStep) {
         return new GeneratedTestStepDto(
+                testStep.getId(),
                 testStep.getStepOrder(),
                 testStep.getAction(),
                 testStep.getExpectedResult()
@@ -345,6 +437,6 @@ public class AiGenerationService {
     }
 
     private GeneratedTestDataDto toGeneratedTestData(TestData testData) {
-        return new GeneratedTestDataDto(testData.getName(), testData.getDataValueJson());
+        return new GeneratedTestDataDto(testData.getId(), testData.getName(), testData.getDataValueJson());
     }
 }

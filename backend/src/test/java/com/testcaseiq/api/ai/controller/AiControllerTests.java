@@ -34,6 +34,7 @@ import com.testcaseiq.api.domain.enums.AmbiguitySeverity;
 import com.testcaseiq.api.domain.enums.CoverageCategory;
 import com.testcaseiq.api.domain.enums.Priority;
 import com.testcaseiq.api.domain.enums.RequirementType;
+import com.testcaseiq.api.domain.enums.ReviewStatus;
 import com.testcaseiq.api.domain.enums.RiskLevel;
 import com.testcaseiq.api.domain.enums.TestCaseType;
 import com.testcaseiq.api.domain.enums.TestLayer;
@@ -66,8 +67,13 @@ class AiControllerTests {
 
         mockMvc.perform(post("/api/stories/{storyId}/generate-tests", storyId))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").exists())
                 .andExpect(jsonPath("$.suiteName").value("Mock AI Regression Suite"))
                 .andExpect(jsonPath("$.testCases", hasSize(1)))
+                .andExpect(jsonPath("$.testCases[0].id").exists())
+                .andExpect(jsonPath("$.testCases[0].reviewStatus").value("NEEDS_REVIEW"))
+                .andExpect(jsonPath("$.testCases[0].steps[0].id").exists())
+                .andExpect(jsonPath("$.testCases[0].testData[0].id").exists())
                 .andExpect(jsonPath("$.testCases[0].steps", hasSize(1)));
     }
 
@@ -89,6 +95,9 @@ class AiControllerTests {
         mockMvc.perform(get("/api/stories/{storyId}/test-suites", storyId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].id").exists())
+                .andExpect(jsonPath("$[0].testCases[0].id").exists())
+                .andExpect(jsonPath("$[0].testCases[0].reviewStatus").value("NEEDS_REVIEW"))
                 .andExpect(jsonPath("$[0].suiteName").value("Mock AI Regression Suite"));
     }
 
@@ -135,21 +144,24 @@ class AiControllerTests {
 
     private GeneratedTestSuiteResult generatedSuiteResult(UUID storyId) {
         return new GeneratedTestSuiteResult(
+                UUID.randomUUID(),
                 storyId,
                 "Mock AI Regression Suite",
                 List.of(new GeneratedTestCaseDto(
+                        UUID.randomUUID(),
                         "Complete primary workflow successfully",
                         "Covers the happy path.",
                         TestCaseType.FUNCTIONAL,
                         TestLayer.UI,
                         Priority.HIGH,
                         RiskLevel.MEDIUM,
+                        ReviewStatus.NEEDS_REVIEW,
                         true,
                         0.9,
                         "Given a valid user",
                         List.of("REQ-1"),
-                        List.of(new GeneratedTestStepDto(1, "Submit valid data.", "The workflow succeeds.")),
-                        List.of(new GeneratedTestDataDto("validInput", "{\"state\":\"valid\"}"))
+                        List.of(new GeneratedTestStepDto(UUID.randomUUID(), 1, "Submit valid data.", "The workflow succeeds.")),
+                        List.of(new GeneratedTestDataDto(UUID.randomUUID(), "validInput", "{\"state\":\"valid\"}"))
                 )),
                 new QaValidationResult(0.8, 0.9, List.of()),
                 "mock-ai-provider",
