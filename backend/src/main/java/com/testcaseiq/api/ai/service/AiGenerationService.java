@@ -29,6 +29,10 @@ import com.testcaseiq.api.ai.dto.StoryAnalysisResult;
 import com.testcaseiq.api.ai.dto.TestGenerationRequest;
 import com.testcaseiq.api.ai.provider.AiGenerationProvider;
 import com.testcaseiq.api.ai.provider.AiProviderException;
+import com.testcaseiq.api.ai.validation.AiOutputValidationService;
+import com.testcaseiq.api.ai.validation.AiValidationIssue;
+import com.testcaseiq.api.ai.validation.StoryAnalysisValidationResult;
+import com.testcaseiq.api.ai.validation.TestGenerationValidationResult;
 import com.testcaseiq.api.common.error.ResourceNotFoundException;
 import com.testcaseiq.api.domain.enums.AiJobStatus;
 import com.testcaseiq.api.domain.enums.ReviewStatus;
@@ -54,17 +58,20 @@ public class AiGenerationService {
     private final StoryRepository storyRepository;
     private final AiJobRepository aiJobRepository;
     private final AiGenerationProvider aiGenerationProvider;
+    private final AiOutputValidationService aiOutputValidationService;
     private final ObjectMapper objectMapper;
 
     public AiGenerationService(
             StoryRepository storyRepository,
             AiJobRepository aiJobRepository,
             AiGenerationProvider aiGenerationProvider,
+            AiOutputValidationService aiOutputValidationService,
             ObjectMapper objectMapper
     ) {
         this.storyRepository = storyRepository;
         this.aiJobRepository = aiJobRepository;
         this.aiGenerationProvider = aiGenerationProvider;
+        this.aiOutputValidationService = aiOutputValidationService;
         this.objectMapper = objectMapper;
     }
 
@@ -76,6 +83,13 @@ public class AiGenerationService {
         try {
             result = aiGenerationProvider.analyzeStory(request);
         } catch (AiProviderException exception) {
+            story.addAiJob(failedJob(ANALYSIS_JOB_TYPE, request, exception));
+            storyRepository.save(story);
+            throw exception;
+        }
+        StoryAnalysisValidationResult validation = aiOutputValidationService.validateStoryAnalysis(result);
+        if (!validation.valid()) {
+            AiProviderException exception = validationException(validation.errors());
             story.addAiJob(failedJob(ANALYSIS_JOB_TYPE, request, exception));
             storyRepository.save(story);
             throw exception;
@@ -97,6 +111,13 @@ public class AiGenerationService {
         try {
             providerResult = aiGenerationProvider.generateTestCases(request);
         } catch (AiProviderException exception) {
+            story.addAiJob(failedJob(TEST_GENERATION_JOB_TYPE, request, exception));
+            storyRepository.save(story);
+            throw exception;
+        }
+        TestGenerationValidationResult validation = aiOutputValidationService.validateTestGeneration(providerResult);
+        if (!validation.valid()) {
+            AiProviderException exception = validationException(validation.errors());
             story.addAiJob(failedJob(TEST_GENERATION_JOB_TYPE, request, exception));
             storyRepository.save(story);
             throw exception;
@@ -261,6 +282,13 @@ public class AiGenerationService {
         aiJob.setProviderName(aiGenerationProvider.providerName());
         aiJob.setModelName(aiGenerationProvider.modelName());
         return aiJob;
+    }
+
+    private AiProviderException validationException(List<AiValidationIssue> errors) {
+        String details = errors.stream()
+                .map(error -> error.code() + " at " + error.path())
+                .collect(Collectors.joining("; "));
+        return new AiProviderException("AI output validation failed: " + details);
     }
 
     private String toJson(Object value) {

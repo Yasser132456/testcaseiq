@@ -1,6 +1,7 @@
 package com.testcaseiq.api.ai.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -33,6 +34,7 @@ import com.testcaseiq.api.ai.dto.StoryAnalysisResult;
 import com.testcaseiq.api.ai.dto.TestGenerationRequest;
 import com.testcaseiq.api.ai.provider.AiGenerationProvider;
 import com.testcaseiq.api.ai.provider.AiProviderException;
+import com.testcaseiq.api.ai.validation.AiOutputValidationService;
 import com.testcaseiq.api.domain.enums.AiJobStatus;
 import com.testcaseiq.api.domain.enums.AmbiguitySeverity;
 import com.testcaseiq.api.domain.enums.CoverageCategory;
@@ -73,6 +75,7 @@ class AiGenerationServiceTests {
                 storyRepository,
                 aiJobRepository,
                 aiGenerationProvider,
+                new AiOutputValidationService(),
                 new ObjectMapper()
         );
     }
@@ -160,6 +163,59 @@ class AiGenerationServiceTests {
     }
 
     @Test
+    void analyzeStoryDoesNotPersistInvalidValidatedOutputAndMarksAiJobFailed() {
+        Story story = story();
+        StoryAnalysisResult invalidResult = invalidAnalysisResult(story.getId());
+        when(storyRepository.findById(story.getId())).thenReturn(Optional.of(story));
+        when(aiGenerationProvider.analyzeStory(any(StoryAnalysisRequest.class))).thenReturn(invalidResult);
+        when(aiGenerationProvider.providerName()).thenReturn("mock-ai-provider");
+        when(aiGenerationProvider.modelName()).thenReturn("mock-model");
+
+        assertThatThrownBy(() -> aiGenerationService.analyzeStory(story.getId()))
+                .isInstanceOf(AiProviderException.class)
+                .hasMessageContaining("AI output validation failed")
+                .hasNoCause();
+
+        assertThat(story.getStatus()).isEqualTo(StoryStatus.DRAFT);
+        assertThat(story.getRequirements()).isEmpty();
+        assertThat(story.getAmbiguities()).isEmpty();
+        assertThat(story.getCoverageItems()).isEmpty();
+        assertThat(story.getAiJobs()).hasSize(1);
+        assertThat(story.getAiJobs().get(0).getStatus()).isEqualTo(AiJobStatus.FAILED);
+        assertThat(story.getAiJobs().get(0).getJobType()).isEqualTo("story-analysis");
+        assertThat(story.getAiJobs().get(0).getProviderName()).isEqualTo("mock-ai-provider");
+        assertThat(story.getAiJobs().get(0).getModelName()).isEqualTo("mock-model");
+        assertThat(story.getAiJobs().get(0).getErrorMessage()).contains("REQUIREMENTS_REQUIRED");
+        verify(storyRepository).save(story);
+    }
+
+    @Test
+    void generateTestCasesDoesNotPersistInvalidValidatedOutputAndMarksAiJobFailed() {
+        Story story = story();
+        story.addRequirement(requirement());
+        GeneratedTestSuiteResult invalidResult = invalidGeneratedSuiteResult(story.getId());
+        when(storyRepository.findById(story.getId())).thenReturn(Optional.of(story));
+        when(aiGenerationProvider.generateTestCases(any(TestGenerationRequest.class))).thenReturn(invalidResult);
+        when(aiGenerationProvider.providerName()).thenReturn("mock-ai-provider");
+        when(aiGenerationProvider.modelName()).thenReturn("mock-model");
+
+        assertThatThrownBy(() -> aiGenerationService.generateTestCases(story.getId()))
+                .isInstanceOf(AiProviderException.class)
+                .hasMessageContaining("AI output validation failed")
+                .hasNoCause();
+
+        assertThat(story.getStatus()).isEqualTo(StoryStatus.DRAFT);
+        assertThat(story.getTestSuites()).isEmpty();
+        assertThat(story.getAiJobs()).hasSize(1);
+        assertThat(story.getAiJobs().get(0).getStatus()).isEqualTo(AiJobStatus.FAILED);
+        assertThat(story.getAiJobs().get(0).getJobType()).isEqualTo("test-generation");
+        assertThat(story.getAiJobs().get(0).getProviderName()).isEqualTo("mock-ai-provider");
+        assertThat(story.getAiJobs().get(0).getModelName()).isEqualTo("mock-model");
+        assertThat(story.getAiJobs().get(0).getErrorMessage()).contains("TEST_SUITE_NAME_REQUIRED");
+        verify(storyRepository).save(story);
+    }
+
+    @Test
     void getTestSuitesReturnsPersistedIdsAndReviewStatus() {
         Story story = story();
         story.addRequirement(requirement());
@@ -240,6 +296,20 @@ class AiGenerationServiceTests {
         );
     }
 
+    private StoryAnalysisResult invalidAnalysisResult(UUID storyId) {
+        return new StoryAnalysisResult(
+                storyId,
+                "QA lead",
+                "create a project",
+                new RequirementExtractionResult(List.of(), List.of()),
+                new AmbiguityDetectionResult(List.of()),
+                new CoveragePlanResult(List.of()),
+                new QaValidationResult(0.8, 0.9, List.of()),
+                "mock-ai-provider",
+                null
+        );
+    }
+
     private GeneratedTestSuiteResult generatedSuiteResult(UUID storyId) {
         return new GeneratedTestSuiteResult(
                 storyId,
@@ -258,6 +328,17 @@ class AiGenerationServiceTests {
                         List.of(new GeneratedTestStepDto(1, "Submit valid data.", "The workflow succeeds.")),
                         List.of(new GeneratedTestDataDto("validInput", "{\"state\":\"valid\"}"))
                 )),
+                new QaValidationResult(0.8, 0.9, List.of()),
+                "mock-ai-provider",
+                null
+        );
+    }
+
+    private GeneratedTestSuiteResult invalidGeneratedSuiteResult(UUID storyId) {
+        return new GeneratedTestSuiteResult(
+                storyId,
+                " ",
+                List.of(),
                 new QaValidationResult(0.8, 0.9, List.of()),
                 "mock-ai-provider",
                 null
