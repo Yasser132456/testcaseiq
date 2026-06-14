@@ -162,8 +162,16 @@ public class Story extends AuditableEntity {
         return exportJobs;
     }
 
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
     public void setStoryText(String storyText) {
         this.storyText = storyText;
+    }
+
+    public void setType(StoryType type) {
+        this.type = type;
     }
 
     public void setStatus(StoryStatus status) {

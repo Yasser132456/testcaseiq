@@ -65,6 +65,14 @@ public class Project extends AuditableEntity {
         return stories;
     }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setKey(String key) {
+        this.key = key;
+    }
+
     public void setDescription(String description) {
         this.description = description;
     }
