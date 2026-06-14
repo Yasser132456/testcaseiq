@@ -9,9 +9,15 @@ import {
   RequirementType,
   StoryAnalysisResult
 } from '../../core/models/analysis.model';
+import {
+  GeneratedTestCase,
+  GeneratedTestData,
+  GeneratedTestSuiteResult
+} from '../../core/models/generated-test.model';
 import { STORY_TYPES, Story, StoryStatus, StoryType } from '../../core/models/story.model';
 import { AnalysisService } from '../../core/services/analysis.service';
 import { StoryService } from '../../core/services/story.service';
+import { TestGenerationService } from '../../core/services/test-generation.service';
 import { StateMessageComponent } from '../../shared/components/state-message.component';
 
 @Component({
@@ -35,6 +41,9 @@ import { StateMessageComponent } from '../../shared/components/state-message.com
             <a class="button secondary" [routerLink]="['/projects', story()?.projectId]">Back to project</a>
             <button class="button analysis-button" type="button" (click)="analyzeStory()" [disabled]="analyzing()">
               {{ analyzing() ? 'Analyzing...' : 'Analyze Story' }}
+            </button>
+            <button class="button generate-button" type="button" (click)="generateTestCases()" [disabled]="generatingTests()">
+              {{ generatingTests() ? 'Generating...' : 'Generate Test Cases' }}
             </button>
             <button class="button danger" type="button" (click)="deleteStory()">Delete story</button>
           </div>
@@ -298,6 +307,166 @@ import { StateMessageComponent } from '../../shared/components/state-message.com
             </div>
           }
         </section>
+
+        <section class="panel generated-tests-panel">
+          <div class="section-header">
+            <div>
+              <p class="eyebrow generated-eyebrow">Manual tests</p>
+              <h3>Generated test cases</h3>
+            </div>
+            <div class="badge-row">
+              <span class="badge cyan-badge">{{ testSuites().length }} suites</span>
+              <span class="badge status-badge">{{ totalTestCases() }} cases</span>
+            </div>
+          </div>
+
+          @if (testSuitesLoading()) {
+            <app-state-message title="Loading test suites" message="Checking for existing generated manual test cases." />
+          } @else if (testGenerationError()) {
+            <app-state-message title="Test generation unavailable" [message]="testGenerationError()" tone="error" />
+          } @else if (!hasTestSuites()) {
+            <div class="empty-analysis generated-empty">
+              <p class="eyebrow generated-eyebrow">Ready for generation</p>
+              <h3>No manual test cases exist yet.</h3>
+              <p>Generate mock manual tests from this story. The result will include test objectives, steps, data, BDD text, and requirement links.</p>
+              <button class="button generate-button" type="button" (click)="generateTestCases()" [disabled]="generatingTests()">
+                {{ generatingTests() ? 'Generating...' : 'Generate Test Cases' }}
+              </button>
+            </div>
+          } @else {
+            <div class="suite-stack">
+              @for (suite of testSuites(); track suite.suiteName + suite.generatedAt) {
+                <article class="test-suite-card">
+                  <div class="suite-summary">
+                    <div>
+                      <p class="eyebrow generated-eyebrow">Test suite</p>
+                      <h4>{{ suite.suiteName }}</h4>
+                      <p>{{ story()?.title }} / {{ suite.provider }}</p>
+                    </div>
+                    <div class="suite-metrics">
+                      <span class="badge status-badge">{{ suite.testCases.length }} test cases</span>
+                      @if (suite.generatedAt) {
+                        <span class="badge">Generated {{ suite.generatedAt | date:'medium' }}</span>
+                      }
+                    </div>
+                  </div>
+
+                  @if (suiteWarnings(suite).length > 0) {
+                    <div class="list-stack compact">
+                      @for (warning of suiteWarnings(suite); track warning) {
+                        <div class="inline-note amber-note">{{ warning }}</div>
+                      }
+                    </div>
+                  }
+
+                  @if (suite.testCases.length === 0) {
+                    <app-state-message title="No test cases returned" message="The generation request completed, but this suite does not contain manual tests." />
+                  } @else {
+                    <div class="test-case-grid">
+                      @for (testCase of suite.testCases; track testCase.title) {
+                        <article class="test-case-card">
+                          <div class="test-case-header">
+                            <div>
+                              <p class="eyebrow generated-eyebrow">Manual test</p>
+                              <h5>{{ testCase.title }}</h5>
+                              <p>{{ testObjective(testCase) }}</p>
+                            </div>
+                            <div class="badge-row">
+                              <span class="badge cyan-badge">{{ testCase.type }}</span>
+                              @if (testCase.testLayer) {
+                                <span class="badge">{{ testCase.testLayer }}</span>
+                              }
+                              @if (testCase.priority) {
+                                <span class="badge status-badge">{{ testCase.priority }}</span>
+                              }
+                              @if (testCase.riskLevel) {
+                                <span class="badge amber-badge">{{ testCase.riskLevel }} risk</span>
+                              }
+                              <span class="badge" [class.status-badge]="testCase.automationCandidate">
+                                {{ testCase.automationCandidate ? 'Automation candidate' : 'Manual priority' }}
+                              </span>
+                              <span class="badge">{{ formatScore(testCase.confidenceScore) }} confidence</span>
+                              @if (testCase.reviewStatus) {
+                                <span class="badge amber-badge">{{ testCase.reviewStatus }}</span>
+                              }
+                            </div>
+                          </div>
+
+                          @if (testCase.linkedRequirementReferences.length > 0) {
+                            <div class="evidence-row">
+                              <span>Linked requirements</span>
+                              <div class="badge-row">
+                                @for (reference of testCase.linkedRequirementReferences; track reference) {
+                                  <span class="badge cyan-badge">{{ reference }}</span>
+                                }
+                              </div>
+                            </div>
+                          }
+
+                          @if (testCase.sourceEvidence) {
+                            <div class="inline-note">{{ testCase.sourceEvidence }}</div>
+                          }
+
+                          @if (testCase.preconditions) {
+                            <section class="test-detail-section">
+                              <h6>Preconditions</h6>
+                              <p>{{ testCase.preconditions }}</p>
+                            </section>
+                          }
+
+                          <section class="test-detail-section">
+                            <h6>Test steps</h6>
+                            @if (testCase.steps.length === 0) {
+                              <app-state-message title="No steps returned" message="This test case does not include detailed steps yet." />
+                            } @else {
+                              <div class="step-list">
+                                @for (step of testCase.steps; track step.order) {
+                                  <div class="step-row">
+                                    <span>{{ step.order }}</span>
+                                    <div>
+                                      <strong>{{ step.action }}</strong>
+                                      <p>{{ step.expectedResult || 'Expected result not specified.' }}</p>
+                                    </div>
+                                  </div>
+                                }
+                              </div>
+                            }
+                          </section>
+
+                          <section class="test-detail-section">
+                            <h6>Test data</h6>
+                            @if (testCase.testData.length === 0) {
+                              <app-state-message title="No test data" message="No structured test data was returned for this case." />
+                            } @else {
+                              <div class="test-data-grid">
+                                @for (data of testCase.testData; track data.name) {
+                                  <div class="test-data-card">
+                                    <span>{{ data.name }}</span>
+                                    @if (data.classification) {
+                                      <small>{{ data.classification }}</small>
+                                    }
+                                    <code>{{ testDataValue(data) }}</code>
+                                  </div>
+                                }
+                              </div>
+                            }
+                          </section>
+
+                          @if (testCase.bddScenario) {
+                            <section class="test-detail-section">
+                              <h6>BDD scenario</h6>
+                              <pre class="bdd-panel"><code>{{ testCase.bddScenario }}</code></pre>
+                            </section>
+                          }
+                        </article>
+                      }
+                    </div>
+                  }
+                </article>
+              }
+            </div>
+          }
+        </section>
       }
     </section>
   `
@@ -308,6 +477,7 @@ export class StoryDetailPageComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly storyService = inject(StoryService);
   private readonly analysisService = inject(AnalysisService);
+  private readonly testGenerationService = inject(TestGenerationService);
 
   readonly storyTypes = STORY_TYPES;
   readonly requirementTypes: RequirementType[] = [
@@ -336,12 +506,16 @@ export class StoryDetailPageComponent implements OnInit {
 
   readonly story = signal<Story | null>(null);
   readonly analysis = signal<StoryAnalysisResult | null>(null);
+  readonly testSuites = signal<GeneratedTestSuiteResult[]>([]);
   readonly loading = signal(true);
   readonly analysisLoading = signal(false);
+  readonly testSuitesLoading = signal(false);
   readonly analyzing = signal(false);
+  readonly generatingTests = signal(false);
   readonly saving = signal(false);
   readonly error = signal('');
   readonly analysisError = signal('');
+  readonly testGenerationError = signal('');
   readonly saveError = signal('');
   readonly saveMessage = signal('');
 
@@ -367,6 +541,7 @@ export class StoryDetailPageComponent implements OnInit {
         });
         this.loading.set(false);
         this.loadAnalysis();
+        this.loadTestSuites();
       },
       error: () => {
         this.error.set('Story not found or backend unavailable.');
@@ -405,16 +580,31 @@ export class StoryDetailPageComponent implements OnInit {
     this.analysisService.analyzeStory(this.storyId).subscribe({
       next: (analysis) => {
         this.analysis.set(analysis);
-        const currentStory = this.story();
-        if (currentStory) {
-          this.story.set({ ...currentStory, status: 'ANALYZED' });
-          this.form.patchValue({ status: 'ANALYZED' });
-        }
+        this.updateStoryStatus('ANALYZED');
         this.analyzing.set(false);
       },
       error: () => {
         this.analysisError.set('The story could not be analyzed. Confirm the backend is running and try again.');
         this.analyzing.set(false);
+      }
+    });
+  }
+
+  generateTestCases(): void {
+    if (!this.storyId || this.generatingTests()) {
+      return;
+    }
+    this.generatingTests.set(true);
+    this.testGenerationError.set('');
+    this.testGenerationService.generateTestCases(this.storyId).subscribe({
+      next: (suite) => {
+        this.testSuites.set([suite, ...this.testSuites()]);
+        this.updateStoryStatus('TESTS_GENERATED');
+        this.generatingTests.set(false);
+      },
+      error: () => {
+        this.testGenerationError.set('The test cases could not be generated. Confirm the backend is running and try again.');
+        this.generatingTests.set(false);
       }
     });
   }
@@ -441,6 +631,14 @@ export class StoryDetailPageComponent implements OnInit {
     );
   }
 
+  hasTestSuites(): boolean {
+    return this.testSuites().some((suite) => suite.testCases.length > 0);
+  }
+
+  totalTestCases(): number {
+    return this.testSuites().reduce((total, suite) => total + suite.testCases.length, 0);
+  }
+
   requirementCount(): number {
     return this.analysis()?.requirements?.requirements?.length ?? 0;
   }
@@ -463,6 +661,25 @@ export class StoryDetailPageComponent implements OnInit {
 
   coverageByCategory(category: CoverageCategory) {
     return this.analysis()?.coveragePlan?.coverageItems?.filter((coverage) => coverage.category === category) ?? [];
+  }
+
+  suiteWarnings(suite: GeneratedTestSuiteResult): string[] {
+    return suite.qaValidation?.warnings ?? [];
+  }
+
+  testObjective(testCase: GeneratedTestCase): string {
+    return testCase.objective || testCase.description || 'Objective not provided.';
+  }
+
+  testDataValue(data: GeneratedTestData): string {
+    if (!data.valueJson) {
+      return 'No value provided';
+    }
+    try {
+      return JSON.stringify(JSON.parse(data.valueJson), null, 2);
+    } catch {
+      return data.valueJson;
+    }
   }
 
   formatScore(score: number | null | undefined): string {
@@ -496,5 +713,32 @@ export class StoryDetailPageComponent implements OnInit {
         this.analysisLoading.set(false);
       }
     });
+  }
+
+  private loadTestSuites(): void {
+    if (!this.storyId) {
+      return;
+    }
+    this.testSuitesLoading.set(true);
+    this.testGenerationError.set('');
+    this.testGenerationService.getTestSuites(this.storyId).subscribe({
+      next: (testSuites) => {
+        this.testSuites.set(testSuites);
+        this.testSuitesLoading.set(false);
+      },
+      error: () => {
+        this.testSuites.set([]);
+        this.testSuitesLoading.set(false);
+      }
+    });
+  }
+
+  private updateStoryStatus(status: StoryStatus): void {
+    const currentStory = this.story();
+    if (!currentStory) {
+      return;
+    }
+    this.story.set({ ...currentStory, status });
+    this.form.patchValue({ status });
   }
 }
