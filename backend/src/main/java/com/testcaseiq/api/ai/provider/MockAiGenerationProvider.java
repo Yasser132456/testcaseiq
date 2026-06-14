@@ -5,8 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import org.springframework.stereotype.Component;
-
 import com.testcaseiq.api.ai.dto.AmbiguityDetectionResult;
 import com.testcaseiq.api.ai.dto.CoverageItemDto;
 import com.testcaseiq.api.ai.dto.CoveragePlanResult;
@@ -29,10 +27,14 @@ import com.testcaseiq.api.domain.enums.RiskLevel;
 import com.testcaseiq.api.domain.enums.TestCaseType;
 import com.testcaseiq.api.domain.enums.TestLayer;
 
-@Component
 public class MockAiGenerationProvider implements AiGenerationProvider {
 
     private static final String PROVIDER_NAME = "mock-ai-provider";
+
+    @Override
+    public String providerName() {
+        return PROVIDER_NAME;
+    }
 
     @Override
     public StoryAnalysisResult analyzeStory(StoryAnalysisRequest request) {

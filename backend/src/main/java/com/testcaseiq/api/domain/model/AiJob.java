@@ -47,6 +47,14 @@ public class AiJob extends AuditableEntity {
     @Column(name = "error_message", columnDefinition = "text")
     private String errorMessage;
 
+    @Size(max = 120)
+    @Column(name = "provider_name", length = 120)
+    private String providerName;
+
+    @Size(max = 160)
+    @Column(name = "model_name", length = 160)
+    private String modelName;
+
     protected AiJob() {
     }
 
@@ -82,6 +90,14 @@ public class AiJob extends AuditableEntity {
         return errorMessage;
     }
 
+    public String getProviderName() {
+        return providerName;
+    }
+
+    public String getModelName() {
+        return modelName;
+    }
+
     public void setStatus(AiJobStatus status) {
         this.status = status;
     }
@@ -96,5 +112,13 @@ public class AiJob extends AuditableEntity {
 
     public void setErrorMessage(String errorMessage) {
         this.errorMessage = errorMessage;
+    }
+
+    public void setProviderName(String providerName) {
+        this.providerName = providerName;
+    }
+
+    public void setModelName(String modelName) {
+        this.modelName = modelName;
     }
 }

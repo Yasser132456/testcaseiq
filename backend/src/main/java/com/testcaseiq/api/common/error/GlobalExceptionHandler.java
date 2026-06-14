@@ -12,6 +12,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import com.testcaseiq.api.ai.provider.AiProviderException;
+
 import jakarta.servlet.http.HttpServletRequest;
 
 @RestControllerAdvice
@@ -25,6 +27,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BadRequestException.class)
     ResponseEntity<ApiErrorResponse> handleBadRequest(BadRequestException exception, HttpServletRequest request) {
         return buildResponse(HttpStatus.BAD_REQUEST, exception.getMessage(), request, Map.of());
+    }
+
+    @ExceptionHandler(AiProviderException.class)
+    ResponseEntity<ApiErrorResponse> handleAiProvider(AiProviderException exception, HttpServletRequest request) {
+        return buildResponse(HttpStatus.BAD_GATEWAY, exception.getMessage(), request, Map.of());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

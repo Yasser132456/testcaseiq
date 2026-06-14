@@ -32,6 +32,8 @@ import com.testcaseiq.api.ai.dto.StoryAnalysisRequest;
 import com.testcaseiq.api.ai.dto.StoryAnalysisResult;
 import com.testcaseiq.api.ai.dto.TestGenerationRequest;
 import com.testcaseiq.api.ai.provider.AiGenerationProvider;
+import com.testcaseiq.api.ai.provider.AiProviderException;
+import com.testcaseiq.api.domain.enums.AiJobStatus;
 import com.testcaseiq.api.domain.enums.AmbiguitySeverity;
 import com.testcaseiq.api.domain.enums.CoverageCategory;
 import com.testcaseiq.api.domain.enums.Priority;
@@ -81,6 +83,7 @@ class AiGenerationServiceTests {
         StoryAnalysisResult result = analysisResult(story.getId());
         when(storyRepository.findById(story.getId())).thenReturn(Optional.of(story));
         when(aiGenerationProvider.analyzeStory(any(StoryAnalysisRequest.class))).thenReturn(result);
+        when(aiGenerationProvider.providerName()).thenReturn("mock-ai-provider");
 
         StoryAnalysisResult response = aiGenerationService.analyzeStory(story.getId());
 
@@ -91,6 +94,8 @@ class AiGenerationServiceTests {
         assertThat(story.getCoverageItems()).hasSize(1);
         assertThat(story.getAiJobs()).hasSize(1);
         assertThat(story.getAiJobs().get(0).getJobType()).isEqualTo("story-analysis");
+        assertThat(story.getAiJobs().get(0).getStatus()).isEqualTo(AiJobStatus.COMPLETED);
+        assertThat(story.getAiJobs().get(0).getProviderName()).isEqualTo("mock-ai-provider");
         verify(storyRepository).save(story);
     }
 
@@ -101,6 +106,7 @@ class AiGenerationServiceTests {
         GeneratedTestSuiteResult result = generatedSuiteResult(story.getId());
         when(storyRepository.findById(story.getId())).thenReturn(Optional.of(story));
         when(aiGenerationProvider.generateTestCases(any(TestGenerationRequest.class))).thenReturn(result);
+        when(aiGenerationProvider.providerName()).thenReturn("mock-ai-provider");
         when(storyRepository.save(story)).thenAnswer(invocation -> {
             assignGeneratedIds(story);
             return story;
@@ -125,6 +131,31 @@ class AiGenerationServiceTests {
         assertThat(story.getTestSuites().get(0).getTestCases().get(0).getTestDataEntries()).hasSize(1);
         assertThat(story.getAiJobs()).hasSize(1);
         assertThat(story.getAiJobs().get(0).getJobType()).isEqualTo("test-generation");
+        assertThat(story.getAiJobs().get(0).getStatus()).isEqualTo(AiJobStatus.COMPLETED);
+        assertThat(story.getAiJobs().get(0).getProviderName()).isEqualTo("mock-ai-provider");
+        verify(storyRepository).save(story);
+    }
+
+    @Test
+    void analyzeStoryPersistsFailedAiJobWhenProviderOutputIsInvalid() {
+        Story story = story();
+        AiProviderException providerException = new AiProviderException("AI provider output validation failed: requirements is required");
+        when(storyRepository.findById(story.getId())).thenReturn(Optional.of(story));
+        when(aiGenerationProvider.analyzeStory(any(StoryAnalysisRequest.class))).thenThrow(providerException);
+        when(aiGenerationProvider.providerName()).thenReturn("openai");
+        when(aiGenerationProvider.modelName()).thenReturn("gpt-test");
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> aiGenerationService.analyzeStory(story.getId()))
+                .isSameAs(providerException);
+
+        assertThat(story.getStatus()).isEqualTo(StoryStatus.DRAFT);
+        assertThat(story.getRequirements()).isEmpty();
+        assertThat(story.getAiJobs()).hasSize(1);
+        assertThat(story.getAiJobs().get(0).getStatus()).isEqualTo(AiJobStatus.FAILED);
+        assertThat(story.getAiJobs().get(0).getJobType()).isEqualTo("story-analysis");
+        assertThat(story.getAiJobs().get(0).getProviderName()).isEqualTo("openai");
+        assertThat(story.getAiJobs().get(0).getModelName()).isEqualTo("gpt-test");
+        assertThat(story.getAiJobs().get(0).getErrorMessage()).contains("requirements is required");
         verify(storyRepository).save(story);
     }
 
