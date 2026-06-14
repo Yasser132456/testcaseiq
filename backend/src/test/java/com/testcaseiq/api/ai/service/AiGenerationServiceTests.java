@@ -36,6 +36,7 @@ import com.testcaseiq.api.domain.enums.AmbiguitySeverity;
 import com.testcaseiq.api.domain.enums.CoverageCategory;
 import com.testcaseiq.api.domain.enums.Priority;
 import com.testcaseiq.api.domain.enums.RequirementType;
+import com.testcaseiq.api.domain.enums.ReviewStatus;
 import com.testcaseiq.api.domain.enums.RiskLevel;
 import com.testcaseiq.api.domain.enums.StoryStatus;
 import com.testcaseiq.api.domain.enums.StoryType;
@@ -43,6 +44,10 @@ import com.testcaseiq.api.domain.enums.TestCaseType;
 import com.testcaseiq.api.domain.enums.TestLayer;
 import com.testcaseiq.api.domain.model.Project;
 import com.testcaseiq.api.domain.model.Story;
+import com.testcaseiq.api.domain.model.TestCase;
+import com.testcaseiq.api.domain.model.TestData;
+import com.testcaseiq.api.domain.model.TestStep;
+import com.testcaseiq.api.domain.model.TestSuite;
 import com.testcaseiq.api.domain.repository.AiJobRepository;
 import com.testcaseiq.api.domain.repository.StoryRepository;
 
@@ -96,10 +101,23 @@ class AiGenerationServiceTests {
         GeneratedTestSuiteResult result = generatedSuiteResult(story.getId());
         when(storyRepository.findById(story.getId())).thenReturn(Optional.of(story));
         when(aiGenerationProvider.generateTestCases(any(TestGenerationRequest.class))).thenReturn(result);
+        when(storyRepository.save(story)).thenAnswer(invocation -> {
+            assignGeneratedIds(story);
+            return story;
+        });
 
         GeneratedTestSuiteResult response = aiGenerationService.generateTestCases(story.getId());
 
-        assertThat(response).isEqualTo(result);
+        assertThat(response.id()).isNotNull();
+        assertThat(response.suiteName()).isEqualTo(result.suiteName());
+        assertThat(response.provider()).isEqualTo(result.provider());
+        assertThat(response.qaValidation()).isEqualTo(result.qaValidation());
+        assertThat(response.testCases()).hasSize(1);
+        assertThat(response.testCases().get(0).id()).isNotNull();
+        assertThat(response.testCases().get(0).reviewStatus()).isEqualTo(ReviewStatus.NEEDS_REVIEW);
+        assertThat(response.testCases().get(0).confidenceScore()).isEqualTo(0.9);
+        assertThat(response.testCases().get(0).steps().get(0).id()).isNotNull();
+        assertThat(response.testCases().get(0).testData().get(0).id()).isNotNull();
         assertThat(story.getStatus()).isEqualTo(StoryStatus.TESTS_GENERATED);
         assertThat(story.getTestSuites()).hasSize(1);
         assertThat(story.getTestSuites().get(0).getTestCases()).hasSize(1);
@@ -108,6 +126,38 @@ class AiGenerationServiceTests {
         assertThat(story.getAiJobs()).hasSize(1);
         assertThat(story.getAiJobs().get(0).getJobType()).isEqualTo("test-generation");
         verify(storyRepository).save(story);
+    }
+
+    @Test
+    void getTestSuitesReturnsPersistedIdsAndReviewStatus() {
+        Story story = story();
+        story.addRequirement(requirement());
+        TestSuite testSuite = new TestSuite("Persisted Regression Suite");
+        TestCase testCase = new TestCase("Complete primary workflow successfully", TestCaseType.FUNCTIONAL);
+        testCase.setDescription("Covers the happy path.");
+        testCase.setTestLayer(TestLayer.UI);
+        testCase.setPriority(Priority.HIGH);
+        testCase.setRiskLevel(RiskLevel.MEDIUM);
+        testCase.setReviewStatus(ReviewStatus.NEEDS_REVIEW);
+        testCase.setAutomationCandidate(true);
+        testCase.addStep(new TestStep(1, "Submit valid data.", "The workflow succeeds."));
+        testCase.addTestData(new TestData("validInput", "{\"state\":\"valid\"}"));
+        testSuite.addTestCase(testCase);
+        story.addTestSuite(testSuite);
+        assignGeneratedIds(story);
+
+        when(storyRepository.findById(story.getId())).thenReturn(Optional.of(story));
+
+        List<GeneratedTestSuiteResult> response = aiGenerationService.getTestSuites(story.getId());
+
+        assertThat(response).hasSize(1);
+        GeneratedTestSuiteResult suiteResponse = response.get(0);
+        assertThat(suiteResponse.id()).isEqualTo(testSuite.getId());
+        assertThat(suiteResponse.testCases()).hasSize(1);
+        assertThat(suiteResponse.testCases().get(0).id()).isEqualTo(testCase.getId());
+        assertThat(suiteResponse.testCases().get(0).reviewStatus()).isEqualTo(ReviewStatus.NEEDS_REVIEW);
+        assertThat(suiteResponse.testCases().get(0).steps().get(0).id()).isEqualTo(testCase.getTestSteps().get(0).getId());
+        assertThat(suiteResponse.testCases().get(0).testData().get(0).id()).isEqualTo(testCase.getTestDataEntries().get(0).getId());
     }
 
     private Story story() {
@@ -181,5 +231,18 @@ class AiGenerationServiceTests {
                 "mock-ai-provider",
                 null
         );
+    }
+
+    private void assignGeneratedIds(Story story) {
+        story.getTestSuites().forEach(testSuite -> {
+            ReflectionTestUtils.setField(testSuite, "id", UUID.randomUUID());
+            testSuite.getTestCases().forEach(testCase -> {
+                ReflectionTestUtils.setField(testCase, "id", UUID.randomUUID());
+                testCase.getTestSteps().forEach(testStep ->
+                        ReflectionTestUtils.setField(testStep, "id", UUID.randomUUID()));
+                testCase.getTestDataEntries().forEach(testData ->
+                        ReflectionTestUtils.setField(testData, "id", UUID.randomUUID()));
+            });
+        });
     }
 }

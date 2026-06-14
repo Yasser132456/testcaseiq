@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.UUID;
 
 public record GeneratedTestSuiteResult(
+        UUID id,
         UUID storyId,
         String suiteName,
         List<GeneratedTestCaseDto> testCases,
@@ -12,4 +13,14 @@ public record GeneratedTestSuiteResult(
         String provider,
         Instant generatedAt
 ) {
+    public GeneratedTestSuiteResult(
+            UUID storyId,
+            String suiteName,
+            List<GeneratedTestCaseDto> testCases,
+            QaValidationResult qaValidation,
+            String provider,
+            Instant generatedAt
+    ) {
+        this(null, storyId, suiteName, testCases, qaValidation, provider, generatedAt);
+    }
 }
