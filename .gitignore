@@ -22,3 +22,6 @@ backend/.mvn/wrapper/maven-wrapper.jar
 # Environment
 .env
 .env.local
+
+# Graphify
+graphify-out/
