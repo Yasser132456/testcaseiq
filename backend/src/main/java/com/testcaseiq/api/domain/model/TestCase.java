@@ -72,6 +72,9 @@ public class TestCase extends AuditableEntity {
     @Column(name = "expected_result", columnDefinition = "text")
     private String expectedResult;
 
+    @Column(name = "automation_candidate", nullable = false)
+    private boolean automationCandidate;
+
     @OneToMany(mappedBy = "testCase", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TestStep> testSteps = new ArrayList<>();
 
@@ -161,6 +164,10 @@ public class TestCase extends AuditableEntity {
         return expectedResult;
     }
 
+    public boolean isAutomationCandidate() {
+        return automationCandidate;
+    }
+
     public List<TestStep> getTestSteps() {
         return testSteps;
     }
@@ -179,6 +186,10 @@ public class TestCase extends AuditableEntity {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
     }
 
     public void setTestLayer(TestLayer testLayer) {
@@ -203,5 +214,14 @@ public class TestCase extends AuditableEntity {
 
     public void setExpectedResult(String expectedResult) {
         this.expectedResult = expectedResult;
+    }
+
+    public void setAutomationCandidate(boolean automationCandidate) {
+        this.automationCandidate = automationCandidate;
+    }
+
+    public void replaceSteps(List<TestStep> replacementSteps) {
+        testSteps.clear();
+        replacementSteps.forEach(this::addStep);
     }
 }

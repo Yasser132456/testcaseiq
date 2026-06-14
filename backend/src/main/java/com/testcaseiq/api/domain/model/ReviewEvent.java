@@ -27,6 +27,16 @@ public class ReviewEvent extends AuditableEntity {
     @Column(nullable = false, length = 64)
     private ReviewStatus status;
 
+    @Size(max = 120)
+    @Column(name = "action_type", length = 120)
+    private String actionType;
+
+    @Column(name = "previous_value", columnDefinition = "text")
+    private String previousValue;
+
+    @Column(name = "new_value", columnDefinition = "text")
+    private String newValue;
+
     @Size(max = 160)
     @Column(length = 160)
     private String reviewer;
@@ -52,6 +62,38 @@ public class ReviewEvent extends AuditableEntity {
 
     public ReviewStatus getStatus() {
         return status;
+    }
+
+    public String getActionType() {
+        return actionType;
+    }
+
+    public String getPreviousValue() {
+        return previousValue;
+    }
+
+    public String getNewValue() {
+        return newValue;
+    }
+
+    public String getReviewer() {
+        return reviewer;
+    }
+
+    public String getComment() {
+        return comment;
+    }
+
+    public void setActionType(String actionType) {
+        this.actionType = actionType;
+    }
+
+    public void setPreviousValue(String previousValue) {
+        this.previousValue = previousValue;
+    }
+
+    public void setNewValue(String newValue) {
+        this.newValue = newValue;
     }
 
     public void setComment(String comment) {

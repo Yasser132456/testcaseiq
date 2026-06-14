@@ -208,6 +208,7 @@ public class AiGenerationService {
         testCase.setRiskLevel(dto.riskLevel());
         testCase.setReviewStatus(ReviewStatus.NEEDS_REVIEW);
         testCase.setExpectedResult(dto.bddScenario());
+        testCase.setAutomationCandidate(dto.automationCandidate());
 
         dto.steps().stream()
                 .map(step -> new TestStep(step.order(), step.action(), step.expectedResult()))
