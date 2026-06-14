@@ -81,6 +81,22 @@ public class Requirement extends AuditableEntity {
         return type;
     }
 
+    public String getDescription() {
+        return description;
+    }
+
+    public Priority getPriority() {
+        return priority;
+    }
+
+    public RiskLevel getRiskLevel() {
+        return riskLevel;
+    }
+
+    public String getSourceReference() {
+        return sourceReference;
+    }
+
     public Set<TestCase> getTestCases() {
         return testCases;
     }

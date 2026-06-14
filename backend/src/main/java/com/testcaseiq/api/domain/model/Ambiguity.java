@@ -64,8 +64,16 @@ public class Ambiguity extends AuditableEntity {
         return severity;
     }
 
+    public String getContext() {
+        return context;
+    }
+
     public boolean isResolved() {
         return resolved;
+    }
+
+    public String getResolutionNotes() {
+        return resolutionNotes;
     }
 
     public void setContext(String context) {

@@ -70,6 +70,18 @@ public class AiJob extends AuditableEntity {
         return status;
     }
 
+    public String getInputPayloadJson() {
+        return inputPayloadJson;
+    }
+
+    public String getOutputPayloadJson() {
+        return outputPayloadJson;
+    }
+
+    public String getErrorMessage() {
+        return errorMessage;
+    }
+
     public void setStatus(AiJobStatus status) {
         this.status = status;
     }

@@ -133,8 +133,32 @@ public class TestCase extends AuditableEntity {
         return type;
     }
 
+    public String getDescription() {
+        return description;
+    }
+
+    public TestLayer getTestLayer() {
+        return testLayer;
+    }
+
+    public Priority getPriority() {
+        return priority;
+    }
+
+    public RiskLevel getRiskLevel() {
+        return riskLevel;
+    }
+
     public ReviewStatus getReviewStatus() {
         return reviewStatus;
+    }
+
+    public String getPreconditions() {
+        return preconditions;
+    }
+
+    public String getExpectedResult() {
+        return expectedResult;
     }
 
     public List<TestStep> getTestSteps() {

@@ -67,6 +67,14 @@ public class TestSuite extends AuditableEntity {
         return name;
     }
 
+    public String getDescription() {
+        return description;
+    }
+
+    public TestLayer getTestLayer() {
+        return testLayer;
+    }
+
     public List<TestCase> getTestCases() {
         return testCases;
     }
