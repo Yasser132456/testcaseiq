@@ -120,7 +120,22 @@ class AiControllerTests {
 
         mockMvc.perform(post("/api/stories/{storyId}/analyze", storyId))
                 .andExpect(status().isBadGateway())
-                .andExpect(jsonPath("$.message").value("AI provider output validation failed: requirements is required"));
+                .andExpect(jsonPath("$.message").value("AI provider output validation failed: requirements is required"))
+                .andExpect(jsonPath("$.trace").doesNotExist())
+                .andExpect(jsonPath("$.exception").doesNotExist());
+    }
+
+    @Test
+    void endpointReturnsCleanErrorWhenAiOutputValidationFails() throws Exception {
+        UUID storyId = UUID.randomUUID();
+        when(aiGenerationService.generateTestCases(storyId))
+                .thenThrow(new AiProviderException("AI output validation failed: TEST_SUITE_NAME_REQUIRED at suiteName"));
+
+        mockMvc.perform(post("/api/stories/{storyId}/generate-tests", storyId))
+                .andExpect(status().isBadGateway())
+                .andExpect(jsonPath("$.message").value("AI output validation failed: TEST_SUITE_NAME_REQUIRED at suiteName"))
+                .andExpect(jsonPath("$.trace").doesNotExist())
+                .andExpect(jsonPath("$.exception").doesNotExist());
     }
 
     private StoryAnalysisResult analysisResult(UUID storyId) {
