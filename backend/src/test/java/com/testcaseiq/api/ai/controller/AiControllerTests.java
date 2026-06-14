@@ -28,6 +28,7 @@ import com.testcaseiq.api.ai.dto.GeneratedTestSuiteResult;
 import com.testcaseiq.api.ai.dto.QaValidationResult;
 import com.testcaseiq.api.ai.dto.RequirementExtractionResult;
 import com.testcaseiq.api.ai.dto.StoryAnalysisResult;
+import com.testcaseiq.api.ai.provider.AiProviderException;
 import com.testcaseiq.api.ai.service.AiGenerationService;
 import com.testcaseiq.api.common.error.ResourceNotFoundException;
 import com.testcaseiq.api.domain.enums.AmbiguitySeverity;
@@ -109,6 +110,17 @@ class AiControllerTests {
         mockMvc.perform(post("/api/stories/{storyId}/analyze", storyId))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value("Story not found: " + storyId));
+    }
+
+    @Test
+    void endpointReturnsBadGatewayWhenAiProviderFailsValidation() throws Exception {
+        UUID storyId = UUID.randomUUID();
+        when(aiGenerationService.analyzeStory(storyId))
+                .thenThrow(new AiProviderException("AI provider output validation failed: requirements is required"));
+
+        mockMvc.perform(post("/api/stories/{storyId}/analyze", storyId))
+                .andExpect(status().isBadGateway())
+                .andExpect(jsonPath("$.message").value("AI provider output validation failed: requirements is required"));
     }
 
     private StoryAnalysisResult analysisResult(UUID storyId) {

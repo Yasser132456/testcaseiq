@@ -10,4 +10,12 @@ public interface AiGenerationProvider {
     StoryAnalysisResult analyzeStory(StoryAnalysisRequest request);
 
     GeneratedTestSuiteResult generateTestCases(TestGenerationRequest request);
+
+    default String providerName() {
+        return getClass().getSimpleName();
+    }
+
+    default String modelName() {
+        return null;
+    }
 }
