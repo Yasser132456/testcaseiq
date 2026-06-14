@@ -63,12 +63,28 @@ public class CoverageItem extends AuditableEntity {
         return category;
     }
 
+    public Requirement getRequirement() {
+        return requirement;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public RiskLevel getRiskLevel() {
+        return riskLevel;
+    }
+
     public boolean isCovered() {
         return covered;
     }
 
     public void setRequirement(Requirement requirement) {
         this.requirement = requirement;
+    }
+
+    public void setRiskLevel(RiskLevel riskLevel) {
+        this.riskLevel = riskLevel;
     }
 
     public void markCovered() {
