@@ -10,4 +10,6 @@ import com.testcaseiq.api.domain.model.Story;
 public interface StoryRepository extends JpaRepository<Story, UUID> {
 
     List<Story> findByProjectId(UUID projectId);
+
+    List<Story> findByProjectIdOrderByCreatedAtDesc(UUID projectId);
 }
