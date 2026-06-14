@@ -21,6 +21,7 @@ import {
 import { ReviewEvent, TestCaseResponse } from '../../core/models/review.model';
 import { STORY_TYPES, Story, StoryStatus, StoryType } from '../../core/models/story.model';
 import { AnalysisService } from '../../core/services/analysis.service';
+import { ExportFormat, ExportService } from '../../core/services/export.service';
 import { ReviewService } from '../../core/services/review.service';
 import { StoryService } from '../../core/services/story.service';
 import { TestGenerationService } from '../../core/services/test-generation.service';
@@ -338,6 +339,34 @@ interface ReviewDraft {
           @if (reviewError()) {
             <app-state-message title="Review update failed" [message]="reviewError()" tone="error" />
           }
+          @if (exportMessage()) {
+            <app-state-message title="Export ready" [message]="exportMessage()" />
+          }
+          @if (exportError()) {
+            <app-state-message title="Export failed" [message]="exportError()" tone="error" />
+          }
+
+          <section class="export-panel">
+            <div class="export-copy">
+              <p class="eyebrow export-eyebrow">Approved export</p>
+              <h4>Download reviewed manual tests</h4>
+              <p>Only APPROVED test cases are exported. Draft, rejected, and needs-review cases stay out of the file.</p>
+            </div>
+            <div class="export-action-grid">
+              @for (option of exportOptions; track option.format) {
+                <button
+                  class="export-card"
+                  type="button"
+                  (click)="exportApprovedTestCases(option.format)"
+                  [disabled]="isExporting()"
+                >
+                  <span>{{ option.badge }}</span>
+                  <strong>{{ exportingFormat() === option.format ? 'Exporting...' : option.label }}</strong>
+                  <small>{{ option.description }}</small>
+                </button>
+              }
+            </div>
+          </section>
 
           @if (testSuitesLoading()) {
             <app-state-message title="Loading test suites" message="Checking for existing generated manual test cases." />
@@ -622,6 +651,7 @@ export class StoryDetailPageComponent implements OnInit {
   private readonly analysisService = inject(AnalysisService);
   private readonly testGenerationService = inject(TestGenerationService);
   private readonly reviewService = inject(ReviewService);
+  private readonly exportService = inject(ExportService);
 
   readonly storyTypes = STORY_TYPES;
   readonly requirementTypes: RequirementType[] = [
@@ -649,6 +679,26 @@ export class StoryDetailPageComponent implements OnInit {
     'ACCESSIBILITY',
     'REGRESSION'
   ];
+  readonly exportOptions: { format: ExportFormat; label: string; badge: string; description: string }[] = [
+    {
+      format: 'markdown',
+      label: 'Markdown',
+      badge: 'MD',
+      description: 'Human-readable review artifact'
+    },
+    {
+      format: 'csv',
+      label: 'CSV',
+      badge: 'CSV',
+      description: 'Spreadsheet-ready test case table'
+    },
+    {
+      format: 'json',
+      label: 'JSON',
+      badge: 'JSON',
+      description: 'Structured integration payload'
+    }
+  ];
 
   readonly story = signal<Story | null>(null);
   readonly analysis = signal<StoryAnalysisResult | null>(null);
@@ -672,6 +722,9 @@ export class StoryDetailPageComponent implements OnInit {
   readonly reviewEvents = signal<ReviewEvent[]>([]);
   readonly reviewHistoryLoading = signal(false);
   readonly reviewHistoryError = signal('');
+  readonly exportingFormat = signal<ExportFormat | null>(null);
+  readonly exportError = signal('');
+  readonly exportMessage = signal('');
 
   readonly form = this.fb.nonNullable.group({
     title: ['', Validators.required],
@@ -759,6 +812,34 @@ export class StoryDetailPageComponent implements OnInit {
       error: () => {
         this.testGenerationError.set('The test cases could not be generated. Confirm the backend is running and try again.');
         this.generatingTests.set(false);
+      }
+    });
+  }
+
+  exportApprovedTestCases(format: ExportFormat): void {
+    if (!this.storyId || this.isExporting()) {
+      return;
+    }
+    this.exportingFormat.set(format);
+    this.exportError.set('');
+    this.exportMessage.set('');
+    this.exportService.exportApprovedTestCases(this.storyId, format).subscribe({
+      next: (response) => {
+        const blob = response.body;
+        if (!blob) {
+          this.exportError.set('The export completed without a downloadable file.');
+          this.exportingFormat.set(null);
+          return;
+        }
+        const fallbackName = this.fallbackExportFilename(format);
+        const filename = this.exportFilename(response.headers.get('Content-Disposition'), fallbackName);
+        this.downloadBlob(blob, filename);
+        this.exportMessage.set(`${this.exportLabel(format)} export download started.`);
+        this.exportingFormat.set(null);
+      },
+      error: () => {
+        this.exportError.set(`The ${this.exportLabel(format)} export could not be downloaded. Confirm the backend is running and try again.`);
+        this.exportingFormat.set(null);
       }
     });
   }
@@ -1012,6 +1093,10 @@ export class StoryDetailPageComponent implements OnInit {
     return value.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase());
   }
 
+  isExporting(): boolean {
+    return this.exportingFormat() !== null;
+  }
+
   severityClass(severity: AmbiguitySeverity): string {
     return `severity-${severity.toLowerCase()}`;
   }
@@ -1032,6 +1117,44 @@ export class StoryDetailPageComponent implements OnInit {
         this.analysisLoading.set(false);
       }
     });
+  }
+
+  private fallbackExportFilename(format: ExportFormat): string {
+    const extension = format === 'markdown' ? 'md' : format;
+    return `story-${this.storyId}-approved-test-cases.${extension}`;
+  }
+
+  private exportFilename(contentDisposition: string | null, fallbackName: string): string {
+    if (!contentDisposition) {
+      return fallbackName;
+    }
+    const encodedMatch = /filename\*=UTF-8''([^;]+)/i.exec(contentDisposition);
+    if (encodedMatch?.[1]) {
+      try {
+        return decodeURIComponent(encodedMatch[1].trim());
+      } catch {
+        return fallbackName;
+      }
+    }
+    const quotedMatch = /filename="([^"]+)"/i.exec(contentDisposition);
+    if (quotedMatch?.[1]) {
+      return quotedMatch[1].trim();
+    }
+    const plainMatch = /filename=([^;]+)/i.exec(contentDisposition);
+    return plainMatch?.[1]?.trim() || fallbackName;
+  }
+
+  private exportLabel(format: ExportFormat): string {
+    return this.exportOptions.find((option) => option.format === format)?.label ?? format.toUpperCase();
+  }
+
+  private downloadBlob(blob: Blob, filename: string): void {
+    const objectUrl = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = objectUrl;
+    anchor.download = filename;
+    anchor.click();
+    URL.revokeObjectURL(objectUrl);
   }
 
   private loadTestSuites(): void {
