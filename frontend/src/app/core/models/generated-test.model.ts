@@ -36,6 +36,7 @@ export interface GeneratedTestSuiteResult {
 }
 
 export interface GeneratedTestCase {
+  id?: string | null;
   title: string;
   description: string | null;
   objective?: string | null;
@@ -55,12 +56,14 @@ export interface GeneratedTestCase {
 }
 
 export interface GeneratedTestStep {
+  id?: string | null;
   order: number;
   action: string;
   expectedResult: string | null;
 }
 
 export interface GeneratedTestData {
+  id?: string | null;
   name: string;
   valueJson: string | null;
   classification?: string | null;

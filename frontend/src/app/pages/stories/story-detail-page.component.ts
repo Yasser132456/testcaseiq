@@ -6,19 +6,32 @@ import {
   AmbiguitySeverity,
   CoverageCategory,
   ExtractedRequirement,
+  Priority,
   RequirementType,
+  RiskLevel,
   StoryAnalysisResult
 } from '../../core/models/analysis.model';
 import {
   GeneratedTestCase,
   GeneratedTestData,
-  GeneratedTestSuiteResult
+  GeneratedTestStep,
+  GeneratedTestSuiteResult,
+  ReviewStatus
 } from '../../core/models/generated-test.model';
+import { ReviewEvent, TestCaseResponse } from '../../core/models/review.model';
 import { STORY_TYPES, Story, StoryStatus, StoryType } from '../../core/models/story.model';
 import { AnalysisService } from '../../core/services/analysis.service';
+import { ReviewService } from '../../core/services/review.service';
 import { StoryService } from '../../core/services/story.service';
 import { TestGenerationService } from '../../core/services/test-generation.service';
 import { StateMessageComponent } from '../../shared/components/state-message.component';
+
+interface ReviewDraft {
+  title?: string;
+  objective?: string;
+  comment?: string;
+  steps?: Record<number, Partial<GeneratedTestStep>>;
+}
 
 @Component({
   selector: 'app-story-detail-page',
@@ -319,6 +332,12 @@ import { StateMessageComponent } from '../../shared/components/state-message.com
               <span class="badge status-badge">{{ totalTestCases() }} cases</span>
             </div>
           </div>
+          @if (reviewMessage()) {
+            <app-state-message title="Review updated" [message]="reviewMessage()" />
+          }
+          @if (reviewError()) {
+            <app-state-message title="Review update failed" [message]="reviewError()" tone="error" />
+          }
 
           @if (testSuitesLoading()) {
             <app-state-message title="Loading test suites" message="Checking for existing generated manual test cases." />
@@ -363,7 +382,7 @@ import { StateMessageComponent } from '../../shared/components/state-message.com
                     <app-state-message title="No test cases returned" message="The generation request completed, but this suite does not contain manual tests." />
                   } @else {
                     <div class="test-case-grid">
-                      @for (testCase of suite.testCases; track testCase.title) {
+                      @for (testCase of suite.testCases; track testCase.id) {
                         <article class="test-case-card">
                           <div class="test-case-header">
                             <div>
@@ -386,11 +405,70 @@ import { StateMessageComponent } from '../../shared/components/state-message.com
                                 {{ testCase.automationCandidate ? 'Automation candidate' : 'Manual priority' }}
                               </span>
                               <span class="badge">{{ formatScore(testCase.confidenceScore) }} confidence</span>
-                              @if (testCase.reviewStatus) {
-                                <span class="badge amber-badge">{{ testCase.reviewStatus }}</span>
-                              }
+                              <span
+                                class="badge review-status-badge"
+                                [class.review-approved]="displayReviewStatus(testCase) === 'APPROVED'"
+                                [class.review-rejected]="displayReviewStatus(testCase) === 'REJECTED'"
+                                [class.review-attention]="displayReviewStatus(testCase) === 'NEEDS_REVIEW' || displayReviewStatus(testCase) === 'NEEDS_CLARIFICATION'"
+                                [class.review-draft]="displayReviewStatus(testCase) === 'DRAFT'"
+                              >
+                                {{ formatLabel(displayReviewStatus(testCase)) }}
+                              </span>
                             </div>
                           </div>
+
+                          @if (!testCase.id) {
+                            <div class="inline-note amber-note">
+                              This generated test case is missing a persisted backend ID, so review actions are disabled.
+                            </div>
+                          } @else {
+                            <section class="review-workflow-panel">
+                              <div class="review-action-grid">
+                                <button class="button approve-button" type="button" (click)="updateReviewStatus(testCase, 'APPROVED')" [disabled]="isReviewBusy(testCase)">
+                                  Approve
+                                </button>
+                                <button class="button danger" type="button" (click)="updateReviewStatus(testCase, 'REJECTED')" [disabled]="isReviewBusy(testCase)">
+                                  Reject
+                                </button>
+                                <button class="button clarification-button" type="button" (click)="updateReviewStatus(testCase, 'NEEDS_CLARIFICATION')" [disabled]="isReviewBusy(testCase)">
+                                  Needs clarification
+                                </button>
+                                <button class="button review-button" type="button" (click)="updateReviewStatus(testCase, 'NEEDS_REVIEW')" [disabled]="isReviewBusy(testCase)">
+                                  Needs review
+                                </button>
+                              </div>
+
+                              <div class="review-field-grid">
+                                <label>
+                                  <span>Priority</span>
+                                  <select [value]="testCase.priority ?? ''" (change)="updatePriority(testCase, $any($event.target).value)" [disabled]="isReviewBusy(testCase)">
+                                    <option value="" disabled>Not set</option>
+                                    @for (priority of priorityOptions; track priority) {
+                                      <option [value]="priority">{{ formatLabel(priority) }}</option>
+                                    }
+                                  </select>
+                                </label>
+                                <label>
+                                  <span>Risk</span>
+                                  <select [value]="testCase.riskLevel ?? ''" (change)="updateRisk(testCase, $any($event.target).value)" [disabled]="isReviewBusy(testCase)">
+                                    <option value="" disabled>Not set</option>
+                                    @for (risk of riskOptions; track risk) {
+                                      <option [value]="risk">{{ formatLabel(risk) }}</option>
+                                    }
+                                  </select>
+                                </label>
+                                <label class="checkbox-field">
+                                  <input type="checkbox" [checked]="testCase.automationCandidate" (change)="updateAutomationCandidate(testCase, $any($event.target).checked)" [disabled]="isReviewBusy(testCase)" />
+                                  <span>Automation candidate</span>
+                                </label>
+                              </div>
+
+                              <label>
+                                <span>Review comment</span>
+                                <input [value]="reviewDraft(testCase)?.comment ?? ''" (input)="updateReviewDraft(testCase, 'comment', $any($event.target).value)" placeholder="Optional note for the review history" [disabled]="isReviewBusy(testCase)" />
+                              </label>
+                            </section>
+                          }
 
                           @if (testCase.linkedRequirementReferences.length > 0) {
                             <div class="evidence-row">
@@ -405,6 +483,25 @@ import { StateMessageComponent } from '../../shared/components/state-message.com
 
                           @if (testCase.sourceEvidence) {
                             <div class="inline-note">{{ testCase.sourceEvidence }}</div>
+                          }
+
+                          @if (testCase.id) {
+                            <section class="test-detail-section edit-test-case-panel">
+                              <h6>Review edits</h6>
+                              <div class="review-edit-grid">
+                                <label>
+                                  <span>Title</span>
+                                  <input [value]="reviewDraft(testCase)?.title ?? testCase.title" (input)="updateReviewDraft(testCase, 'title', $any($event.target).value)" [disabled]="isReviewBusy(testCase)" />
+                                </label>
+                                <label>
+                                  <span>Objective</span>
+                                  <textarea rows="3" [value]="reviewDraft(testCase)?.objective ?? testObjective(testCase)" (input)="updateReviewDraft(testCase, 'objective', $any($event.target).value)" [disabled]="isReviewBusy(testCase)"></textarea>
+                                </label>
+                              </div>
+                              <button class="button secondary" type="button" (click)="saveTestCaseEdits(testCase)" [disabled]="isReviewBusy(testCase)">
+                                {{ isReviewBusy(testCase) ? 'Saving...' : 'Save test case edits' }}
+                              </button>
+                            </section>
                           }
 
                           @if (testCase.preconditions) {
@@ -424,14 +521,60 @@ import { StateMessageComponent } from '../../shared/components/state-message.com
                                   <div class="step-row">
                                     <span>{{ step.order }}</span>
                                     <div>
-                                      <strong>{{ step.action }}</strong>
-                                      <p>{{ step.expectedResult || 'Expected result not specified.' }}</p>
+                                      @if (testCase.id) {
+                                        <label class="compact-field">
+                                          <span>Action</span>
+                                          <input [value]="stepDraft(testCase, step)?.action ?? step.action" (input)="updateReviewStepDraft(testCase, step, 'action', $any($event.target).value)" [disabled]="isReviewBusy(testCase)" />
+                                        </label>
+                                        <label class="compact-field">
+                                          <span>Expected result</span>
+                                          <textarea rows="2" [value]="stepDraft(testCase, step)?.expectedResult ?? step.expectedResult ?? ''" (input)="updateReviewStepDraft(testCase, step, 'expectedResult', $any($event.target).value)" [disabled]="isReviewBusy(testCase)"></textarea>
+                                        </label>
+                                      } @else {
+                                        <strong>{{ step.action }}</strong>
+                                        <p>{{ step.expectedResult || 'Expected result not specified.' }}</p>
+                                      }
                                     </div>
                                   </div>
                                 }
                               </div>
                             }
                           </section>
+
+                          @if (testCase.id) {
+                            <section class="test-detail-section review-history-section">
+                              <div class="history-header">
+                                <h6>Review history</h6>
+                                <button class="button secondary" type="button" (click)="toggleReviewHistory(testCase)" [disabled]="reviewHistoryLoading() && selectedHistoryTestCaseId() === testCase.id">
+                                  {{ selectedHistoryTestCaseId() === testCase.id ? 'Hide history' : 'Show history' }}
+                                </button>
+                              </div>
+                              @if (selectedHistoryTestCaseId() === testCase.id) {
+                                @if (reviewHistoryLoading()) {
+                                  <app-state-message title="Loading history" message="Reading review events." />
+                                } @else if (reviewHistoryError()) {
+                                  <app-state-message title="History unavailable" [message]="reviewHistoryError()" tone="error" />
+                                } @else if (reviewEvents().length === 0) {
+                                  <app-state-message title="No review events" message="No review history has been recorded for this test case yet." />
+                                } @else {
+                                  <div class="review-event-list">
+                                    @for (event of reviewEvents(); track event.id) {
+                                      <article class="review-event-row">
+                                        <div>
+                                          <strong>{{ formatLabel(event.actionType) }}</strong>
+                                          <p>{{ event.previousValue || 'None' }} -> {{ event.newValue || 'None' }}</p>
+                                          @if (event.comment) {
+                                            <small>{{ event.comment }}</small>
+                                          }
+                                        </div>
+                                        <time>{{ event.createdAt | date:'medium' }}</time>
+                                      </article>
+                                    }
+                                  </div>
+                                }
+                              }
+                            </section>
+                          }
 
                           <section class="test-detail-section">
                             <h6>Test data</h6>
@@ -478,6 +621,7 @@ export class StoryDetailPageComponent implements OnInit {
   private readonly storyService = inject(StoryService);
   private readonly analysisService = inject(AnalysisService);
   private readonly testGenerationService = inject(TestGenerationService);
+  private readonly reviewService = inject(ReviewService);
 
   readonly storyTypes = STORY_TYPES;
   readonly requirementTypes: RequirementType[] = [
@@ -491,6 +635,8 @@ export class StoryDetailPageComponent implements OnInit {
     'INTEGRATION'
   ];
   readonly ambiguitySeverities: AmbiguitySeverity[] = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'];
+  readonly priorityOptions: Priority[] = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
+  readonly riskOptions: RiskLevel[] = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
   readonly coverageCategories: CoverageCategory[] = [
     'HAPPY_PATH',
     'NEGATIVE_PATH',
@@ -518,6 +664,14 @@ export class StoryDetailPageComponent implements OnInit {
   readonly testGenerationError = signal('');
   readonly saveError = signal('');
   readonly saveMessage = signal('');
+  readonly reviewMessage = signal('');
+  readonly reviewError = signal('');
+  readonly reviewBusyByTestCaseId = signal<Record<string, string>>({});
+  readonly reviewDrafts = signal<Record<string, ReviewDraft>>({});
+  readonly selectedHistoryTestCaseId = signal<string | null>(null);
+  readonly reviewEvents = signal<ReviewEvent[]>([]);
+  readonly reviewHistoryLoading = signal(false);
+  readonly reviewHistoryError = signal('');
 
   readonly form = this.fb.nonNullable.group({
     title: ['', Validators.required],
@@ -682,6 +836,171 @@ export class StoryDetailPageComponent implements OnInit {
     }
   }
 
+  reviewDraft(testCase: GeneratedTestCase): ReviewDraft | null {
+    const testCaseId = testCase.id;
+    return testCaseId ? this.reviewDrafts()[testCaseId] ?? null : null;
+  }
+
+  stepDraft(testCase: GeneratedTestCase, step: GeneratedTestStep): Partial<GeneratedTestStep> | null {
+    return this.reviewDraft(testCase)?.steps?.[step.order] ?? null;
+  }
+
+  updateReviewDraft(testCase: GeneratedTestCase, field: 'title' | 'objective' | 'comment', value: string): void {
+    const testCaseId = testCase.id;
+    if (!testCaseId) {
+      return;
+    }
+    this.reviewDrafts.update((drafts) => ({
+      ...drafts,
+      [testCaseId]: {
+        ...drafts[testCaseId],
+        [field]: value
+      }
+    }));
+  }
+
+  updateReviewStepDraft(
+    testCase: GeneratedTestCase,
+    step: GeneratedTestStep,
+    field: 'action' | 'expectedResult',
+    value: string
+  ): void {
+    const testCaseId = testCase.id;
+    if (!testCaseId) {
+      return;
+    }
+    const currentDraft = this.reviewDrafts()[testCaseId] ?? {};
+    const currentSteps = currentDraft.steps ?? {};
+    this.reviewDrafts.update((drafts) => ({
+      ...drafts,
+      [testCaseId]: {
+        ...currentDraft,
+        steps: {
+          ...currentSteps,
+          [step.order]: {
+            ...currentSteps[step.order],
+            [field]: value
+          }
+        }
+      }
+    }));
+  }
+
+  updateReviewStatus(testCase: GeneratedTestCase, status: ReviewStatus): void {
+    const testCaseId = this.persistedTestCaseId(testCase);
+    if (!testCaseId || this.isReviewBusy(testCase)) {
+      return;
+    }
+    this.beginReviewUpdate(testCaseId, 'review-status');
+    this.reviewService.updateReviewStatus(testCaseId, {
+      status,
+      comment: this.reviewDraft(testCase)?.comment || null
+    }).subscribe({
+      next: (updatedTestCase) => this.completeReviewUpdate(testCase, updatedTestCase, 'Review status was updated.'),
+      error: () => this.failReviewUpdate(testCaseId, 'The review status could not be updated.')
+    });
+  }
+
+  updatePriority(testCase: GeneratedTestCase, priority: Priority | ''): void {
+    const testCaseId = this.persistedTestCaseId(testCase);
+    if (!testCaseId || !priority || this.isReviewBusy(testCase)) {
+      return;
+    }
+    this.beginReviewUpdate(testCaseId, 'priority');
+    this.reviewService.updatePriority(testCaseId, {
+      priority,
+      comment: this.reviewDraft(testCase)?.comment || null
+    }).subscribe({
+      next: (updatedTestCase) => this.completeReviewUpdate(testCase, updatedTestCase, 'Priority was updated.'),
+      error: () => this.failReviewUpdate(testCaseId, 'The priority could not be updated.')
+    });
+  }
+
+  updateRisk(testCase: GeneratedTestCase, riskLevel: RiskLevel | ''): void {
+    const testCaseId = this.persistedTestCaseId(testCase);
+    if (!testCaseId || !riskLevel || this.isReviewBusy(testCase)) {
+      return;
+    }
+    this.beginReviewUpdate(testCaseId, 'risk');
+    this.reviewService.updateRisk(testCaseId, {
+      riskLevel,
+      comment: this.reviewDraft(testCase)?.comment || null
+    }).subscribe({
+      next: (updatedTestCase) => this.completeReviewUpdate(testCase, updatedTestCase, 'Risk was updated.'),
+      error: () => this.failReviewUpdate(testCaseId, 'The risk could not be updated.')
+    });
+  }
+
+  updateAutomationCandidate(testCase: GeneratedTestCase, automationCandidate: boolean): void {
+    const testCaseId = this.persistedTestCaseId(testCase);
+    if (!testCaseId || this.isReviewBusy(testCase)) {
+      return;
+    }
+    this.beginReviewUpdate(testCaseId, 'automation');
+    this.reviewService.updateAutomationCandidate(testCaseId, {
+      automationCandidate,
+      comment: this.reviewDraft(testCase)?.comment || null
+    }).subscribe({
+      next: (updatedTestCase) => this.completeReviewUpdate(testCase, updatedTestCase, 'Automation candidate flag was updated.'),
+      error: () => this.failReviewUpdate(testCaseId, 'The automation candidate flag could not be updated.')
+    });
+  }
+
+  saveTestCaseEdits(testCase: GeneratedTestCase): void {
+    const testCaseId = this.persistedTestCaseId(testCase);
+    if (!testCaseId || this.isReviewBusy(testCase)) {
+      return;
+    }
+    const draft = this.reviewDraft(testCase);
+    const title = (draft?.title ?? testCase.title).trim();
+    if (!title) {
+      this.reviewError.set('Test case title is required.');
+      return;
+    }
+
+    this.beginReviewUpdate(testCaseId, 'content');
+    this.reviewService.updateTestCase(testCaseId, {
+      title,
+      objective: draft?.objective ?? this.testObjective(testCase),
+      steps: testCase.steps.map((step) => {
+        const stepDraft = draft?.steps?.[step.order];
+        return {
+          order: step.order,
+          action: (stepDraft?.action ?? step.action).trim(),
+          expectedResult: stepDraft?.expectedResult ?? step.expectedResult
+        };
+      }),
+      comment: draft?.comment || null
+    }).subscribe({
+      next: (updatedTestCase) => this.completeReviewUpdate(testCase, updatedTestCase, 'Test case edits were saved.'),
+      error: () => this.failReviewUpdate(testCaseId, 'The test case edits could not be saved.')
+    });
+  }
+
+  toggleReviewHistory(testCase: GeneratedTestCase): void {
+    const testCaseId = this.persistedTestCaseId(testCase);
+    if (!testCaseId) {
+      return;
+    }
+    if (this.selectedHistoryTestCaseId() === testCaseId) {
+      this.selectedHistoryTestCaseId.set(null);
+      this.reviewEvents.set([]);
+      this.reviewHistoryError.set('');
+      return;
+    }
+    this.selectedHistoryTestCaseId.set(testCaseId);
+    this.loadReviewHistory(testCaseId);
+  }
+
+  isReviewBusy(testCase: GeneratedTestCase): boolean {
+    const testCaseId = testCase.id;
+    return !!testCaseId && !!this.reviewBusyByTestCaseId()[testCaseId];
+  }
+
+  displayReviewStatus(testCase: GeneratedTestCase): ReviewStatus {
+    return testCase.reviewStatus ?? 'DRAFT';
+  }
+
   formatScore(score: number | null | undefined): string {
     if (score === null || score === undefined || score <= 0) {
       return 'N/A';
@@ -740,5 +1059,130 @@ export class StoryDetailPageComponent implements OnInit {
     }
     this.story.set({ ...currentStory, status });
     this.form.patchValue({ status });
+  }
+
+  private persistedTestCaseId(testCase: GeneratedTestCase): string | null {
+    if (!testCase.id) {
+      this.reviewError.set('This generated test case does not have a persisted backend ID yet.');
+      return null;
+    }
+    return testCase.id;
+  }
+
+  private beginReviewUpdate(testCaseId: string, action: string): void {
+    this.reviewMessage.set('');
+    this.reviewError.set('');
+    this.reviewBusyByTestCaseId.update((busy) => ({ ...busy, [testCaseId]: action }));
+  }
+
+  private completeReviewUpdate(
+    originalTestCase: GeneratedTestCase,
+    updatedTestCase: TestCaseResponse,
+    message: string
+  ): void {
+    this.replaceGeneratedTestCase(updatedTestCase, originalTestCase);
+    this.reviewMessage.set(message);
+    this.reviewBusyByTestCaseId.update((busy) => {
+      const nextBusy = { ...busy };
+      delete nextBusy[updatedTestCase.id];
+      return nextBusy;
+    });
+    this.reviewDrafts.update((drafts) => ({
+      ...drafts,
+      [updatedTestCase.id]: {
+        ...drafts[updatedTestCase.id],
+        title: updatedTestCase.title,
+        objective: updatedTestCase.objective ?? '',
+        steps: {},
+        comment: ''
+      }
+    }));
+    if (this.selectedHistoryTestCaseId() === updatedTestCase.id) {
+      this.loadReviewHistory(updatedTestCase.id);
+    }
+  }
+
+  private failReviewUpdate(testCaseId: string, message: string): void {
+    this.reviewError.set(message);
+    this.reviewBusyByTestCaseId.update((busy) => {
+      const nextBusy = { ...busy };
+      delete nextBusy[testCaseId];
+      return nextBusy;
+    });
+  }
+
+  private replaceGeneratedTestCase(updatedTestCase: TestCaseResponse, originalTestCase: GeneratedTestCase): void {
+    this.testSuites.update((suites) => suites.map((suite) => ({
+      ...suite,
+      testCases: suite.testCases.map((testCase) => (
+        testCase.id === updatedTestCase.id
+          ? this.mergeUpdatedTestCase(testCase, updatedTestCase)
+          : testCase
+      ))
+    })));
+
+    if (!this.testSuites().some((suite) => suite.testCases.some((testCase) => testCase.id === updatedTestCase.id))) {
+      this.replaceGeneratedTestCaseByReference(updatedTestCase, originalTestCase);
+    }
+  }
+
+  private replaceGeneratedTestCaseByReference(
+    updatedTestCase: TestCaseResponse,
+    originalTestCase: GeneratedTestCase
+  ): void {
+    this.testSuites.update((suites) => suites.map((suite) => ({
+      ...suite,
+      testCases: suite.testCases.map((testCase) => (
+        testCase === originalTestCase
+          ? this.mergeUpdatedTestCase(testCase, updatedTestCase)
+          : testCase
+      ))
+    })));
+  }
+
+  private mergeUpdatedTestCase(
+    currentTestCase: GeneratedTestCase,
+    updatedTestCase: TestCaseResponse
+  ): GeneratedTestCase {
+    return {
+      ...currentTestCase,
+      id: updatedTestCase.id,
+      title: updatedTestCase.title,
+      description: updatedTestCase.objective,
+      objective: updatedTestCase.objective,
+      type: updatedTestCase.type,
+      testLayer: updatedTestCase.testLayer,
+      priority: updatedTestCase.priority,
+      riskLevel: updatedTestCase.riskLevel,
+      reviewStatus: updatedTestCase.reviewStatus,
+      automationCandidate: updatedTestCase.automationCandidate,
+      preconditions: updatedTestCase.preconditions,
+      bddScenario: updatedTestCase.bddScenario,
+      linkedRequirementReferences: updatedTestCase.linkedRequirementReferences,
+      steps: updatedTestCase.steps.map((step) => ({
+        id: step.id,
+        order: step.order,
+        action: step.action,
+        expectedResult: step.expectedResult
+      }))
+    };
+  }
+
+  private loadReviewHistory(testCaseId: string): void {
+    this.reviewHistoryLoading.set(true);
+    this.reviewHistoryError.set('');
+    this.reviewEvents.set([]);
+    this.reviewService.getReviewEvents(testCaseId).subscribe({
+      next: (events) => {
+        if (this.selectedHistoryTestCaseId() === testCaseId) {
+          this.reviewEvents.set(events);
+        }
+        this.reviewHistoryLoading.set(false);
+      },
+      error: () => {
+        this.reviewHistoryError.set('Review history could not be loaded.');
+        this.reviewHistoryLoading.set(false);
+      }
+    });
   }
 }
