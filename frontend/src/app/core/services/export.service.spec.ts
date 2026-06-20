@@ -31,6 +31,26 @@ describe('ExportService', () => {
     expectExportRequest('csv', '/api/stories/story-1/exports/csv', 'text/csv');
   });
 
+  it('downloads approved test cases as Jira Xray csv with response headers', () => {
+    let response: HttpResponse<Blob> | undefined;
+    service.exportApprovedTestCases('story-1', 'xray-csv').subscribe((exportResponse) => {
+      response = exportResponse;
+    });
+
+    const request = http.expectOne('/api/stories/story-1/exports/xray-csv');
+    expect(request.request.method).toBe('GET');
+    expect(request.request.responseType).toBe('blob');
+    const body = new Blob(['Summary,Action,Data,Expected Result'], { type: 'text/csv' });
+    request.flush(body, {
+      headers: {
+        'Content-Disposition': 'attachment; filename="story-1-approved-tests-xray.csv"'
+      }
+    });
+
+    expect(response?.body).toBe(body);
+    expect(response?.headers.get('Content-Disposition')).toContain('approved-tests-xray.csv');
+  });
+
   it('downloads approved test cases as json with response headers', () => {
     expectExportRequest('json', '/api/stories/story-1/exports/json', 'application/json');
   });

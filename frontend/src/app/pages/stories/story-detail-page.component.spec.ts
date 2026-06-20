@@ -172,7 +172,47 @@ describe('StoryDetailPageComponent export actions', () => {
     expect(component.exportMessage()).toContain('Postman');
   });
 
+  it('calls the Jira Xray export endpoint and uses the xray csv filename fallback', () => {
+    let downloadedFilename = '';
+    spyOn(HTMLAnchorElement.prototype, 'click').and.callFake(function (this: HTMLAnchorElement) {
+      downloadedFilename = this.download;
+    });
+    spyOn(URL, 'createObjectURL').and.returnValue('blob:xray-export');
+    spyOn(URL, 'revokeObjectURL');
+
+    exportButtonByText('Jira/Xray CSV').click();
+    fixture.detectChanges();
+
+    expect(exportService.exportApprovedTestCases).toHaveBeenCalledOnceWith('story-1', 'xray-csv');
+
+    exportResponse.next(new HttpResponse({
+      body: new Blob(['Summary,Action,Data,Expected Result'], { type: 'text/csv' }),
+      headers: new HttpHeaders({})
+    }));
+    fixture.detectChanges();
+
+    expect(downloadedFilename).toBe('story-story-1-approved-tests-xray.csv');
+    expect(component.exportMessage()).toBe('Jira/Xray CSV export download started.');
+  });
+
+  it('shows Jira Xray draft mapping and no live connection guidance', () => {
+    const exportPanelText = (fixture.nativeElement.querySelector('.export-panel') as HTMLElement).textContent ?? '';
+
+    expect(exportPanelText).toContain('Jira/Xray export generates a draft import mapping only.');
+    expect(exportPanelText).toContain('Generated CSV should be reviewed before Jira/Xray import.');
+    expect(exportPanelText).toContain('Exports approved test cases only.');
+    expect(exportPanelText).toContain('No Jira/Xray API connection is used in this export.');
+  });
+
   function exportActionButtons(): HTMLButtonElement[] {
     return Array.from(fixture.nativeElement.querySelectorAll('.export-card')) as HTMLButtonElement[];
+  }
+
+  function exportButtonByText(text: string): HTMLButtonElement {
+    const button = exportActionButtons().find((candidate) => candidate.textContent?.includes(text));
+    if (!button) {
+      throw new Error(`Export button not found: ${text}`);
+    }
+    return button;
   }
 });

@@ -2,7 +2,7 @@ import { HttpClient, HttpResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
-export type ExportFormat = 'markdown' | 'csv' | 'json' | 'playwright' | 'postman';
+export type ExportFormat = 'markdown' | 'csv' | 'json' | 'playwright' | 'postman' | 'xray-csv';
 
 @Injectable({ providedIn: 'root' })
 export class ExportService {
