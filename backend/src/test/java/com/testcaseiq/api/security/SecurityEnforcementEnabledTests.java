@@ -13,6 +13,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.testcaseiq.api.project.ProjectController;
+import com.testcaseiq.api.audit.AuditService;
 import com.testcaseiq.api.project.ProjectService;
 import com.testcaseiq.api.user.UserAccountRepository;
 
@@ -32,6 +33,9 @@ class SecurityEnforcementEnabledTests {
 
     @MockBean
     private UserAccountRepository userAccountRepository;
+
+    @MockBean
+    private AuditService auditService;
 
     @Test
     void enforcedModeRejectsUnauthenticatedBusinessEndpointAccess() throws Exception {

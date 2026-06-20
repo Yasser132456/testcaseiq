@@ -25,6 +25,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.testcaseiq.api.audit.AuditService;
 import com.testcaseiq.api.common.error.ResourceNotFoundException;
 
 @WebMvcTest(ProjectController.class)
@@ -36,6 +37,9 @@ class ProjectControllerTests {
 
     @MockBean
     private ProjectService projectService;
+
+    @MockBean
+    private AuditService auditService;
 
     @Test
     void createsProject() throws Exception {

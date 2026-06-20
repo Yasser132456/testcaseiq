@@ -13,27 +13,36 @@ import org.springframework.web.bind.annotation.RestController;
 import com.testcaseiq.api.ai.dto.GeneratedTestSuiteResult;
 import com.testcaseiq.api.ai.dto.StoryAnalysisResult;
 import com.testcaseiq.api.ai.service.AiGenerationService;
+import com.testcaseiq.api.audit.AuditAction;
+import com.testcaseiq.api.audit.AuditOutcome;
+import com.testcaseiq.api.audit.AuditService;
 
 @RestController
 @RequestMapping("/api/stories/{storyId}")
 public class AiController {
 
     private final AiGenerationService aiGenerationService;
+    private final AuditService auditService;
 
-    public AiController(AiGenerationService aiGenerationService) {
+    public AiController(AiGenerationService aiGenerationService, AuditService auditService) {
         this.aiGenerationService = aiGenerationService;
+        this.auditService = auditService;
     }
 
     @PostMapping("/analyze")
     @org.springframework.security.access.prepost.PreAuthorize("!@securityEnforcement.isEnforced() or hasAnyRole('ADMIN', 'QA_ENGINEER')")
     public ResponseEntity<StoryAnalysisResult> analyzeStory(@PathVariable UUID storyId) {
-        return ResponseEntity.ok(aiGenerationService.analyzeStory(storyId));
+        ResponseEntity<StoryAnalysisResult> result = ResponseEntity.ok(aiGenerationService.analyzeStory(storyId));
+        auditService.log(AuditAction.STORY_ANALYSIS_REQUESTED, "STORY", storyId.toString(), AuditOutcome.SUCCESS, null);
+        return result;
     }
 
     @PostMapping("/generate-tests")
     @org.springframework.security.access.prepost.PreAuthorize("!@securityEnforcement.isEnforced() or hasAnyRole('ADMIN', 'QA_ENGINEER')")
     public ResponseEntity<GeneratedTestSuiteResult> generateTests(@PathVariable UUID storyId) {
-        return ResponseEntity.ok(aiGenerationService.generateTestCases(storyId));
+        ResponseEntity<GeneratedTestSuiteResult> result = ResponseEntity.ok(aiGenerationService.generateTestCases(storyId));
+        auditService.log(AuditAction.TEST_GENERATION_REQUESTED, "STORY", storyId.toString(), AuditOutcome.SUCCESS, null);
+        return result;
     }
 
     @GetMapping("/analysis")

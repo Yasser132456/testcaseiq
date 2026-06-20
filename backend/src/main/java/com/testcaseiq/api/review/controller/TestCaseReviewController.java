@@ -11,6 +11,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.testcaseiq.api.audit.AuditAction;
+import com.testcaseiq.api.audit.AuditOutcome;
+import com.testcaseiq.api.audit.AuditService;
+import com.testcaseiq.api.domain.enums.ReviewStatus;
 import com.testcaseiq.api.review.dto.ReviewEventResponse;
 import com.testcaseiq.api.review.dto.TestCaseAutomationCandidateUpdateRequest;
 import com.testcaseiq.api.review.dto.TestCasePriorityUpdateRequest;
@@ -27,9 +31,11 @@ import jakarta.validation.Valid;
 public class TestCaseReviewController {
 
     private final TestCaseReviewService testCaseReviewService;
+    private final AuditService auditService;
 
-    public TestCaseReviewController(TestCaseReviewService testCaseReviewService) {
+    public TestCaseReviewController(TestCaseReviewService testCaseReviewService, AuditService auditService) {
         this.testCaseReviewService = testCaseReviewService;
+        this.auditService = auditService;
     }
 
     @PatchMapping("/review-status")
@@ -38,7 +44,11 @@ public class TestCaseReviewController {
             @PathVariable UUID testCaseId,
             @Valid @RequestBody TestCaseReviewStatusUpdateRequest request
     ) {
-        return ResponseEntity.ok(testCaseReviewService.updateReviewStatus(testCaseId, request));
+        TestCaseResponse response = testCaseReviewService.updateReviewStatus(testCaseId, request);
+        AuditAction action = (request.status() == ReviewStatus.APPROVED || request.status() == ReviewStatus.REJECTED)
+                ? AuditAction.TEST_CASE_STATUS_CHANGED : AuditAction.TEST_CASE_UPDATED;
+        auditService.log(action, "TEST_CASE", testCaseId.toString(), AuditOutcome.SUCCESS, null);
+        return ResponseEntity.ok(response);
     }
 
     @PatchMapping("/priority")
@@ -47,7 +57,9 @@ public class TestCaseReviewController {
             @PathVariable UUID testCaseId,
             @Valid @RequestBody TestCasePriorityUpdateRequest request
     ) {
-        return ResponseEntity.ok(testCaseReviewService.updatePriority(testCaseId, request));
+        TestCaseResponse response = testCaseReviewService.updatePriority(testCaseId, request);
+        auditService.log(AuditAction.TEST_CASE_UPDATED, "TEST_CASE", testCaseId.toString(), AuditOutcome.SUCCESS, null);
+        return ResponseEntity.ok(response);
     }
 
     @PatchMapping("/risk")
@@ -56,7 +68,9 @@ public class TestCaseReviewController {
             @PathVariable UUID testCaseId,
             @Valid @RequestBody TestCaseRiskUpdateRequest request
     ) {
-        return ResponseEntity.ok(testCaseReviewService.updateRisk(testCaseId, request));
+        TestCaseResponse response = testCaseReviewService.updateRisk(testCaseId, request);
+        auditService.log(AuditAction.TEST_CASE_UPDATED, "TEST_CASE", testCaseId.toString(), AuditOutcome.SUCCESS, null);
+        return ResponseEntity.ok(response);
     }
 
     @PatchMapping("/automation-candidate")
@@ -65,7 +79,9 @@ public class TestCaseReviewController {
             @PathVariable UUID testCaseId,
             @Valid @RequestBody TestCaseAutomationCandidateUpdateRequest request
     ) {
-        return ResponseEntity.ok(testCaseReviewService.updateAutomationCandidate(testCaseId, request));
+        TestCaseResponse response = testCaseReviewService.updateAutomationCandidate(testCaseId, request);
+        auditService.log(AuditAction.TEST_CASE_UPDATED, "TEST_CASE", testCaseId.toString(), AuditOutcome.SUCCESS, null);
+        return ResponseEntity.ok(response);
     }
 
     @PatchMapping
@@ -74,7 +90,9 @@ public class TestCaseReviewController {
             @PathVariable UUID testCaseId,
             @Valid @RequestBody TestCaseUpdateRequest request
     ) {
-        return ResponseEntity.ok(testCaseReviewService.updateTestCase(testCaseId, request));
+        TestCaseResponse response = testCaseReviewService.updateTestCase(testCaseId, request);
+        auditService.log(AuditAction.TEST_CASE_UPDATED, "TEST_CASE", testCaseId.toString(), AuditOutcome.SUCCESS, null);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/review-events")

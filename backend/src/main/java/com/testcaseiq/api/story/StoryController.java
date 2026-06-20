@@ -14,6 +14,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.testcaseiq.api.audit.AuditAction;
+import com.testcaseiq.api.audit.AuditOutcome;
+import com.testcaseiq.api.audit.AuditService;
+
 import jakarta.validation.Valid;
 
 @RestController
@@ -21,9 +25,11 @@ import jakarta.validation.Valid;
 public class StoryController {
 
     private final StoryService storyService;
+    private final AuditService auditService;
 
-    public StoryController(StoryService storyService) {
+    public StoryController(StoryService storyService, AuditService auditService) {
         this.storyService = storyService;
+        this.auditService = auditService;
     }
 
     @PostMapping("/projects/{projectId}/stories")
@@ -33,6 +39,7 @@ public class StoryController {
             @Valid @RequestBody StoryCreateRequest request
     ) {
         StoryResponse response = storyService.create(projectId, request);
+        auditService.log(AuditAction.STORY_CREATED, "STORY", response.id().toString(), AuditOutcome.SUCCESS, null);
         return ResponseEntity.created(URI.create("/api/stories/" + response.id())).body(response);
     }
 
@@ -51,13 +58,16 @@ public class StoryController {
     @PatchMapping("/stories/{storyId}")
     @org.springframework.security.access.prepost.PreAuthorize("!@securityEnforcement.isEnforced() or hasAnyRole('ADMIN', 'QA_ENGINEER')")
     public StoryResponse update(@PathVariable UUID storyId, @Valid @RequestBody StoryUpdateRequest request) {
-        return storyService.update(storyId, request);
+        StoryResponse response = storyService.update(storyId, request);
+        auditService.log(AuditAction.STORY_UPDATED, "STORY", storyId.toString(), AuditOutcome.SUCCESS, null);
+        return response;
     }
 
     @DeleteMapping("/stories/{storyId}")
     @org.springframework.security.access.prepost.PreAuthorize("!@securityEnforcement.isEnforced() or hasRole('ADMIN')")
     public ResponseEntity<Void> delete(@PathVariable UUID storyId) {
         storyService.delete(storyId);
+        auditService.log(AuditAction.STORY_DELETED, "STORY", storyId.toString(), AuditOutcome.SUCCESS, null);
         return ResponseEntity.noContent().build();
     }
 }

@@ -33,6 +33,7 @@ import com.testcaseiq.api.review.dto.TestCasePriorityUpdateRequest;
 import com.testcaseiq.api.review.dto.TestCaseResponse;
 import com.testcaseiq.api.review.dto.TestCaseReviewStatusUpdateRequest;
 import com.testcaseiq.api.review.dto.TestCaseRiskUpdateRequest;
+import com.testcaseiq.api.audit.AuditService;
 import com.testcaseiq.api.review.service.TestCaseReviewService;
 
 @WebMvcTest(TestCaseReviewController.class)
@@ -44,6 +45,9 @@ class TestCaseReviewControllerTests {
 
     @MockBean
     private TestCaseReviewService testCaseReviewService;
+
+    @MockBean
+    private AuditService auditService;
 
     @Test
     void updatesReviewStatus() throws Exception {

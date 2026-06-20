@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { authGuard } from './core/auth/auth.guard';
 import { AppLayoutComponent } from './layout/app-layout.component';
 import { AdminUsersPageComponent } from './pages/admin/admin-users-page.component';
+import { AuditLogPageComponent } from './pages/admin/audit-log-page.component';
 import { DashboardPageComponent } from './pages/dashboard/dashboard-page.component';
 import { LoginPageComponent } from './pages/auth/login-page.component';
 import { ProjectDetailPageComponent } from './pages/projects/project-detail-page.component';
@@ -24,6 +25,11 @@ export const routes: Routes = [
       {
         path: 'admin/users',
         component: AdminUsersPageComponent,
+        data: { requiresAuth: true, roles: ['ADMIN'] }
+      },
+      {
+        path: 'admin/audit',
+        component: AuditLogPageComponent,
         data: { requiresAuth: true, roles: ['ADMIN'] }
       }
     ]

@@ -20,6 +20,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.testcaseiq.api.common.error.ResourceNotFoundException;
 import com.testcaseiq.api.export.dto.ExportFormat;
 import com.testcaseiq.api.export.dto.ExportResult;
+import com.testcaseiq.api.audit.AuditService;
 import com.testcaseiq.api.export.service.ExportService;
 
 @WebMvcTest(ExportController.class)
@@ -31,6 +32,9 @@ class ExportControllerTests {
 
     @MockBean
     private ExportService exportService;
+
+    @MockBean
+    private AuditService auditService;
 
     @Test
     void exportsStoryApprovedTestCasesAsMarkdownDownload() throws Exception {
