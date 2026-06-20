@@ -39,6 +39,11 @@ public class ExportController {
         return downloadable(exportService.exportStory(storyId, ExportFormat.XRAY_CSV));
     }
 
+    @GetMapping("/stories/{storyId}/exports/azure-devops-csv")
+    ResponseEntity<String> exportStoryAzureDevOpsCsv(@PathVariable UUID storyId) {
+        return downloadable(exportService.exportStory(storyId, ExportFormat.AZURE_DEVOPS_CSV));
+    }
+
     @GetMapping("/stories/{storyId}/exports/json")
     ResponseEntity<String> exportStoryJson(@PathVariable UUID storyId) {
         return downloadable(exportService.exportStory(storyId, ExportFormat.JSON));

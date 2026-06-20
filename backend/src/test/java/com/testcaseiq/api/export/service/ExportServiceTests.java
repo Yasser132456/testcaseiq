@@ -153,6 +153,57 @@ class ExportServiceTests {
     }
 
     @Test
+    void azureDevOpsCsvExportContainsApprovedTestCasesWithDraftImportMapping() {
+        Story story = storyWithMixedReviewStatuses();
+        UUID storyId = story.getId();
+        UUID approvedId = story.getTestSuites().getFirst().getTestCases().getFirst().getId();
+        when(storyRepository.findById(storyId)).thenReturn(Optional.of(story));
+
+        String content = exportService.exportStory(storyId, ExportFormat.AZURE_DEVOPS_CSV).content();
+
+        assertThat(content).startsWith("Test Case ID,Title,Description,Preconditions,Steps,Expected Results,Priority,Risk,Layer,Type,Requirement Reference,Source Evidence,Review Status,Automation Candidate,Tags,Export Warning");
+        assertThat(content).contains(approvedId + ",Pay by card successfully,Covers an approved card payment.,Buyer is signed in.");
+        assertThat(content).contains("1. Submit valid card details");
+        assertThat(content).contains("1. Payment is authorized");
+        assertThat(content).contains("HIGH,HIGH,UI,FUNCTIONAL,REQ-PAY-1");
+        assertThat(content).contains("APPROVED,true");
+        assertThat(content).contains("draft-mapping; testcaseiq; story-PAY-42; suite-Checkout regression");
+        assertThat(content).contains("Review required before Azure DevOps import.");
+        assertThat(content).doesNotContain("Rejected card payment");
+        assertThat(content).doesNotContain("Draft payment test");
+        assertThat(content).doesNotContain("Needs review payment test");
+        assertThat(content).doesNotContain("Needs clarification payment test");
+    }
+
+    @Test
+    void azureDevOpsCsvExportHandlesNoApprovedTestCasesCleanly() {
+        Story story = storyWithoutApprovedTestCases();
+        UUID storyId = story.getId();
+        when(storyRepository.findById(storyId)).thenReturn(Optional.of(story));
+
+        String content = exportService.exportStory(storyId, ExportFormat.AZURE_DEVOPS_CSV).content();
+
+        assertThat(content).isEqualTo("Test Case ID,Title,Description,Preconditions,Steps,Expected Results,Priority,Risk,Layer,Type,Requirement Reference,Source Evidence,Review Status,Automation Candidate,Tags,Export Warning\n");
+    }
+
+    @Test
+    void azureDevOpsCsvStoryExportUsesFallbackFilenameAndCompletedExportJob() {
+        Story story = storyWithMixedReviewStatuses();
+        UUID storyId = story.getId();
+        when(storyRepository.findById(storyId)).thenReturn(Optional.of(story));
+
+        String filename = exportService.exportStory(storyId, ExportFormat.AZURE_DEVOPS_CSV).filename();
+
+        assertThat(filename).isEqualTo("story-" + storyId + "-approved-tests-azure-devops.csv");
+        ArgumentCaptor<ExportJob> captor = ArgumentCaptor.forClass(ExportJob.class);
+        verify(exportJobRepository).save(captor.capture());
+        ExportJob job = captor.getValue();
+        assertThat(job.getStory()).isEqualTo(story);
+        assertThat(job.getExportType()).isEqualTo("approved-test-cases-azure-devops-csv");
+        assertThat(job.getStatus()).isEqualTo(ExportStatus.COMPLETED);
+    }
+
+    @Test
     void xrayCsvStoryExportUsesJiraOrientedFilenameAndCompletedExportJob() {
         Story story = storyWithMixedReviewStatuses();
         UUID storyId = story.getId();
