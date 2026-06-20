@@ -97,6 +97,30 @@ Example environment files are included for documentation:
 
 Do not commit real `.env` files or production secrets.
 
+## CI Quality Gates
+
+GitHub Actions runs the repository quality gates on pull requests targeting `main` and on pushes to `main`.
+
+The CI workflow currently runs:
+
+- Secret hygiene checks that fail on committed `.env` files or obvious OpenAI-style API keys.
+- Backend tests with Java 21 and cached Maven dependencies:
+
+  ```bash
+  cd backend
+  mvn test
+  ```
+
+- Frontend install and production build with Node.js 20 and cached npm dependencies:
+
+  ```bash
+  cd frontend
+  npm ci
+  npm run build
+  ```
+
+Backend CI sets `AI_PROVIDER=mock` and leaves `OPENAI_API_KEY` empty, so tests do not require real AI credentials and must not make external AI calls. The frontend gate is build-only for this sprint; browser-based Angular tests are not forced in CI until they have a stable CI runner configuration.
+
 ## Roadmap
 
 See [docs/ROADMAP.md](docs/ROADMAP.md) for the current phased direction.
