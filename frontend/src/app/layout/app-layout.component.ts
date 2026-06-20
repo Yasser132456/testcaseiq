@@ -17,18 +17,29 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
         </a>
 
         <nav class="nav-list" aria-label="Primary navigation">
-          <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Dashboard</a>
-          <a routerLink="/projects" routerLinkActive="active">Projects</a>
+          <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+            <span class="nav-icon" aria-hidden="true">⊞</span>
+            Dashboard
+          </a>
+          <a routerLink="/projects" routerLinkActive="active">
+            <span class="nav-icon" aria-hidden="true">◈</span>
+            Projects
+          </a>
         </nav>
+
+        <div class="sidebar-footer">
+          <span class="status-dot"></span>
+          <span>Sprint 10</span>
+        </div>
       </aside>
 
       <section class="workspace">
         <header class="topbar">
           <div>
-            <p class="eyebrow">Sprint 3</p>
-            <h1>Story Workspace</h1>
+            <p class="eyebrow">Workspace</p>
+            <h1>TestCaseIQ</h1>
           </div>
-          <a class="button secondary" routerLink="/projects">Open projects</a>
+          <a class="button secondary" routerLink="/projects">Projects</a>
         </header>
 
         <router-outlet />
