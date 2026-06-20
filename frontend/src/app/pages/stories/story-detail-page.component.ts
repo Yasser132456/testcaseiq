@@ -356,6 +356,7 @@ interface ReviewDraft {
               @for (option of exportOptions; track option.format) {
                 <button
                   class="export-card"
+                  [class.playwright-card]="option.format === 'playwright'"
                   type="button"
                   (click)="exportApprovedTestCases(option.format)"
                   [disabled]="isExporting()"
@@ -365,6 +366,10 @@ interface ReviewDraft {
                   <small>{{ option.description }}</small>
                 </button>
               }
+            </div>
+            <div class="inline-note amber-note playwright-draft-note">
+              <strong>Playwright export — draft skeleton only.</strong>
+              Generated selectors and actions are placeholders. A QA engineer or developer must review and complete the file before execution. Do not run generated tests directly in production.
             </div>
           </section>
 
@@ -697,6 +702,12 @@ export class StoryDetailPageComponent implements OnInit {
       label: 'JSON',
       badge: 'JSON',
       description: 'Structured integration payload'
+    },
+    {
+      format: 'playwright',
+      label: 'Playwright',
+      badge: 'TS',
+      description: 'Draft automation skeleton'
     }
   ];
 
@@ -1120,6 +1131,9 @@ export class StoryDetailPageComponent implements OnInit {
   }
 
   private fallbackExportFilename(format: ExportFormat): string {
+    if (format === 'playwright') {
+      return `story-${this.storyId}-approved-tests.spec.ts`;
+    }
     const extension = format === 'markdown' ? 'md' : format;
     return `story-${this.storyId}-approved-test-cases.${extension}`;
   }
