@@ -3,11 +3,12 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
+import { StateMessageComponent } from '../../shared/components/state-message.component';
 
 @Component({
   selector: 'app-login-page',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, StateMessageComponent],
   template: `
     <main class="auth-shell">
       <section class="auth-panel">
@@ -20,16 +21,12 @@ import { AuthService } from '../../core/services/auth.service';
         </a>
 
         <div class="auth-copy">
-          <p class="eyebrow">Secure workspace</p>
           <h1>Sign in to continue</h1>
           <p>Access traceable AI-assisted QA assets, review workflows, and export tooling.</p>
         </div>
 
         @if (error()) {
-          <div class="state-message error" role="alert">
-            <strong>Sign in failed</strong>
-            <p>{{ error() }}</p>
-          </div>
+          <app-state-message title="Sign in failed" [message]="error()!" tone="error" />
         }
 
         <form class="form-panel" [formGroup]="form" (ngSubmit)="submit()" novalidate>

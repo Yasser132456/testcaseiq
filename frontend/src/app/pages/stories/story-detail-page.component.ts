@@ -48,9 +48,8 @@ interface ReviewDraft {
       } @else if (story()) {
         <div class="detail-hero">
           <div>
-            <p class="eyebrow">Story</p>
             <h2>{{ story()?.title }}</h2>
-            <p>{{ story()?.status }} / {{ story()?.type }} / Updated {{ story()?.updatedAt | date:'medium' }}</p>
+            <p>{{ formatLabel(story()?.status ?? '') }} / {{ formatLabel(story()?.type ?? '') }} / Updated {{ story()?.updatedAt | date:'medium' }}</p>
           </div>
           <div class="action-row">
             <a class="button secondary" [routerLink]="['/projects', story()?.projectId]">Back to project</a>
@@ -70,21 +69,30 @@ interface ReviewDraft {
 
         <section class="panel story-summary-panel">
           <div class="section-header">
-            <div>
-              <p class="eyebrow">Story summary</p>
-              <h3>{{ story()?.title }}</h3>
-            </div>
             <div class="badge-row">
-              <span class="badge">{{ story()?.type }}</span>
-              <span class="badge status-badge">{{ story()?.status }}</span>
+              <span class="badge">{{ formatLabel(story()?.type ?? '') }}</span>
+              <span class="badge status-badge">{{ formatLabel(story()?.status ?? '') }}</span>
             </div>
+            <button class="button secondary toggle-btn" type="button" (click)="toggleStorySummary()" [attr.aria-expanded]="storySummaryExpanded()">
+              {{ storySummaryExpanded() ? 'Hide story' : 'Show story text' }}
+            </button>
           </div>
-          <p class="raw-story-text">{{ story()?.rawText }}</p>
+          @if (storySummaryExpanded()) {
+            <p class="raw-story-text">{{ story()?.rawText }}</p>
+          }
         </section>
 
         @if (canEdit()) {
-          <form class="panel form-panel wide" [formGroup]="form" (ngSubmit)="saveStory()">
-            <h3>Edit story</h3>
+          <section class="panel form-panel wide">
+            <div class="section-header">
+              <h3>Edit story</h3>
+              <button class="button secondary toggle-btn" type="button" (click)="toggleEditForm()" [attr.aria-expanded]="editFormExpanded()">
+                {{ editFormExpanded() ? 'Close' : 'Edit' }}
+              </button>
+            </div>
+          @if (editFormExpanded()) {
+          <form [formGroup]="form" (ngSubmit)="saveStory()">
+
             <label>
               <span>Title</span>
               <input formControlName="title" />
@@ -104,23 +112,21 @@ interface ReviewDraft {
                 <span>Type</span>
                 <select formControlName="type">
                   @for (type of storyTypes; track type) {
-                    <option [value]="type">{{ type }}</option>
+                    <option [value]="type">{{ formatLabel(type) }}</option>
                   }
                 </select>
               </label>
               <label>
                 <span>Status</span>
                 <select formControlName="status">
-                  <option value="DRAFT">DRAFT</option>
-                  <option value="ANALYZED">ANALYZED</option>
-                  <option value="TESTS_GENERATED">TESTS_GENERATED</option>
-                  <option value="REVIEWED">REVIEWED</option>
-                  <option value="EXPORTED">EXPORTED</option>
+                  @for (status of storyStatuses; track status) {
+                    <option [value]="status">{{ formatLabel(status) }}</option>
+                  }
                 </select>
               </label>
             </div>
             @if (saveMessage()) {
-              <app-state-message title="Story saved" [message]="saveMessage()" />
+              <app-state-message title="Story saved" [message]="saveMessage()" tone="success" />
             }
             @if (saveError()) {
               <app-state-message title="Could not save story" [message]="saveError()" tone="error" />
@@ -129,17 +135,21 @@ interface ReviewDraft {
               {{ saving() ? 'Saving...' : 'Save changes' }}
             </button>
           </form>
+          }
+          </section>
         }
 
         <section class="panel analysis-panel">
           <div class="section-header">
             <div>
-              <p class="eyebrow analysis-eyebrow">AI analysis</p>
               <h3>Story analysis</h3>
+              @if (analysis()?.generatedAt) {
+                <span class="muted-text">Generated {{ analysis()?.generatedAt | date:'medium' }}</span>
+              }
             </div>
-            @if (analysis()?.generatedAt) {
-              <span class="muted-text">Generated {{ analysis()?.generatedAt | date:'medium' }}</span>
-            }
+            <button class="button secondary toggle-btn" type="button" (click)="toggleAnalysis()" [attr.aria-expanded]="analysisExpanded()">
+              {{ analysisExpanded() ? 'Collapse' : 'Expand' }}
+            </button>
           </div>
 
           @if (analysisLoading()) {
@@ -148,7 +158,6 @@ interface ReviewDraft {
             <app-state-message title="Analysis unavailable" [message]="analysisError()" tone="error" />
           } @else if (!hasAnalysis()) {
             <div class="empty-analysis">
-              <p class="eyebrow analysis-eyebrow">Ready for analysis</p>
               <h3>No analysis has been generated yet.</h3>
               <p>Run the mock AI analysis to extract requirements, ambiguities, scores, and coverage suggestions.</p>
               @if (canEdit()) {
@@ -158,6 +167,7 @@ interface ReviewDraft {
               }
             </div>
           } @else {
+            @if (analysisExpanded()) {
             <div class="score-grid">
               <article class="score-card">
                 <span>Requirement quality</span>
@@ -176,8 +186,7 @@ interface ReviewDraft {
             <div class="analysis-grid">
               <section class="analysis-card">
                 <div class="analysis-card-header">
-                  <p class="eyebrow analysis-eyebrow">Understanding</p>
-                  <h4>Extracted story understanding</h4>
+                  <h4>Story understanding</h4>
                 </div>
                 <dl class="definition-list">
                   <div>
@@ -197,7 +206,6 @@ interface ReviewDraft {
 
               <section class="analysis-card">
                 <div class="analysis-card-header">
-                  <p class="eyebrow analysis-eyebrow">Warnings</p>
                   <h4>QA validation notes</h4>
                 </div>
                 @if ((analysis()?.qaValidation?.warnings?.length ?? 0) > 0) {
@@ -207,14 +215,13 @@ interface ReviewDraft {
                     }
                   </div>
                 } @else {
-                  <app-state-message title="No warnings" message="The analysis did not flag additional QA validation warnings." />
+                  <app-state-message title="No warnings" message="The analysis did not flag any QA validation warnings." tone="success" />
                 }
               </section>
             </div>
 
             <section class="analysis-card full-span">
               <div class="analysis-card-header">
-                <p class="eyebrow analysis-eyebrow">Requirements</p>
                 <h4>Extracted requirements</h4>
               </div>
               @if (requirementCount() === 0) {
@@ -266,11 +273,10 @@ interface ReviewDraft {
             <div class="analysis-grid">
               <section class="analysis-card">
                 <div class="analysis-card-header">
-                  <p class="eyebrow analysis-eyebrow">Ambiguities</p>
                   <h4>Questions and risks</h4>
                 </div>
                 @if ((analysis()?.ambiguities?.ambiguities?.length ?? 0) === 0) {
-                  <app-state-message title="No ambiguities found" message="The story is clear enough for this analysis pass." />
+                  <app-state-message title="No ambiguities found" message="The story is clear enough for this analysis pass." tone="success" />
                 } @else {
                   <div class="list-stack compact">
                     @for (severity of ambiguitySeverities; track severity) {
@@ -297,7 +303,6 @@ interface ReviewDraft {
 
               <section class="analysis-card">
                 <div class="analysis-card-header">
-                  <p class="eyebrow analysis-eyebrow">Coverage</p>
                   <h4>Coverage suggestions</h4>
                 </div>
                 @if ((analysis()?.coveragePlan?.coverageItems?.length ?? 0) === 0) {
@@ -328,13 +333,15 @@ interface ReviewDraft {
                 }
               </section>
             </div>
+            } @else {
+              <p class="muted-text">Expand to view extracted requirements, ambiguities, and coverage suggestions.</p>
+            }
           }
         </section>
 
         <section class="panel generated-tests-panel">
           <div class="section-header">
             <div>
-              <p class="eyebrow generated-eyebrow">Manual tests</p>
               <h3>Generated test cases</h3>
             </div>
             <div class="badge-row">
@@ -343,13 +350,13 @@ interface ReviewDraft {
             </div>
           </div>
           @if (reviewMessage()) {
-            <app-state-message title="Review updated" [message]="reviewMessage()" />
+            <app-state-message title="Review updated" [message]="reviewMessage()" tone="success" />
           }
           @if (reviewError()) {
             <app-state-message title="Review update failed" [message]="reviewError()" tone="error" />
           }
           @if (exportMessage()) {
-            <app-state-message title="Export ready" [message]="exportMessage()" />
+            <app-state-message title="Export ready" [message]="exportMessage()" tone="success" />
           }
           @if (exportError()) {
             <app-state-message title="Export failed" [message]="exportError()" tone="error" />
@@ -357,7 +364,6 @@ interface ReviewDraft {
 
           <section class="export-panel">
             <div class="export-copy">
-              <p class="eyebrow export-eyebrow">Approved export</p>
               <h4>Download reviewed manual tests</h4>
               <p>Only APPROVED test cases are exported. Draft, rejected, and needs-review cases stay out of the file.</p>
             </div>
@@ -379,22 +385,9 @@ interface ReviewDraft {
                 </button>
               }
             </div>
-            <div class="inline-note amber-note playwright-draft-note">
-              <strong>Playwright export — draft skeleton only.</strong>
-              Generated selectors and actions are placeholders. A QA engineer or developer must review and complete the file before execution. Do not run generated tests directly in production.
-            </div>
-            <div class="inline-note amber-note postman-draft-note">
-              <strong>Postman export — draft API collection only.</strong>
-              Exports approved API-oriented test cases only. Generated endpoints, headers, auth, payloads, and assertions are placeholders — a QA engineer or developer must review and complete the collection before execution.
-            </div>
-            <div class="inline-note amber-note xray-draft-note">
-              <strong>Jira/Xray export generates a draft import mapping only.</strong>
-              Generated CSV should be reviewed before Jira/Xray import. Exports approved test cases only. No Jira/Xray API connection is used in this export.
-            </div>
-            <div class="inline-note amber-note azure-draft-note">
-              <strong>Azure DevOps export generates a draft import mapping only.</strong>
-              Generated CSV should be reviewed before Azure DevOps import. Exports approved test cases only. No Azure DevOps API connection is used in this export.
-            </div>
+            @if (exportFormatDisclaimer()) {
+              <div class="inline-note amber-note">{{ exportFormatDisclaimer() }}</div>
+            }
           </section>
 
           @if (testSuitesLoading()) {
@@ -403,7 +396,6 @@ interface ReviewDraft {
             <app-state-message title="Test generation unavailable" [message]="testGenerationError()" tone="error" />
           } @else if (!hasTestSuites()) {
             <div class="empty-analysis generated-empty">
-              <p class="eyebrow generated-eyebrow">Ready for generation</p>
               <h3>No manual test cases exist yet.</h3>
               <p>Generate mock manual tests from this story. The result will include test objectives, steps, data, BDD text, and requirement links.</p>
               @if (canEdit()) {
@@ -697,6 +689,7 @@ export class StoryDetailPageComponent implements OnInit {
   });
 
   readonly storyTypes = STORY_TYPES;
+  readonly storyStatuses: StoryStatus[] = ['DRAFT', 'ANALYZED', 'TESTS_GENERATED', 'REVIEWED', 'EXPORTED'];
   readonly requirementTypes: RequirementType[] = [
     'FUNCTIONAL',
     'ACCEPTANCE_CRITERION',
@@ -793,6 +786,20 @@ export class StoryDetailPageComponent implements OnInit {
   readonly exportError = signal('');
   readonly exportMessage = signal('');
 
+  readonly analysisExpanded = signal(false);
+  readonly storySummaryExpanded = signal(true);
+  readonly editFormExpanded = signal(false);
+  readonly lastExportFormat = signal<ExportFormat | null>(null);
+
+  readonly exportFormatDisclaimer = computed(() => {
+    const fmt = this.lastExportFormat();
+    if (fmt === 'playwright') return 'Playwright export — draft skeleton only. Generated selectors and actions are placeholders; review and complete before execution.';
+    if (fmt === 'postman') return 'Postman export — draft API collection only. Endpoints, headers, auth, and payloads are placeholders; review and complete before execution.';
+    if (fmt === 'xray-csv') return 'Jira/Xray export — draft import mapping CSV. Review before importing. No Jira/Xray API connection is used.';
+    if (fmt === 'azure-devops-csv') return 'Azure DevOps export — draft import mapping CSV. Review before importing. No Azure DevOps API connection is used.';
+    return null;
+  });
+
   readonly form = this.fb.nonNullable.group({
     title: ['', Validators.required],
     rawText: ['', Validators.required],
@@ -883,10 +890,15 @@ export class StoryDetailPageComponent implements OnInit {
     });
   }
 
+  toggleAnalysis(): void { this.analysisExpanded.update(v => !v); }
+  toggleStorySummary(): void { this.storySummaryExpanded.update(v => !v); }
+  toggleEditForm(): void { this.editFormExpanded.update(v => !v); }
+
   exportApprovedTestCases(format: ExportFormat): void {
     if (!this.storyId || this.isExporting()) {
       return;
     }
+    this.lastExportFormat.set(format);
     this.exportingFormat.set(format);
     this.exportError.set('');
     this.exportMessage.set('');
@@ -1246,6 +1258,9 @@ export class StoryDetailPageComponent implements OnInit {
       next: (testSuites) => {
         this.testSuites.set(testSuites);
         this.testSuitesLoading.set(false);
+        if (!testSuites.some(s => s.testCases.length > 0)) {
+          this.analysisExpanded.set(true);
+        }
       },
       error: () => {
         this.testSuites.set([]);

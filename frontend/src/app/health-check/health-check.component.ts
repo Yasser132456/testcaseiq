@@ -21,7 +21,6 @@ type HealthState =
   template: `
     <section class="health-panel" aria-labelledby="health-title">
       <div class="panel-copy">
-        <p class="label">System handshake</p>
         <h2 id="health-title">Backend health check</h2>
         <p>Call the Spring Boot API through the Angular proxy and confirm the foundation is connected.</p>
       </div>
@@ -75,23 +74,14 @@ type HealthState =
       gap: 1.5rem;
       max-width: 720px;
       padding: 1.5rem;
-      border: 1px solid rgba(148, 163, 184, 0.22);
+      border: 1px solid var(--border);
       border-radius: 8px;
-      background: rgba(15, 23, 42, 0.78);
-      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.32);
-      backdrop-filter: blur(16px);
+      background: var(--surface-1);
     }
 
     .panel-copy {
       display: grid;
       gap: 0.45rem;
-    }
-
-    .label {
-      color: #2dd4bf;
-      font-size: 0.78rem;
-      font-weight: 700;
-      text-transform: uppercase;
     }
 
     h2,
@@ -105,7 +95,7 @@ type HealthState =
 
     p,
     small {
-      color: #9fb0c8;
+      color: var(--text-2);
       line-height: 1.6;
     }
 
@@ -113,12 +103,17 @@ type HealthState =
       width: fit-content;
       min-height: 2.75rem;
       padding: 0 1rem;
-      border: 1px solid rgba(45, 212, 191, 0.45);
+      border: none;
       border-radius: 8px;
-      background: #2dd4bf;
-      color: #04111d;
+      background: var(--accent);
+      color: var(--bg);
       font-weight: 800;
       cursor: pointer;
+      transition: box-shadow 150ms var(--ease);
+    }
+
+    button:hover:not(:disabled) {
+      box-shadow: 0 0 0 3px var(--accent-glow);
     }
 
     button:disabled {
@@ -128,17 +123,17 @@ type HealthState =
 
     code,
     pre {
-      color: #cbd5e1;
-      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      color: var(--text-2);
+      font-family: var(--font-mono);
     }
 
     pre {
       overflow: auto;
       margin: 0.9rem 0 0;
       padding: 1rem;
-      border: 1px solid rgba(148, 163, 184, 0.18);
+      border: 1px solid var(--border);
       border-radius: 8px;
-      background: rgba(2, 6, 23, 0.65);
+      background: var(--bg);
       font-size: 0.82rem;
     }
 
@@ -148,9 +143,9 @@ type HealthState =
       gap: 0.85rem;
       min-height: 4rem;
       padding: 1rem;
-      border: 1px solid rgba(148, 163, 184, 0.14);
+      border: 1px solid var(--border);
       border-radius: 8px;
-      background: rgba(2, 6, 23, 0.42);
+      background: var(--surface-2);
     }
 
     .status-dot {
@@ -162,23 +157,23 @@ type HealthState =
     }
 
     .idle {
-      background: #64748b;
-      box-shadow: 0 0 0 6px rgba(100, 116, 139, 0.12);
+      background: var(--text-3);
+      box-shadow: 0 0 0 6px rgba(113, 113, 122, 0.12);
     }
 
     .healthy {
-      background: #22c55e;
-      box-shadow: 0 0 0 6px rgba(34, 197, 94, 0.12);
+      background: var(--green);
+      box-shadow: 0 0 0 6px var(--green-bg);
     }
 
     .pending {
-      background: #f59e0b;
-      box-shadow: 0 0 0 6px rgba(245, 158, 11, 0.14);
+      background: var(--amber);
+      box-shadow: 0 0 0 6px var(--amber-bg);
     }
 
     .offline {
-      background: #ef4444;
-      box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.12);
+      background: var(--red);
+      box-shadow: 0 0 0 6px var(--red-bg);
     }
   `]
 })

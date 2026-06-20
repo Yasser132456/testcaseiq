@@ -3,11 +3,12 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
+import { StateMessageComponent } from '../../shared/components/state-message.component';
 
 @Component({
   selector: 'app-register-page',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, StateMessageComponent],
   template: `
     <main class="auth-shell">
       <section class="auth-panel">
@@ -20,16 +21,12 @@ import { AuthService } from '../../core/services/auth.service';
         </a>
 
         <div class="auth-copy">
-          <p class="eyebrow">Create access</p>
           <h1>Register for TestCaseIQ</h1>
           <p>New accounts are created as QA engineers by the backend and can use the review workspace immediately.</p>
         </div>
 
         @if (error()) {
-          <div class="state-message error" role="alert">
-            <strong>Registration failed</strong>
-            <p>{{ error() }}</p>
-          </div>
+          <app-state-message title="Registration failed" [message]="error()!" tone="error" />
         }
 
         <form class="form-panel" [formGroup]="form" (ngSubmit)="submit()" novalidate>

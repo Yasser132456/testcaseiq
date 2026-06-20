@@ -22,7 +22,6 @@ import { StateMessageComponent } from '../../shared/components/state-message.com
       } @else if (project()) {
         <div class="detail-hero">
           <div>
-            <p class="eyebrow">Project</p>
             <h2>{{ project()?.name }}</h2>
             <p>{{ project()?.description || 'No description added yet.' }}</p>
           </div>
@@ -53,7 +52,7 @@ import { StateMessageComponent } from '../../shared/components/state-message.com
                 <span>Type</span>
                 <select formControlName="type">
                   @for (type of storyTypes; track type) {
-                    <option [value]="type">{{ type }}</option>
+                    <option [value]="type">{{ formatLabel(type) }}</option>
                   }
                 </select>
               </label>
@@ -68,10 +67,7 @@ import { StateMessageComponent } from '../../shared/components/state-message.com
 
           <section class="panel">
             <div class="section-header">
-              <div>
-                <p class="eyebrow">Stories</p>
-                <h3>{{ storyCount() }} in this project</h3>
-              </div>
+              <h3>{{ storyCount() }} stories</h3>
             </div>
 
             @if (storiesLoading()) {
@@ -84,7 +80,7 @@ import { StateMessageComponent } from '../../shared/components/state-message.com
                   <article class="list-row split">
                     <a [routerLink]="['/stories', story.id]">
                       <strong>{{ story.title }}</strong>
-                      <span>{{ story.status }} · {{ story.type }} · {{ story.createdAt | date:'mediumDate' }}</span>
+                      <span>{{ formatLabel(story.status) }} · {{ formatLabel(story.type) }} · {{ story.createdAt | date:'mediumDate' }}</span>
                     </a>
                     @if (canDelete()) {
                       <button class="text-danger" type="button" (click)="deleteStory(story)">Delete</button>
@@ -177,6 +173,10 @@ export class ProjectDetailPageComponent implements OnInit {
       next: () => this.stories.set(this.stories().filter((item) => item.id !== story.id)),
       error: () => this.error.set('The story could not be deleted.')
     });
+  }
+
+  formatLabel(value: string): string {
+    return value.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (l) => l.toUpperCase());
   }
 
   private loadProject(): void {

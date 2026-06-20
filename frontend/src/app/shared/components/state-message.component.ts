@@ -4,7 +4,15 @@ import { Component, Input } from '@angular/core';
   selector: 'app-state-message',
   standalone: true,
   template: `
-    <div class="state-message" [class.error]="tone === 'error'">
+    <div
+      class="state-message"
+      [class.error]="tone === 'error'"
+      [class.success]="tone === 'success'"
+      [class.warning]="tone === 'warning'"
+      [class.info]="tone === 'info'"
+      [attr.role]="tone === 'error' ? 'alert' : 'status'"
+      aria-live="polite"
+    >
       <strong>{{ title }}</strong>
       <p>{{ message }}</p>
     </div>
@@ -13,5 +21,5 @@ import { Component, Input } from '@angular/core';
 export class StateMessageComponent {
   @Input({ required: true }) title = '';
   @Input({ required: true }) message = '';
-  @Input() tone: 'neutral' | 'error' = 'neutral';
+  @Input() tone: 'neutral' | 'error' | 'success' | 'warning' | 'info' = 'neutral';
 }

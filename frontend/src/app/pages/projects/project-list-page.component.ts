@@ -14,10 +14,7 @@ import { StateMessageComponent } from '../../shared/components/state-message.com
   template: `
     <section class="page-stack">
       <div class="section-header">
-        <div>
-          <p class="eyebrow">Projects</p>
-          <h2>Project intake</h2>
-        </div>
+        <h2>Project intake</h2>
       </div>
 
       <div class="content-grid">
@@ -46,10 +43,7 @@ import { StateMessageComponent } from '../../shared/components/state-message.com
 
         <section class="panel">
           <div class="section-header">
-            <div>
-              <p class="eyebrow">Workspace</p>
-              <h3>All projects</h3>
-            </div>
+            <h3>All projects</h3>
           </div>
 
           @if (isViewer()) {
