@@ -26,6 +26,12 @@ import { AuthService } from '../core/services/auth.service';
             <span class="nav-icon" aria-hidden="true">PR</span>
             Projects
           </a>
+          @if (authService.hasRole('ADMIN')) {
+            <a routerLink="/admin/users" routerLinkActive="active">
+              <span class="nav-icon" aria-hidden="true">UA</span>
+              User Administration
+            </a>
+          }
         </nav>
 
         <div class="sidebar-footer">

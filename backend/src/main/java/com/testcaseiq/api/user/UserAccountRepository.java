@@ -10,4 +10,8 @@ public interface UserAccountRepository extends JpaRepository<UserAccount, UUID> 
     Optional<UserAccount> findByEmailIgnoreCase(String email);
 
     boolean existsByEmailIgnoreCase(String email);
+
+    long countByRole(UserRole role);
+
+    long countByRoleAndEnabled(UserRole role, boolean enabled);
 }
