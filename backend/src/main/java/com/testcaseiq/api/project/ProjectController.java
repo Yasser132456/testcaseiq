@@ -14,6 +14,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.testcaseiq.api.audit.AuditAction;
+import com.testcaseiq.api.audit.AuditOutcome;
+import com.testcaseiq.api.audit.AuditService;
+
 import jakarta.validation.Valid;
 
 @RestController
@@ -21,15 +25,18 @@ import jakarta.validation.Valid;
 public class ProjectController {
 
     private final ProjectService projectService;
+    private final AuditService auditService;
 
-    public ProjectController(ProjectService projectService) {
+    public ProjectController(ProjectService projectService, AuditService auditService) {
         this.projectService = projectService;
+        this.auditService = auditService;
     }
 
     @PostMapping
     @org.springframework.security.access.prepost.PreAuthorize("!@securityEnforcement.isEnforced() or hasAnyRole('ADMIN', 'QA_ENGINEER')")
     public ResponseEntity<ProjectResponse> create(@Valid @RequestBody ProjectCreateRequest request) {
         ProjectResponse response = projectService.create(request);
+        auditService.log(AuditAction.PROJECT_CREATED, "PROJECT", response.id().toString(), AuditOutcome.SUCCESS, null);
         return ResponseEntity.created(URI.create("/api/projects/" + response.id())).body(response);
     }
 
@@ -48,13 +55,16 @@ public class ProjectController {
     @PatchMapping("/{projectId}")
     @org.springframework.security.access.prepost.PreAuthorize("!@securityEnforcement.isEnforced() or hasAnyRole('ADMIN', 'QA_ENGINEER')")
     public ProjectResponse update(@PathVariable UUID projectId, @Valid @RequestBody ProjectUpdateRequest request) {
-        return projectService.update(projectId, request);
+        ProjectResponse response = projectService.update(projectId, request);
+        auditService.log(AuditAction.PROJECT_UPDATED, "PROJECT", projectId.toString(), AuditOutcome.SUCCESS, null);
+        return response;
     }
 
     @DeleteMapping("/{projectId}")
     @org.springframework.security.access.prepost.PreAuthorize("!@securityEnforcement.isEnforced() or hasRole('ADMIN')")
     public ResponseEntity<Void> delete(@PathVariable UUID projectId) {
         projectService.delete(projectId);
+        auditService.log(AuditAction.PROJECT_DELETED, "PROJECT", projectId.toString(), AuditOutcome.SUCCESS, null);
         return ResponseEntity.noContent().build();
     }
 }

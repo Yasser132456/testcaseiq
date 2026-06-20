@@ -27,6 +27,7 @@ import com.testcaseiq.api.common.error.BadRequestException;
 import com.testcaseiq.api.security.JwtAuthenticationFilter;
 import com.testcaseiq.api.security.JwtService;
 import com.testcaseiq.api.security.SecurityConfig;
+import com.testcaseiq.api.audit.AuditService;
 import com.testcaseiq.api.user.UserAccount;
 import com.testcaseiq.api.user.UserAccountRepository;
 import com.testcaseiq.api.user.UserRole;
@@ -50,6 +51,9 @@ class AdminUserControllerTests {
 
     @MockBean
     private UserAccountRepository userAccountRepository;
+
+    @MockBean
+    private AuditService auditService;
 
     @Test
     void adminCanListUsers() throws Exception {

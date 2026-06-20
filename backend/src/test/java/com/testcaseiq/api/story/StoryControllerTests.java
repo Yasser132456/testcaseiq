@@ -25,6 +25,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.testcaseiq.api.audit.AuditService;
 import com.testcaseiq.api.common.error.ResourceNotFoundException;
 import com.testcaseiq.api.domain.enums.StoryStatus;
 import com.testcaseiq.api.domain.enums.StoryType;
@@ -38,6 +39,9 @@ class StoryControllerTests {
 
     @MockBean
     private StoryService storyService;
+
+    @MockBean
+    private AuditService auditService;
 
     @Test
     void createsStoryUnderProject() throws Exception {

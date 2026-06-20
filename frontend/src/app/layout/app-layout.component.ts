@@ -31,6 +31,10 @@ import { AuthService } from '../core/services/auth.service';
               <span class="nav-icon" aria-hidden="true">UA</span>
               User Administration
             </a>
+            <a routerLink="/admin/audit" routerLinkActive="active">
+              <span class="nav-icon" aria-hidden="true">AL</span>
+              Activity Log
+            </a>
           }
         </nav>
 

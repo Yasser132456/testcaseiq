@@ -31,6 +31,7 @@ import com.testcaseiq.api.ai.dto.RequirementExtractionResult;
 import com.testcaseiq.api.ai.dto.StoryAnalysisResult;
 import com.testcaseiq.api.ai.provider.AiProviderException;
 import com.testcaseiq.api.ai.service.AiGenerationService;
+import com.testcaseiq.api.audit.AuditService;
 import com.testcaseiq.api.common.error.ResourceNotFoundException;
 import com.testcaseiq.api.domain.enums.AmbiguitySeverity;
 import com.testcaseiq.api.domain.enums.CoverageCategory;
@@ -50,6 +51,9 @@ class AiControllerTests {
 
     @MockBean
     private AiGenerationService aiGenerationService;
+
+    @MockBean
+    private AuditService auditService;
 
     @Test
     void analyzeStoryReturnsAnalysisResult() throws Exception {

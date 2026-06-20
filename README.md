@@ -29,6 +29,7 @@ The project is built around a careful QA workflow:
 | Postman collection export    | Generate draft Postman Collection JSON for API testing       | Implemented |
 | Backend authentication       | Register/login/me endpoints with JWT and role foundation     | Implemented |
 | User administration          | ADMIN-only UI to view users, change roles, enable/disable    | Implemented |
+| Audit trail                  | System-wide activity log, ADMIN-only, filterable/paginated   | Implemented |
 | Real AI provider support     | Use a real provider through configuration                    | Implemented |
 | Mock provider support        | Run locally and in tests without real AI credentials         | Implemented |
 | AI output validation         | Validate generated structures before persistence             | Implemented |
@@ -286,6 +287,43 @@ All three endpoints always require an authenticated `ADMIN` JWT regardless of th
 - `QA_ENGINEER` and `VIEWER` receive `403 Forbidden` on any `/api/admin/**` request.
 - Unauthenticated requests receive `401 Unauthorized`.
 - Non-admin users who navigate directly to `/admin/users` are redirected to the dashboard with an access-restricted notice.
+
+## Audit Trail
+
+The Activity Log provides a tamper-resistant record of all significant actions taken in the system. It is accessible only to users with the `ADMIN` role and is available at `/admin/audit` in the sidebar navigation.
+
+### Audited actions
+
+| Action | Trigger |
+|--------|---------|
+| `USER_REGISTERED` | Account registration |
+| `USER_LOGIN_SUCCESS` | Successful login |
+| `USER_LOGIN_FAILED` | Failed login attempt |
+| `PROJECT_CREATED`, `PROJECT_UPDATED`, `PROJECT_DELETED` | Project lifecycle |
+| `STORY_CREATED`, `STORY_UPDATED`, `STORY_DELETED` | Story lifecycle |
+| `STORY_ANALYSIS_REQUESTED` | AI story analysis |
+| `TEST_GENERATION_REQUESTED` | AI test case generation |
+| `TEST_CASE_STATUS_CHANGED` | Approve / reject a test case |
+| `TEST_CASE_UPDATED` | Priority, risk, automation-candidate, or inline update |
+| `TESTS_EXPORTED` | Any story or test-suite export |
+| `USER_ROLE_CHANGED` | Admin changes a user's role |
+| `USER_STATUS_CHANGED` | Admin enables or disables a user account |
+
+### Security constraints
+
+- Passwords, password hashes, JWT tokens, API keys, and raw credentials are never logged or returned.
+- The `AuditService` uses `REQUIRES_NEW` transaction propagation so audit records are written independently; an audit failure never breaks the main workflow.
+- Actor identity is extracted from `SecurityContextHolder` — no sensitive fields are passed through call sites.
+
+### Backend endpoint
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/audit/events` | List audit events, paginated |
+
+Query parameters: `action`, `outcome`, `resourceType` (optional filters), `page` (default 0), `size` (default 50, max 200).
+
+The endpoint always requires an authenticated `ADMIN` JWT regardless of the `enforce-auth` flag.
 
 ## Exports
 
