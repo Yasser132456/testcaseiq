@@ -4,6 +4,7 @@ public enum ExportFormat {
     MARKDOWN("markdown", "md", "text/markdown"),
     CSV("csv", "csv", "text/csv"),
     XRAY_CSV("xray-csv", "csv", "text/csv"),
+    AZURE_DEVOPS_CSV("azure-devops-csv", "csv", "text/csv"),
     JSON("json", "json", "application/json"),
     PLAYWRIGHT("playwright", "spec.ts", "text/plain"),
     POSTMAN("postman", "postman_collection.json", "application/json");
