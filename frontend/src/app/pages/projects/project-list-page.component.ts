@@ -1,8 +1,9 @@
 import { DatePipe } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { Project } from '../../core/models/project.model';
+import { AuthService } from '../../core/services/auth.service';
 import { ProjectService } from '../../core/services/project.service';
 import { StateMessageComponent } from '../../shared/components/state-message.component';
 
@@ -20,26 +21,28 @@ import { StateMessageComponent } from '../../shared/components/state-message.com
       </div>
 
       <div class="content-grid">
-        <form class="panel form-panel" [formGroup]="form" (ngSubmit)="createProject()">
-          <h3>New project</h3>
-          <label>
-            <span>Name</span>
-            <input formControlName="name" placeholder="Payments modernization" />
-          </label>
-          @if (form.controls.name.touched && form.controls.name.invalid) {
-            <small class="field-error">Project name is required.</small>
-          }
-          <label>
-            <span>Description</span>
-            <textarea formControlName="description" rows="4" placeholder="Scope, system context, or product area"></textarea>
-          </label>
-          @if (createError()) {
-            <app-state-message title="Could not create project" [message]="createError()" tone="error" />
-          }
-          <button class="button" type="submit" [disabled]="form.invalid || creating()">
-            {{ creating() ? 'Creating...' : 'Create project' }}
-          </button>
-        </form>
+        @if (canEdit()) {
+          <form class="panel form-panel" [formGroup]="form" (ngSubmit)="createProject()">
+            <h3>New project</h3>
+            <label>
+              <span>Name</span>
+              <input formControlName="name" placeholder="Payments modernization" />
+            </label>
+            @if (form.controls.name.touched && form.controls.name.invalid) {
+              <small class="field-error">Project name is required.</small>
+            }
+            <label>
+              <span>Description</span>
+              <textarea formControlName="description" rows="4" placeholder="Scope, system context, or product area"></textarea>
+            </label>
+            @if (createError()) {
+              <app-state-message title="Could not create project" [message]="createError()" tone="error" />
+            }
+            <button class="button" type="submit" [disabled]="form.invalid || creating()">
+              {{ creating() ? 'Creating...' : 'Create project' }}
+            </button>
+          </form>
+        }
 
         <section class="panel">
           <div class="section-header">
@@ -48,6 +51,12 @@ import { StateMessageComponent } from '../../shared/components/state-message.com
               <h3>All projects</h3>
             </div>
           </div>
+
+          @if (isViewer()) {
+            <div class="inline-note" style="margin-bottom: 1rem;">
+              Read-only access. You can view projects but cannot create or modify them.
+            </div>
+          }
 
           @if (loading()) {
             <app-state-message title="Loading projects" message="Fetching project workspace." />
@@ -74,6 +83,17 @@ export class ProjectListPageComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly projectService = inject(ProjectService);
   private readonly router = inject(Router);
+  private readonly authService = inject(AuthService);
+
+  readonly canEdit = computed(() => {
+    if (!this.authService.isAuthenticated()) return true;
+    const role = this.authService.currentRole();
+    return role === 'ADMIN' || role === 'QA_ENGINEER';
+  });
+
+  readonly isViewer = computed(() =>
+    this.authService.isAuthenticated() && this.authService.currentRole() === 'VIEWER'
+  );
 
   readonly projects = signal<Project[]>([]);
   readonly loading = signal(true);

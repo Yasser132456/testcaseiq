@@ -27,27 +27,32 @@ public class ProjectController {
     }
 
     @PostMapping
+    @org.springframework.security.access.prepost.PreAuthorize("!@securityEnforcement.isEnforced() or hasAnyRole('ADMIN', 'QA_ENGINEER')")
     public ResponseEntity<ProjectResponse> create(@Valid @RequestBody ProjectCreateRequest request) {
         ProjectResponse response = projectService.create(request);
         return ResponseEntity.created(URI.create("/api/projects/" + response.id())).body(response);
     }
 
     @GetMapping
+    @org.springframework.security.access.prepost.PreAuthorize("!@securityEnforcement.isEnforced() or hasAnyRole('ADMIN', 'QA_ENGINEER', 'VIEWER')")
     public List<ProjectResponse> list() {
         return projectService.list();
     }
 
     @GetMapping("/{projectId}")
+    @org.springframework.security.access.prepost.PreAuthorize("!@securityEnforcement.isEnforced() or hasAnyRole('ADMIN', 'QA_ENGINEER', 'VIEWER')")
     public ProjectResponse get(@PathVariable UUID projectId) {
         return projectService.get(projectId);
     }
 
     @PatchMapping("/{projectId}")
+    @org.springframework.security.access.prepost.PreAuthorize("!@securityEnforcement.isEnforced() or hasAnyRole('ADMIN', 'QA_ENGINEER')")
     public ProjectResponse update(@PathVariable UUID projectId, @Valid @RequestBody ProjectUpdateRequest request) {
         return projectService.update(projectId, request);
     }
 
     @DeleteMapping("/{projectId}")
+    @org.springframework.security.access.prepost.PreAuthorize("!@securityEnforcement.isEnforced() or hasRole('ADMIN')")
     public ResponseEntity<Void> delete(@PathVariable UUID projectId) {
         projectService.delete(projectId);
         return ResponseEntity.noContent().build();

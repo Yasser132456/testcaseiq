@@ -181,9 +181,9 @@ To enable a real AI provider, configure the provider and key through local envir
 
 AI output is validated before persistence so malformed or unsafe generated structures can be rejected before they become reviewable test assets.
 
-## Authentication
+## Authentication and Role-Based Access
 
-The app includes a JWT authentication foundation with BCrypt password hashing on the backend and Angular session handling on the frontend.
+The app includes JWT authentication with BCrypt password hashing on the backend and Angular session handling on the frontend.
 
 Auth endpoints:
 
@@ -191,16 +191,65 @@ Auth endpoints:
 - `POST /api/auth/login`: accepts `email` and `password`; returns an access token plus profile for valid enabled users.
 - `GET /api/auth/me`: returns the current user profile when called with `Authorization: Bearer <token>`.
 
-Supported roles are `ADMIN`, `QA_ENGINEER`, and `VIEWER`. Password hashes are stored server-side only and are never returned in API responses.
+Auth endpoints are always public regardless of the enforcement flag.
 
-Frontend routes:
+### Role Model
 
-- `/login`: signs in with the backend login endpoint and restores the requested route when present.
-- `/register`: creates a local account through the backend register endpoint.
+| Role | Permissions |
+|------|-------------|
+| `ADMIN` | Full access: create, update, delete, generate, analyze, review, approve/reject, export, manage all resources |
+| `QA_ENGINEER` | Create and manage projects and stories; run analysis; generate tests; review and approve/reject test cases; export approved tests. Cannot delete or manage users. |
+| `VIEWER` | Read-only: view projects, stories, analysis results, generated tests, review history, and exports. Cannot create, update, delete, generate, or approve/reject. |
 
-Security enforcement is controlled by `TESTCASEIQ_SECURITY_ENFORCE_AUTH`. It defaults to `false` so the current local/demo workflow remains usable. When set to `true`, business endpoints require a valid JWT. Use a real `TESTCASEIQ_JWT_SECRET` in shared or production-like environments; the documented default is only a local development fallback and should not be treated as a secret.
+Password hashes are stored server-side only and are never returned in API responses.
 
-No development admin seed is created yet. Use `POST /api/auth/register` for local account creation until a controlled seed/user-management workflow exists.
+### Security Enforcement Flag
+
+Security enforcement is controlled by `TESTCASEIQ_SECURITY_ENFORCE_AUTH` (mapped to `app.security.enforce-auth`).
+
+**Default behavior (`enforce-auth=false`):**
+
+- All business endpoints remain accessible without authentication.
+- The existing demo workflow works without logging in.
+- Auth endpoints still work normally.
+- This is the default for local and demo use.
+
+**Enforced mode (`enforce-auth=true`):**
+
+- Business endpoints require a valid JWT (`Authorization: Bearer <token>`).
+- Unauthenticated requests to business endpoints return `401 Unauthorized`.
+- Authenticated requests to endpoints outside the user's role return `403 Forbidden`.
+- Auth endpoints remain public.
+- Health endpoint remains public.
+
+### Enabling Enforcement Locally
+
+```bash
+# Set the env var before starting the backend
+TESTCASEIQ_SECURITY_ENFORCE_AUTH=true mvn spring-boot:run
+```
+
+Or add to `backend/.env`:
+
+```
+TESTCASEIQ_SECURITY_ENFORCE_AUTH=true
+```
+
+Use a real `TESTCASEIQ_JWT_SECRET` in shared or production-like environments; the documented default is only a local development fallback.
+
+### Frontend Route Protection
+
+When `enforce-auth=true` is set on the backend, the Angular route guard also redirects unauthenticated users to `/login`. The UI additionally hides or disables mutating actions based on the authenticated user's role:
+
+- ADMIN sees all actions.
+- QA_ENGINEER sees create, edit, analyze, generate, and review actions; no delete or admin controls.
+- VIEWER sees read-only views with no create, edit, delete, generate, or review buttons.
+
+Frontend restrictions are cosmetic reinforcement — the backend enforces role permissions on every request.
+
+### Creating Accounts
+
+No development admin seed is created automatically. Use `POST /api/auth/register` to create a `QA_ENGINEER` account locally. Admin accounts must be promoted directly in the database until a user-management workflow exists.
 
 ## Exports
 

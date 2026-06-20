@@ -27,6 +27,7 @@ public class StoryController {
     }
 
     @PostMapping("/projects/{projectId}/stories")
+    @org.springframework.security.access.prepost.PreAuthorize("!@securityEnforcement.isEnforced() or hasAnyRole('ADMIN', 'QA_ENGINEER')")
     public ResponseEntity<StoryResponse> create(
             @PathVariable UUID projectId,
             @Valid @RequestBody StoryCreateRequest request
@@ -36,21 +37,25 @@ public class StoryController {
     }
 
     @GetMapping("/projects/{projectId}/stories")
+    @org.springframework.security.access.prepost.PreAuthorize("!@securityEnforcement.isEnforced() or hasAnyRole('ADMIN', 'QA_ENGINEER', 'VIEWER')")
     public List<StoryResponse> listForProject(@PathVariable UUID projectId) {
         return storyService.listForProject(projectId);
     }
 
     @GetMapping("/stories/{storyId}")
+    @org.springframework.security.access.prepost.PreAuthorize("!@securityEnforcement.isEnforced() or hasAnyRole('ADMIN', 'QA_ENGINEER', 'VIEWER')")
     public StoryResponse get(@PathVariable UUID storyId) {
         return storyService.get(storyId);
     }
 
     @PatchMapping("/stories/{storyId}")
+    @org.springframework.security.access.prepost.PreAuthorize("!@securityEnforcement.isEnforced() or hasAnyRole('ADMIN', 'QA_ENGINEER')")
     public StoryResponse update(@PathVariable UUID storyId, @Valid @RequestBody StoryUpdateRequest request) {
         return storyService.update(storyId, request);
     }
 
     @DeleteMapping("/stories/{storyId}")
+    @org.springframework.security.access.prepost.PreAuthorize("!@securityEnforcement.isEnforced() or hasRole('ADMIN')")
     public ResponseEntity<Void> delete(@PathVariable UUID storyId) {
         storyService.delete(storyId);
         return ResponseEntity.noContent().build();

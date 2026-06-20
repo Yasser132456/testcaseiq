@@ -1,7 +1,8 @@
 import { DatePipe } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { AuthService } from '../../core/services/auth.service';
 import {
   AmbiguitySeverity,
   CoverageCategory,
@@ -53,13 +54,17 @@ interface ReviewDraft {
           </div>
           <div class="action-row">
             <a class="button secondary" [routerLink]="['/projects', story()?.projectId]">Back to project</a>
-            <button class="button analysis-button" type="button" (click)="analyzeStory()" [disabled]="analyzing()">
-              {{ analyzing() ? 'Analyzing...' : 'Analyze Story' }}
-            </button>
-            <button class="button generate-button" type="button" (click)="generateTestCases()" [disabled]="generatingTests()">
-              {{ generatingTests() ? 'Generating...' : 'Generate Test Cases' }}
-            </button>
-            <button class="button danger" type="button" (click)="deleteStory()">Delete story</button>
+            @if (canEdit()) {
+              <button class="button analysis-button" type="button" (click)="analyzeStory()" [disabled]="analyzing()">
+                {{ analyzing() ? 'Analyzing...' : 'Analyze Story' }}
+              </button>
+              <button class="button generate-button" type="button" (click)="generateTestCases()" [disabled]="generatingTests()">
+                {{ generatingTests() ? 'Generating...' : 'Generate Test Cases' }}
+              </button>
+            }
+            @if (canDelete()) {
+              <button class="button danger" type="button" (click)="deleteStory()">Delete story</button>
+            }
           </div>
         </div>
 
@@ -77,52 +82,54 @@ interface ReviewDraft {
           <p class="raw-story-text">{{ story()?.rawText }}</p>
         </section>
 
-        <form class="panel form-panel wide" [formGroup]="form" (ngSubmit)="saveStory()">
-          <h3>Edit story</h3>
-          <label>
-            <span>Title</span>
-            <input formControlName="title" />
-          </label>
-          @if (form.controls.title.touched && form.controls.title.invalid) {
-            <small class="field-error">Story title is required.</small>
-          }
-          <label>
-            <span>Raw text</span>
-            <textarea formControlName="rawText" rows="10"></textarea>
-          </label>
-          @if (form.controls.rawText.touched && form.controls.rawText.invalid) {
-            <small class="field-error">Story raw text is required.</small>
-          }
-          <div class="form-grid">
+        @if (canEdit()) {
+          <form class="panel form-panel wide" [formGroup]="form" (ngSubmit)="saveStory()">
+            <h3>Edit story</h3>
             <label>
-              <span>Type</span>
-              <select formControlName="type">
-                @for (type of storyTypes; track type) {
-                  <option [value]="type">{{ type }}</option>
-                }
-              </select>
+              <span>Title</span>
+              <input formControlName="title" />
             </label>
+            @if (form.controls.title.touched && form.controls.title.invalid) {
+              <small class="field-error">Story title is required.</small>
+            }
             <label>
-              <span>Status</span>
-              <select formControlName="status">
-                <option value="DRAFT">DRAFT</option>
-                <option value="ANALYZED">ANALYZED</option>
-                <option value="TESTS_GENERATED">TESTS_GENERATED</option>
-                <option value="REVIEWED">REVIEWED</option>
-                <option value="EXPORTED">EXPORTED</option>
-              </select>
+              <span>Raw text</span>
+              <textarea formControlName="rawText" rows="10"></textarea>
             </label>
-          </div>
-          @if (saveMessage()) {
-            <app-state-message title="Story saved" [message]="saveMessage()" />
-          }
-          @if (saveError()) {
-            <app-state-message title="Could not save story" [message]="saveError()" tone="error" />
-          }
-          <button class="button" type="submit" [disabled]="form.invalid || saving()">
-            {{ saving() ? 'Saving...' : 'Save changes' }}
-          </button>
-        </form>
+            @if (form.controls.rawText.touched && form.controls.rawText.invalid) {
+              <small class="field-error">Story raw text is required.</small>
+            }
+            <div class="form-grid">
+              <label>
+                <span>Type</span>
+                <select formControlName="type">
+                  @for (type of storyTypes; track type) {
+                    <option [value]="type">{{ type }}</option>
+                  }
+                </select>
+              </label>
+              <label>
+                <span>Status</span>
+                <select formControlName="status">
+                  <option value="DRAFT">DRAFT</option>
+                  <option value="ANALYZED">ANALYZED</option>
+                  <option value="TESTS_GENERATED">TESTS_GENERATED</option>
+                  <option value="REVIEWED">REVIEWED</option>
+                  <option value="EXPORTED">EXPORTED</option>
+                </select>
+              </label>
+            </div>
+            @if (saveMessage()) {
+              <app-state-message title="Story saved" [message]="saveMessage()" />
+            }
+            @if (saveError()) {
+              <app-state-message title="Could not save story" [message]="saveError()" tone="error" />
+            }
+            <button class="button" type="submit" [disabled]="form.invalid || saving()">
+              {{ saving() ? 'Saving...' : 'Save changes' }}
+            </button>
+          </form>
+        }
 
         <section class="panel analysis-panel">
           <div class="section-header">
@@ -144,9 +151,11 @@ interface ReviewDraft {
               <p class="eyebrow analysis-eyebrow">Ready for analysis</p>
               <h3>No analysis has been generated yet.</h3>
               <p>Run the mock AI analysis to extract requirements, ambiguities, scores, and coverage suggestions.</p>
-              <button class="button analysis-button" type="button" (click)="analyzeStory()" [disabled]="analyzing()">
-                {{ analyzing() ? 'Analyzing...' : 'Analyze Story' }}
-              </button>
+              @if (canEdit()) {
+                <button class="button analysis-button" type="button" (click)="analyzeStory()" [disabled]="analyzing()">
+                  {{ analyzing() ? 'Analyzing...' : 'Analyze Story' }}
+                </button>
+              }
             </div>
           } @else {
             <div class="score-grid">
@@ -397,9 +406,11 @@ interface ReviewDraft {
               <p class="eyebrow generated-eyebrow">Ready for generation</p>
               <h3>No manual test cases exist yet.</h3>
               <p>Generate mock manual tests from this story. The result will include test objectives, steps, data, BDD text, and requirement links.</p>
-              <button class="button generate-button" type="button" (click)="generateTestCases()" [disabled]="generatingTests()">
-                {{ generatingTests() ? 'Generating...' : 'Generate Test Cases' }}
-              </button>
+              @if (canEdit()) {
+                <button class="button generate-button" type="button" (click)="generateTestCases()" [disabled]="generatingTests()">
+                  {{ generatingTests() ? 'Generating...' : 'Generate Test Cases' }}
+                </button>
+              }
             </div>
           } @else {
             <div class="suite-stack">
@@ -470,7 +481,7 @@ interface ReviewDraft {
                             <div class="inline-note amber-note">
                               This generated test case is missing a persisted backend ID, so review actions are disabled.
                             </div>
-                          } @else {
+                          } @else if (canEdit()) {
                             <section class="review-workflow-panel">
                               <div class="review-action-grid">
                                 <button class="button approve-button" type="button" (click)="updateReviewStatus(testCase, 'APPROVED')" [disabled]="isReviewBusy(testCase)">
@@ -534,7 +545,7 @@ interface ReviewDraft {
                             <div class="inline-note">{{ testCase.sourceEvidence }}</div>
                           }
 
-                          @if (testCase.id) {
+                          @if (testCase.id && canEdit()) {
                             <section class="test-detail-section edit-test-case-panel">
                               <h6>Review edits</h6>
                               <div class="review-edit-grid">
@@ -570,7 +581,7 @@ interface ReviewDraft {
                                   <div class="step-row">
                                     <span>{{ step.order }}</span>
                                     <div>
-                                      @if (testCase.id) {
+                                      @if (testCase.id && canEdit()) {
                                         <label class="compact-field">
                                           <span>Action</span>
                                           <input [value]="stepDraft(testCase, step)?.action ?? step.action" (input)="updateReviewStepDraft(testCase, step, 'action', $any($event.target).value)" [disabled]="isReviewBusy(testCase)" />
@@ -672,6 +683,18 @@ export class StoryDetailPageComponent implements OnInit {
   private readonly testGenerationService = inject(TestGenerationService);
   private readonly reviewService = inject(ReviewService);
   private readonly exportService = inject(ExportService);
+  private readonly authService = inject(AuthService);
+
+  readonly canEdit = computed(() => {
+    if (!this.authService.isAuthenticated()) return true;
+    const role = this.authService.currentRole();
+    return role === 'ADMIN' || role === 'QA_ENGINEER';
+  });
+
+  readonly canDelete = computed(() => {
+    if (!this.authService.isAuthenticated()) return true;
+    return this.authService.currentRole() === 'ADMIN';
+  });
 
   readonly storyTypes = STORY_TYPES;
   readonly requirementTypes: RequirementType[] = [

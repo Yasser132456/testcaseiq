@@ -4,6 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Project } from '../../core/models/project.model';
 import { STORY_TYPES, Story, StoryType } from '../../core/models/story.model';
+import { AuthService } from '../../core/services/auth.service';
 import { ProjectService } from '../../core/services/project.service';
 import { StoryService } from '../../core/services/story.service';
 import { StateMessageComponent } from '../../shared/components/state-message.component';
@@ -25,41 +26,45 @@ import { StateMessageComponent } from '../../shared/components/state-message.com
             <h2>{{ project()?.name }}</h2>
             <p>{{ project()?.description || 'No description added yet.' }}</p>
           </div>
-          <button class="button danger" type="button" (click)="deleteProject()">Delete project</button>
+          @if (canDelete()) {
+            <button class="button danger" type="button" (click)="deleteProject()">Delete project</button>
+          }
         </div>
 
         <div class="content-grid">
-          <form class="panel form-panel" [formGroup]="storyForm" (ngSubmit)="createStory()">
-            <h3>New story</h3>
-            <label>
-              <span>Title</span>
-              <input formControlName="title" placeholder="Buyer completes checkout" />
-            </label>
-            @if (storyForm.controls.title.touched && storyForm.controls.title.invalid) {
-              <small class="field-error">Story title is required.</small>
-            }
-            <label>
-              <span>Raw text</span>
-              <textarea formControlName="rawText" rows="7" placeholder="As a buyer, I want..."></textarea>
-            </label>
-            @if (storyForm.controls.rawText.touched && storyForm.controls.rawText.invalid) {
-              <small class="field-error">Story raw text is required.</small>
-            }
-            <label>
-              <span>Type</span>
-              <select formControlName="type">
-                @for (type of storyTypes; track type) {
-                  <option [value]="type">{{ type }}</option>
-                }
-              </select>
-            </label>
-            @if (createError()) {
-              <app-state-message title="Could not create story" [message]="createError()" tone="error" />
-            }
-            <button class="button" type="submit" [disabled]="storyForm.invalid || creatingStory()">
-              {{ creatingStory() ? 'Creating...' : 'Create story' }}
-            </button>
-          </form>
+          @if (canEdit()) {
+            <form class="panel form-panel" [formGroup]="storyForm" (ngSubmit)="createStory()">
+              <h3>New story</h3>
+              <label>
+                <span>Title</span>
+                <input formControlName="title" placeholder="Buyer completes checkout" />
+              </label>
+              @if (storyForm.controls.title.touched && storyForm.controls.title.invalid) {
+                <small class="field-error">Story title is required.</small>
+              }
+              <label>
+                <span>Raw text</span>
+                <textarea formControlName="rawText" rows="7" placeholder="As a buyer, I want..."></textarea>
+              </label>
+              @if (storyForm.controls.rawText.touched && storyForm.controls.rawText.invalid) {
+                <small class="field-error">Story raw text is required.</small>
+              }
+              <label>
+                <span>Type</span>
+                <select formControlName="type">
+                  @for (type of storyTypes; track type) {
+                    <option [value]="type">{{ type }}</option>
+                  }
+                </select>
+              </label>
+              @if (createError()) {
+                <app-state-message title="Could not create story" [message]="createError()" tone="error" />
+              }
+              <button class="button" type="submit" [disabled]="storyForm.invalid || creatingStory()">
+                {{ creatingStory() ? 'Creating...' : 'Create story' }}
+              </button>
+            </form>
+          }
 
           <section class="panel">
             <div class="section-header">
@@ -81,7 +86,9 @@ import { StateMessageComponent } from '../../shared/components/state-message.com
                       <strong>{{ story.title }}</strong>
                       <span>{{ story.status }} · {{ story.type }} · {{ story.createdAt | date:'mediumDate' }}</span>
                     </a>
-                    <button class="text-danger" type="button" (click)="deleteStory(story)">Delete</button>
+                    @if (canDelete()) {
+                      <button class="text-danger" type="button" (click)="deleteStory(story)">Delete</button>
+                    }
                   </article>
                 }
               </div>
@@ -98,6 +105,18 @@ export class ProjectDetailPageComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly projectService = inject(ProjectService);
   private readonly storyService = inject(StoryService);
+  private readonly authService = inject(AuthService);
+
+  readonly canEdit = computed(() => {
+    if (!this.authService.isAuthenticated()) return true;
+    const role = this.authService.currentRole();
+    return role === 'ADMIN' || role === 'QA_ENGINEER';
+  });
+
+  readonly canDelete = computed(() => {
+    if (!this.authService.isAuthenticated()) return true;
+    return this.authService.currentRole() === 'ADMIN';
+  });
 
   readonly storyTypes = STORY_TYPES;
   readonly project = signal<Project | null>(null);
