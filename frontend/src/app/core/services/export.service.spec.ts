@@ -35,6 +35,26 @@ describe('ExportService', () => {
     expectExportRequest('json', '/api/stories/story-1/exports/json', 'application/json');
   });
 
+  it('downloads approved test cases as playwright spec file with response headers', () => {
+    let response: HttpResponse<Blob> | undefined;
+    service.exportApprovedTestCases('story-1', 'playwright').subscribe((exportResponse) => {
+      response = exportResponse;
+    });
+
+    const request = http.expectOne('/api/stories/story-1/exports/playwright');
+    expect(request.request.method).toBe('GET');
+    expect(request.request.responseType).toBe('blob');
+    const body = new Blob(["import { test, expect } from '@playwright/test';"], { type: 'text/plain' });
+    request.flush(body, {
+      headers: {
+        'Content-Disposition': 'attachment; filename="story-1-approved-test-cases.spec.ts"'
+      }
+    });
+
+    expect(response?.body).toBe(body);
+    expect(response?.headers.get('Content-Disposition')).toContain('.spec.ts');
+  });
+
   function expectExportRequest(format: ExportFormat, url: string, contentType: string): void {
     let response: HttpResponse<Blob> | undefined;
     service.exportApprovedTestCases('story-1', format).subscribe((exportResponse) => {
