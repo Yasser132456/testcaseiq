@@ -358,6 +358,7 @@ interface ReviewDraft {
                   class="export-card"
                   [class.playwright-card]="option.format === 'playwright'"
                   [class.postman-card]="option.format === 'postman'"
+                  [class.xray-card]="option.format === 'xray-csv'"
                   type="button"
                   (click)="exportApprovedTestCases(option.format)"
                   [disabled]="isExporting()"
@@ -375,6 +376,10 @@ interface ReviewDraft {
             <div class="inline-note amber-note postman-draft-note">
               <strong>Postman export — draft API collection only.</strong>
               Exports approved API-oriented test cases only. Generated endpoints, headers, auth, payloads, and assertions are placeholders — a QA engineer or developer must review and complete the collection before execution.
+            </div>
+            <div class="inline-note amber-note xray-draft-note">
+              <strong>Jira/Xray export generates a draft import mapping only.</strong>
+              Generated CSV should be reviewed before Jira/Xray import. Exports approved test cases only. No Jira/Xray API connection is used in this export.
             </div>
           </section>
 
@@ -719,6 +724,12 @@ export class StoryDetailPageComponent implements OnInit {
       label: 'Postman',
       badge: 'API',
       description: 'Approved API-oriented test cases only'
+    },
+    {
+      format: 'xray-csv',
+      label: 'Jira/Xray CSV',
+      badge: 'XRAY',
+      description: 'Draft import mapping CSV'
     }
   ];
 
@@ -1147,6 +1158,9 @@ export class StoryDetailPageComponent implements OnInit {
     }
     if (format === 'postman') {
       return `story-${this.storyId}-approved-api-tests.postman_collection.json`;
+    }
+    if (format === 'xray-csv') {
+      return `story-${this.storyId}-approved-tests-xray.csv`;
     }
     const extension = format === 'markdown' ? 'md' : format;
     return `story-${this.storyId}-approved-test-cases.${extension}`;
