@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Component, inject } from '@angular/core';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { AuthService } from '../core/services/auth.service';
 
 @Component({
   selector: 'app-layout',
@@ -18,18 +19,22 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
         <nav class="nav-list" aria-label="Primary navigation">
           <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
-            <span class="nav-icon" aria-hidden="true">⊞</span>
+            <span class="nav-icon" aria-hidden="true">DX</span>
             Dashboard
           </a>
           <a routerLink="/projects" routerLinkActive="active">
-            <span class="nav-icon" aria-hidden="true">◈</span>
+            <span class="nav-icon" aria-hidden="true">PR</span>
             Projects
           </a>
         </nav>
 
         <div class="sidebar-footer">
           <span class="status-dot"></span>
-          <span>Sprint 10</span>
+          @if (authService.currentUser(); as user) {
+            <span>{{ user.role }}</span>
+          } @else {
+            <span>Demo mode</span>
+          }
         </div>
       </aside>
 
@@ -39,7 +44,19 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
             <p class="eyebrow">Workspace</p>
             <h1>TestCaseIQ</h1>
           </div>
-          <a class="button secondary" routerLink="/projects">Projects</a>
+          <div class="topbar-actions">
+            @if (authService.currentUser(); as user) {
+              <div class="user-chip" aria-label="Current user">
+                <span>{{ initials(user.displayName) }}</span>
+                <strong>{{ user.displayName }}</strong>
+                <small>{{ user.role }}</small>
+              </div>
+              <button class="button secondary" type="button" (click)="logout()">Logout</button>
+            } @else {
+              <a class="button secondary" routerLink="/login">Sign in</a>
+            }
+            <a class="button secondary" routerLink="/projects">Projects</a>
+          </div>
         </header>
 
         <router-outlet />
@@ -47,4 +64,21 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
     </div>
   `
 })
-export class AppLayoutComponent {}
+export class AppLayoutComponent {
+  readonly authService = inject(AuthService);
+  private readonly router = inject(Router);
+
+  initials(displayName: string): string {
+    return displayName
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase())
+      .join('') || 'U';
+  }
+
+  logout(): void {
+    this.authService.logout();
+    void this.router.navigateByUrl('/login');
+  }
+}
