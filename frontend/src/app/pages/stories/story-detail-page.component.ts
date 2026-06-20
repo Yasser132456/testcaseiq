@@ -359,6 +359,7 @@ interface ReviewDraft {
                   [class.playwright-card]="option.format === 'playwright'"
                   [class.postman-card]="option.format === 'postman'"
                   [class.xray-card]="option.format === 'xray-csv'"
+                  [class.azure-card]="option.format === 'azure-devops-csv'"
                   type="button"
                   (click)="exportApprovedTestCases(option.format)"
                   [disabled]="isExporting()"
@@ -380,6 +381,10 @@ interface ReviewDraft {
             <div class="inline-note amber-note xray-draft-note">
               <strong>Jira/Xray export generates a draft import mapping only.</strong>
               Generated CSV should be reviewed before Jira/Xray import. Exports approved test cases only. No Jira/Xray API connection is used in this export.
+            </div>
+            <div class="inline-note amber-note azure-draft-note">
+              <strong>Azure DevOps export generates a draft import mapping only.</strong>
+              Generated CSV should be reviewed before Azure DevOps import. Exports approved test cases only. No Azure DevOps API connection is used in this export.
             </div>
           </section>
 
@@ -730,6 +735,12 @@ export class StoryDetailPageComponent implements OnInit {
       label: 'Jira/Xray CSV',
       badge: 'XRAY',
       description: 'Draft import mapping CSV'
+    },
+    {
+      format: 'azure-devops-csv',
+      label: 'Azure DevOps CSV',
+      badge: 'ADO',
+      description: 'Draft Azure import mapping'
     }
   ];
 
@@ -1161,6 +1172,9 @@ export class StoryDetailPageComponent implements OnInit {
     }
     if (format === 'xray-csv') {
       return `story-${this.storyId}-approved-tests-xray.csv`;
+    }
+    if (format === 'azure-devops-csv') {
+      return `story-${this.storyId}-approved-tests-azure-devops.csv`;
     }
     const extension = format === 'markdown' ? 'md' : format;
     return `story-${this.storyId}-approved-test-cases.${extension}`;
