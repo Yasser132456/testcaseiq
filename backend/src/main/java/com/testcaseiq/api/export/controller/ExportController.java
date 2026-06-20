@@ -34,6 +34,11 @@ public class ExportController {
         return downloadable(exportService.exportStory(storyId, ExportFormat.CSV));
     }
 
+    @GetMapping("/stories/{storyId}/exports/xray-csv")
+    ResponseEntity<String> exportStoryXrayCsv(@PathVariable UUID storyId) {
+        return downloadable(exportService.exportStory(storyId, ExportFormat.XRAY_CSV));
+    }
+
     @GetMapping("/stories/{storyId}/exports/json")
     ResponseEntity<String> exportStoryJson(@PathVariable UUID storyId) {
         return downloadable(exportService.exportStory(storyId, ExportFormat.JSON));
@@ -47,6 +52,11 @@ public class ExportController {
     @GetMapping("/test-suites/{testSuiteId}/exports/csv")
     ResponseEntity<String> exportTestSuiteCsv(@PathVariable UUID testSuiteId) {
         return downloadable(exportService.exportTestSuite(testSuiteId, ExportFormat.CSV));
+    }
+
+    @GetMapping("/test-suites/{testSuiteId}/exports/xray-csv")
+    ResponseEntity<String> exportTestSuiteXrayCsv(@PathVariable UUID testSuiteId) {
+        return downloadable(exportService.exportTestSuite(testSuiteId, ExportFormat.XRAY_CSV));
     }
 
     @GetMapping("/test-suites/{testSuiteId}/exports/json")
