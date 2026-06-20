@@ -149,6 +149,29 @@ describe('StoryDetailPageComponent export actions', () => {
     expect(component.exportMessage()).toBe('CSV export download started.');
   });
 
+  it('calls the postman export endpoint and uses postman_collection.json filename fallback', () => {
+    let downloadedFilename = '';
+    spyOn(HTMLAnchorElement.prototype, 'click').and.callFake(function (this: HTMLAnchorElement) {
+      downloadedFilename = this.download;
+    });
+    spyOn(URL, 'createObjectURL').and.returnValue('blob:postman-export');
+    spyOn(URL, 'revokeObjectURL');
+
+    exportActionButtons()[4].click();
+    fixture.detectChanges();
+
+    expect(exportService.exportApprovedTestCases).toHaveBeenCalledOnceWith('story-1', 'postman');
+
+    exportResponse.next(new HttpResponse({
+      body: new Blob(['{"info":{},"item":[]}'], { type: 'application/json' }),
+      headers: new HttpHeaders({})
+    }));
+    fixture.detectChanges();
+
+    expect(downloadedFilename).toContain('.postman_collection.json');
+    expect(component.exportMessage()).toContain('Postman');
+  });
+
   function exportActionButtons(): HTMLButtonElement[] {
     return Array.from(fixture.nativeElement.querySelectorAll('.export-card')) as HTMLButtonElement[];
   }

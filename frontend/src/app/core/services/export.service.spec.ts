@@ -35,6 +35,26 @@ describe('ExportService', () => {
     expectExportRequest('json', '/api/stories/story-1/exports/json', 'application/json');
   });
 
+  it('downloads approved test cases as postman collection with response headers', () => {
+    let response: HttpResponse<Blob> | undefined;
+    service.exportApprovedTestCases('story-1', 'postman').subscribe((exportResponse) => {
+      response = exportResponse;
+    });
+
+    const request = http.expectOne('/api/stories/story-1/exports/postman');
+    expect(request.request.method).toBe('GET');
+    expect(request.request.responseType).toBe('blob');
+    const body = new Blob(['{"info":{"name":"TestCaseIQ"},"item":[]}'], { type: 'application/json' });
+    request.flush(body, {
+      headers: {
+        'Content-Disposition': 'attachment; filename="story-1-approved-api-tests.postman_collection.json"'
+      }
+    });
+
+    expect(response?.body).toBe(body);
+    expect(response?.headers.get('Content-Disposition')).toContain('.postman_collection.json');
+  });
+
   it('downloads approved test cases as playwright spec file with response headers', () => {
     let response: HttpResponse<Blob> | undefined;
     service.exportApprovedTestCases('story-1', 'playwright').subscribe((exportResponse) => {

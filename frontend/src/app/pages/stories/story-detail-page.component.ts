@@ -357,6 +357,7 @@ interface ReviewDraft {
                 <button
                   class="export-card"
                   [class.playwright-card]="option.format === 'playwright'"
+                  [class.postman-card]="option.format === 'postman'"
                   type="button"
                   (click)="exportApprovedTestCases(option.format)"
                   [disabled]="isExporting()"
@@ -370,6 +371,10 @@ interface ReviewDraft {
             <div class="inline-note amber-note playwright-draft-note">
               <strong>Playwright export — draft skeleton only.</strong>
               Generated selectors and actions are placeholders. A QA engineer or developer must review and complete the file before execution. Do not run generated tests directly in production.
+            </div>
+            <div class="inline-note amber-note postman-draft-note">
+              <strong>Postman export — draft API collection only.</strong>
+              Exports approved API-oriented test cases only. Generated endpoints, headers, auth, payloads, and assertions are placeholders — a QA engineer or developer must review and complete the collection before execution.
             </div>
           </section>
 
@@ -708,6 +713,12 @@ export class StoryDetailPageComponent implements OnInit {
       label: 'Playwright',
       badge: 'TS',
       description: 'Draft automation skeleton'
+    },
+    {
+      format: 'postman',
+      label: 'Postman',
+      badge: 'API',
+      description: 'Approved API-oriented test cases only'
     }
   ];
 
@@ -1133,6 +1144,9 @@ export class StoryDetailPageComponent implements OnInit {
   private fallbackExportFilename(format: ExportFormat): string {
     if (format === 'playwright') {
       return `story-${this.storyId}-approved-tests.spec.ts`;
+    }
+    if (format === 'postman') {
+      return `story-${this.storyId}-approved-api-tests.postman_collection.json`;
     }
     const extension = format === 'markdown' ? 'md' : format;
     return `story-${this.storyId}-approved-test-cases.${extension}`;
