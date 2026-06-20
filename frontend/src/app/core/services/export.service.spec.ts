@@ -51,6 +51,26 @@ describe('ExportService', () => {
     expect(response?.headers.get('Content-Disposition')).toContain('approved-tests-xray.csv');
   });
 
+  it('downloads approved test cases as Azure DevOps csv with response headers', () => {
+    let response: HttpResponse<Blob> | undefined;
+    service.exportApprovedTestCases('story-1', 'azure-devops-csv').subscribe((exportResponse) => {
+      response = exportResponse;
+    });
+
+    const request = http.expectOne('/api/stories/story-1/exports/azure-devops-csv');
+    expect(request.request.method).toBe('GET');
+    expect(request.request.responseType).toBe('blob');
+    const body = new Blob(['Test Case ID,Title,Export Warning'], { type: 'text/csv' });
+    request.flush(body, {
+      headers: {
+        'Content-Disposition': 'attachment; filename="story-1-approved-tests-azure-devops.csv"'
+      }
+    });
+
+    expect(response?.body).toBe(body);
+    expect(response?.headers.get('Content-Disposition')).toContain('approved-tests-azure-devops.csv');
+  });
+
   it('downloads approved test cases as json with response headers', () => {
     expectExportRequest('json', '/api/stories/story-1/exports/json', 'application/json');
   });

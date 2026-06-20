@@ -195,6 +195,38 @@ describe('StoryDetailPageComponent export actions', () => {
     expect(component.exportMessage()).toBe('Jira/Xray CSV export download started.');
   });
 
+  it('calls the Azure DevOps export endpoint and uses the azure csv filename fallback', () => {
+    let downloadedFilename = '';
+    spyOn(HTMLAnchorElement.prototype, 'click').and.callFake(function (this: HTMLAnchorElement) {
+      downloadedFilename = this.download;
+    });
+    spyOn(URL, 'createObjectURL').and.returnValue('blob:azure-devops-export');
+    spyOn(URL, 'revokeObjectURL');
+
+    exportButtonByText('Azure DevOps CSV').click();
+    fixture.detectChanges();
+
+    expect(exportService.exportApprovedTestCases).toHaveBeenCalledOnceWith('story-1', 'azure-devops-csv');
+
+    exportResponse.next(new HttpResponse({
+      body: new Blob(['Test Case ID,Title,Export Warning'], { type: 'text/csv' }),
+      headers: new HttpHeaders({})
+    }));
+    fixture.detectChanges();
+
+    expect(downloadedFilename).toBe('story-story-1-approved-tests-azure-devops.csv');
+    expect(component.exportMessage()).toBe('Azure DevOps CSV export download started.');
+  });
+
+  it('shows Azure DevOps draft mapping and no live connection guidance', () => {
+    const exportPanelText = (fixture.nativeElement.querySelector('.export-panel') as HTMLElement).textContent ?? '';
+
+    expect(exportPanelText).toContain('Azure DevOps export generates a draft import mapping only.');
+    expect(exportPanelText).toContain('Generated CSV should be reviewed before Azure DevOps import.');
+    expect(exportPanelText).toContain('Exports approved test cases only.');
+    expect(exportPanelText).toContain('No Azure DevOps API connection is used in this export.');
+  });
+
   it('shows Jira Xray draft mapping and no live connection guidance', () => {
     const exportPanelText = (fixture.nativeElement.querySelector('.export-panel') as HTMLElement).textContent ?? '';
 
