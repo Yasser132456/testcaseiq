@@ -3,7 +3,8 @@ package com.testcaseiq.api.export.dto;
 public enum ExportFormat {
     MARKDOWN("markdown", "md", "text/markdown"),
     CSV("csv", "csv", "text/csv"),
-    JSON("json", "json", "application/json");
+    JSON("json", "json", "application/json"),
+    PLAYWRIGHT("playwright", "spec.ts", "text/plain");
 
     private final String pathSegment;
     private final String extension;

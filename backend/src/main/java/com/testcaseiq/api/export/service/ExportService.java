@@ -38,17 +38,20 @@ public class ExportService {
     private final TestSuiteRepository testSuiteRepository;
     private final ExportJobRepository exportJobRepository;
     private final ObjectMapper objectMapper;
+    private final PlaywrightScriptGenerator playwrightScriptGenerator;
 
     public ExportService(
             StoryRepository storyRepository,
             TestSuiteRepository testSuiteRepository,
             ExportJobRepository exportJobRepository,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            PlaywrightScriptGenerator playwrightScriptGenerator
     ) {
         this.storyRepository = storyRepository;
         this.testSuiteRepository = testSuiteRepository;
         this.exportJobRepository = exportJobRepository;
         this.objectMapper = objectMapper;
+        this.playwrightScriptGenerator = playwrightScriptGenerator;
     }
 
     @Transactional
@@ -79,6 +82,7 @@ public class ExportService {
                 case MARKDOWN -> toMarkdown(document);
                 case CSV -> toCsv(document);
                 case JSON -> toJson(document);
+                case PLAYWRIGHT -> playwrightScriptGenerator.generate(document);
             };
             exportJob.setStatus(ExportStatus.COMPLETED);
             exportJob.setExportDetailsJson(toMetadataJson(format, filename, document.testCases().size()));

@@ -39,6 +39,7 @@ import com.testcaseiq.api.domain.repository.ExportJobRepository;
 import com.testcaseiq.api.domain.repository.StoryRepository;
 import com.testcaseiq.api.domain.repository.TestSuiteRepository;
 import com.testcaseiq.api.export.dto.ExportFormat;
+import com.testcaseiq.api.export.service.PlaywrightScriptGenerator;
 
 @ExtendWith(MockitoExtension.class)
 class ExportServiceTests {
@@ -60,7 +61,8 @@ class ExportServiceTests {
                 storyRepository,
                 testSuiteRepository,
                 exportJobRepository,
-                new ObjectMapper()
+                new ObjectMapper(),
+                new PlaywrightScriptGenerator()
         );
     }
 
@@ -166,7 +168,8 @@ class ExportServiceTests {
                         throw new com.fasterxml.jackson.core.JsonProcessingException("boom") {
                         };
                     }
-                }
+                },
+                new PlaywrightScriptGenerator()
         );
         when(storyRepository.findById(storyId)).thenReturn(Optional.of(story));
 
