@@ -29,6 +29,11 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.BAD_REQUEST, exception.getMessage(), request, Map.of());
     }
 
+    @ExceptionHandler(UnauthorizedException.class)
+    ResponseEntity<ApiErrorResponse> handleUnauthorized(UnauthorizedException exception, HttpServletRequest request) {
+        return buildResponse(HttpStatus.UNAUTHORIZED, exception.getMessage(), request, Map.of());
+    }
+
     @ExceptionHandler(AiProviderException.class)
     ResponseEntity<ApiErrorResponse> handleAiProvider(AiProviderException exception, HttpServletRequest request) {
         return buildResponse(HttpStatus.BAD_GATEWAY, exception.getMessage(), request, Map.of());

@@ -27,6 +27,7 @@ The project is built around a careful QA workflow:
 | Markdown/CSV/JSON export     | Export approved test assets for documentation and handoff    | Implemented |
 | Playwright skeleton export   | Generate draft `.spec.ts` automation skeletons               | Implemented |
 | Postman collection export    | Generate draft Postman Collection JSON for API testing       | Implemented |
+| Backend authentication       | Register/login/me endpoints with JWT and role foundation     | Implemented |
 | Real AI provider support     | Use a real provider through configuration                    | Implemented |
 | Mock provider support        | Run locally and in tests without real AI credentials         | Implemented |
 | AI output validation         | Validate generated structures before persistence             | Implemented |
@@ -55,7 +56,7 @@ GitHub Actions CI
 Core pieces:
 
 - `frontend/`: Angular UI for project, story, analysis, generation, review, and export workflows.
-- `backend/`: Spring Boot API with domain services, persistence, AI provider abstraction, validation, and export generation.
+- `backend/`: Spring Boot API with domain services, persistence, AI provider abstraction, validation, export generation, and JWT auth foundation.
 - PostgreSQL: local relational persistence through Docker Compose.
 - Export services: Markdown, CSV, JSON, Playwright draft specs, and Postman Collection JSON.
 - Review workflow: keeps generated tests in a human approval path before export.
@@ -129,6 +130,8 @@ The app runs at `http://localhost:4200`.
 
 The frontend development server proxies `/api` requests to `http://localhost:8080`.
 
+By default, local/demo mode keeps existing project, story, analysis, review, and export endpoints accessible while the login UI is still being built. Authentication endpoints are available now, and protected enforcement can be enabled with `TESTCASEIQ_SECURITY_ENFORCE_AUTH=true`.
+
 ## Testing And Quality
 
 Run backend tests:
@@ -170,10 +173,29 @@ Relevant backend configuration keys include:
 - `OPENAI_API_KEY=`
 - `OPENAI_MODEL=gpt-4o-mini`
 - `OPENAI_BASE_URL=https://api.openai.com`
+- `TESTCASEIQ_SECURITY_ENFORCE_AUTH=false`
+- `TESTCASEIQ_JWT_SECRET=testcaseiq-local-development-jwt-secret-change-me`
+- `TESTCASEIQ_ACCESS_TOKEN_EXPIRATION_SECONDS=3600`
 
 To enable a real AI provider, configure the provider and key through local environment/config values. Do not commit real `.env` files, production secrets, or API keys.
 
 AI output is validated before persistence so malformed or unsafe generated structures can be rejected before they become reviewable test assets.
+
+## Authentication
+
+The backend includes a JWT authentication foundation with BCrypt password hashing and role-aware user profiles.
+
+Auth endpoints:
+
+- `POST /api/auth/register`: accepts `displayName`, `email`, and `password`; creates a `QA_ENGINEER` user by default and returns an access token plus profile.
+- `POST /api/auth/login`: accepts `email` and `password`; returns an access token plus profile for valid enabled users.
+- `GET /api/auth/me`: returns the current user profile when called with `Authorization: Bearer <token>`.
+
+Supported roles are `ADMIN`, `QA_ENGINEER`, and `VIEWER`. Password hashes are stored server-side only and are never returned in API responses.
+
+Security enforcement is controlled by `TESTCASEIQ_SECURITY_ENFORCE_AUTH`. It defaults to `false` so the current local/demo workflow remains usable before the Angular login UI exists. When set to `true`, business endpoints require a valid JWT. Use a real `TESTCASEIQ_JWT_SECRET` in shared or production-like environments; the documented default is only a local development fallback and should not be treated as a secret.
+
+No development admin seed is created yet. Use `POST /api/auth/register` for local account creation until a controlled seed/user-management workflow exists.
 
 ## Exports
 
@@ -186,6 +208,8 @@ Supported export targets:
 - JSON for structured downstream processing.
 - Playwright `.spec.ts` draft skeletons for UI automation starting points.
 - Postman Collection JSON drafts for API testing starting points.
+- Jira/Xray CSV draft import mappings.
+- Azure DevOps CSV draft import mappings.
 
 Automation exports are draft and review-required. Test automation engineers should inspect, adapt, and harden generated skeletons before relying on them in an execution pipeline.
 
