@@ -4,7 +4,8 @@ public enum ExportFormat {
     MARKDOWN("markdown", "md", "text/markdown"),
     CSV("csv", "csv", "text/csv"),
     JSON("json", "json", "application/json"),
-    PLAYWRIGHT("playwright", "spec.ts", "text/plain");
+    PLAYWRIGHT("playwright", "spec.ts", "text/plain"),
+    POSTMAN("postman", "postman_collection.json", "application/json");
 
     private final String pathSegment;
     private final String extension;

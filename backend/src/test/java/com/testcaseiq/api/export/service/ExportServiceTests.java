@@ -40,6 +40,7 @@ import com.testcaseiq.api.domain.repository.StoryRepository;
 import com.testcaseiq.api.domain.repository.TestSuiteRepository;
 import com.testcaseiq.api.export.dto.ExportFormat;
 import com.testcaseiq.api.export.service.PlaywrightScriptGenerator;
+import com.testcaseiq.api.export.service.PostmanCollectionGenerator;
 
 @ExtendWith(MockitoExtension.class)
 class ExportServiceTests {
@@ -57,12 +58,14 @@ class ExportServiceTests {
 
     @BeforeEach
     void setUp() {
+        ObjectMapper objectMapper = new ObjectMapper();
         exportService = new ExportService(
                 storyRepository,
                 testSuiteRepository,
                 exportJobRepository,
-                new ObjectMapper(),
-                new PlaywrightScriptGenerator()
+                objectMapper,
+                new PlaywrightScriptGenerator(),
+                new PostmanCollectionGenerator(objectMapper)
         );
     }
 
@@ -158,18 +161,20 @@ class ExportServiceTests {
     void marksExportJobFailedWhenFormattingFails() {
         Story story = storyWithMixedReviewStatuses();
         UUID storyId = story.getId();
+        ObjectMapper failingMapper = new ObjectMapper() {
+            @Override
+            public String writeValueAsString(Object value) throws com.fasterxml.jackson.core.JsonProcessingException {
+                throw new com.fasterxml.jackson.core.JsonProcessingException("boom") {
+                };
+            }
+        };
         ExportService failingService = new ExportService(
                 storyRepository,
                 testSuiteRepository,
                 exportJobRepository,
-                new ObjectMapper() {
-                    @Override
-                    public String writeValueAsString(Object value) throws com.fasterxml.jackson.core.JsonProcessingException {
-                        throw new com.fasterxml.jackson.core.JsonProcessingException("boom") {
-                        };
-                    }
-                },
-                new PlaywrightScriptGenerator()
+                failingMapper,
+                new PlaywrightScriptGenerator(),
+                new PostmanCollectionGenerator(failingMapper)
         );
         when(storyRepository.findById(storyId)).thenReturn(Optional.of(story));
 
