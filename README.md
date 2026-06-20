@@ -35,7 +35,7 @@ testcaseiq/
 
 ## Prerequisites
 
-- Node.js 20+
+- Node.js 24.15.0+
 - npm 10+
 - Java 21, or Java 17 if Java 21 is not available
 - Maven 3.9+
