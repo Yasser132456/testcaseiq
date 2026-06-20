@@ -18,7 +18,6 @@ import { StateMessageComponent } from '../../shared/components/state-message.com
   template: `
     <section class="page-stack">
       <div class="hero-panel">
-        <p class="eyebrow">TestCaseIQ</p>
         <h2>Transform stories into test intelligence.</h2>
         <p>Manage project intake and user stories before analysis, generation, and review enter the workflow.</p>
       </div>
@@ -50,10 +49,7 @@ import { StateMessageComponent } from '../../shared/components/state-message.com
         <div class="content-grid">
           <section class="panel">
             <div class="section-header">
-              <div>
-                <p class="eyebrow">Recent</p>
-                <h3>Projects</h3>
-              </div>
+              <h3>Recent projects</h3>
               <a routerLink="/projects">View all</a>
             </div>
 
@@ -73,10 +69,7 @@ import { StateMessageComponent } from '../../shared/components/state-message.com
 
           <section class="panel">
             <div class="section-header">
-              <div>
-                <p class="eyebrow">Recent</p>
-                <h3>Stories</h3>
-              </div>
+              <h3>Recent stories</h3>
             </div>
 
             @if (recentStories().length === 0) {
@@ -86,7 +79,7 @@ import { StateMessageComponent } from '../../shared/components/state-message.com
                 @for (story of recentStories(); track story.id) {
                   <a class="list-row" [routerLink]="['/stories', story.id]">
                     <strong>{{ story.title }}</strong>
-                    <span>{{ story.status }} · {{ story.type }}</span>
+                    <span>{{ formatLabel(story.status) }} · {{ formatLabel(story.type) }}</span>
                   </a>
                 }
               </div>
@@ -109,6 +102,10 @@ export class DashboardPageComponent implements OnInit {
   readonly health = signal<HealthResponse | null>(null);
 
   readonly recentProjects = signal<Project[]>([]);
+
+  formatLabel(value: string): string {
+    return value.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (l) => l.toUpperCase());
+  }
 
   ngOnInit(): void {
     this.projectService.list().pipe(

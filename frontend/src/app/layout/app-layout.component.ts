@@ -40,10 +40,7 @@ import { AuthService } from '../core/services/auth.service';
 
       <section class="workspace">
         <header class="topbar">
-          <div>
-            <p class="eyebrow">Workspace</p>
-            <h1>TestCaseIQ</h1>
-          </div>
+          <h1>TestCaseIQ</h1>
           <div class="topbar-actions">
             @if (authService.currentUser(); as user) {
               <div class="user-chip" aria-label="Current user">
@@ -55,12 +52,11 @@ import { AuthService } from '../core/services/auth.service';
             } @else {
               <a class="button secondary" routerLink="/login">Sign in</a>
             }
-            <a class="button secondary" routerLink="/projects">Projects</a>
           </div>
         </header>
 
         @if (accessRestricted()) {
-          <div class="inline-note amber-note" style="margin: 1rem 1.5rem 0; border-radius: 6px;">
+          <div class="access-restricted-notice inline-note amber-note">
             <strong>Access restricted.</strong>
             You do not have permission to perform that action. Contact your administrator to request additional access.
           </div>

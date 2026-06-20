@@ -1,0 +1,279 @@
+{
+  "version": 1,
+  "north_star": "The Black Glass Instrument",
+  "colors": {
+    "bg": "#0a0a0a",
+    "surface_1": "#121212",
+    "surface_2": "#18181b",
+    "border": "#27272a",
+    "text": "#f5f5f5",
+    "text_2": "#a1a1aa",
+    "text_3": "#71717a",
+    "accent": "#b8ff5a",
+    "accent_bg": "rgba(184, 255, 90, 0.10)",
+    "accent_border": "rgba(184, 255, 90, 0.40)",
+    "accent_glow": "rgba(184, 255, 90, 0.28)",
+    "purple": "#a78bfa",
+    "purple_bg": "rgba(167, 139, 250, 0.10)",
+    "purple_border": "rgba(167, 139, 250, 0.35)",
+    "cyan": "#67e8f9",
+    "cyan_2": "#22d3ee",
+    "cyan_bg": "rgba(34, 211, 238, 0.09)",
+    "cyan_border": "rgba(34, 211, 238, 0.30)",
+    "green": "#22c55e",
+    "green_bg": "rgba(34, 197, 94, 0.09)",
+    "green_border": "rgba(34, 197, 94, 0.40)",
+    "amber": "#fbbf24",
+    "amber_bg": "rgba(251, 191, 36, 0.10)",
+    "amber_border": "rgba(251, 191, 36, 0.35)",
+    "red": "#f87171",
+    "red_bg": "rgba(248, 113, 113, 0.10)",
+    "red_border": "rgba(248, 113, 113, 0.45)"
+  },
+  "typography": {
+    "sans": "'Inter', ui-sans-serif, system-ui, sans-serif",
+    "mono": "'JetBrains Mono', ui-monospace, monospace",
+    "scale": {
+      "display": { "size": "clamp(1.75rem, 5vw, 4rem)", "weight": 800 },
+      "h1": { "size": "1.5rem", "weight": 700 },
+      "h2": { "size": "1.125rem", "weight": 600 },
+      "body": { "size": "1rem", "weight": 400 },
+      "small": { "size": "0.875rem", "weight": 400 },
+      "xs": { "size": "0.75rem", "weight": 500 }
+    }
+  },
+  "spacing": {
+    "xs": "0.45rem",
+    "sm": "0.6rem",
+    "md": "0.85rem",
+    "base": "1rem",
+    "lg": "1.25rem",
+    "xl": "1.5rem"
+  },
+  "radius": {
+    "sm": "6px",
+    "md": "8px",
+    "lg": "10px"
+  },
+  "motion": {
+    "ease": "cubic-bezier(0.0, 0.0, 0.2, 1)",
+    "duration": "150ms",
+    "duration_slow": "250ms",
+    "entrance": "fadeInUp",
+    "entrance_detail": "opacity 0→1, translateY 8px→0 over 250ms"
+  },
+  "breakpoints": {
+    "mobile": "900px"
+  },
+  "components": {
+    "button_primary": {
+      "description": "Main CTA — Phosphor Green fill, Void Black text",
+      "tokens": {
+        "background": "var(--accent)",
+        "color": "#0a0a0a",
+        "border": "none",
+        "border_radius": "8px",
+        "padding": "0.5rem 1rem",
+        "font_weight": 600,
+        "transition": "background 150ms var(--ease), box-shadow 150ms var(--ease)"
+      },
+      "states": {
+        "hover": { "box_shadow": "0 0 0 3px var(--accent-glow)" },
+        "focus_visible": { "outline": "2px solid var(--accent)", "outline_offset": "2px" },
+        "disabled": { "opacity": 0.45, "cursor": "not-allowed" }
+      }
+    },
+    "button_secondary": {
+      "description": "Cancel / back — surface fill, subtle border",
+      "tokens": {
+        "background": "var(--surface-2)",
+        "color": "var(--text)",
+        "border": "1px solid var(--border)",
+        "border_radius": "8px",
+        "padding": "0.5rem 1rem"
+      },
+      "states": {
+        "hover": { "background": "rgba(255, 255, 255, 0.06)" }
+      }
+    },
+    "button_danger": {
+      "description": "Destructive actions — Rejection Red",
+      "tokens": {
+        "background": "var(--red-bg)",
+        "color": "var(--red)",
+        "border": "1px solid var(--red-border)",
+        "border_radius": "8px",
+        "padding": "0.5rem 1rem"
+      },
+      "states": {
+        "hover": { "background": "rgba(248, 113, 113, 0.15)" }
+      }
+    },
+    "button_analysis": {
+      "description": "Trigger AI analysis — Analysis Violet",
+      "tokens": {
+        "background": "var(--purple-bg)",
+        "color": "var(--purple)",
+        "border": "1px solid var(--purple-border)",
+        "border_radius": "8px",
+        "padding": "0.5rem 1rem"
+      },
+      "states": {
+        "hover": { "background": "rgba(167, 139, 250, 0.18)" }
+      }
+    },
+    "button_generate": {
+      "description": "Generate test cases — Generation Cyan",
+      "tokens": {
+        "background": "var(--cyan-bg)",
+        "color": "var(--cyan)",
+        "border": "1px solid var(--cyan-border)",
+        "border_radius": "8px",
+        "padding": "0.5rem 1rem"
+      },
+      "states": {
+        "hover": { "background": "rgba(34, 211, 238, 0.15)" }
+      }
+    },
+    "badge": {
+      "description": "Semantic status chip — always paired with text label",
+      "tokens": {
+        "border_radius": "6px",
+        "padding": "0.2rem 0.5rem",
+        "font_size": "0.75rem",
+        "font_weight": 500
+      },
+      "variants": {
+        "approved": { "background": "var(--green-bg)", "color": "var(--green)", "border": "1px solid var(--green-border)" },
+        "rejected": { "background": "var(--red-bg)", "color": "var(--red)", "border": "1px solid var(--red-border)" },
+        "risk": { "background": "var(--amber-bg)", "color": "var(--amber)", "border": "1px solid var(--amber-border)" },
+        "generating": { "background": "var(--cyan-bg)", "color": "var(--cyan)", "border": "1px solid var(--cyan-border)" },
+        "analyzing": { "background": "var(--purple-bg)", "color": "var(--purple)", "border": "1px solid var(--purple-border)" },
+        "neutral": { "background": "rgba(255, 255, 255, 0.06)", "color": "var(--text-2)", "border": "1px solid var(--border)" }
+      },
+      "rule": "Never use color as the sole state signal — always include a text label inside the badge"
+    },
+    "input": {
+      "description": "Text input / textarea / select",
+      "tokens": {
+        "background": "var(--surface-2)",
+        "color": "var(--text)",
+        "border": "1px solid var(--border)",
+        "border_radius": "8px",
+        "padding": "0.6rem 0.85rem",
+        "font_family": "var(--font-sans)",
+        "placeholder_color": "var(--text-3)",
+        "transition": "border-color 150ms var(--ease), box-shadow 150ms var(--ease)"
+      },
+      "states": {
+        "focus": { "border_color": "var(--accent)", "box_shadow": "0 0 0 3px var(--accent-bg)", "outline": "none" },
+        "error": { "border_color": "var(--red)", "box_shadow": "0 0 0 3px var(--red-bg)" },
+        "disabled": { "opacity": 0.5, "cursor": "not-allowed" }
+      }
+    },
+    "nav_item": {
+      "description": "Sidebar navigation row",
+      "tokens": {
+        "padding": "0.6rem 0.85rem",
+        "border_radius": "8px",
+        "font_size": "0.875rem",
+        "font_weight": 500,
+        "color": "var(--text-2)",
+        "transition": "background 150ms var(--ease), color 150ms var(--ease)"
+      },
+      "states": {
+        "hover": {
+          "background": "rgba(255, 255, 255, 0.04)",
+          "color": "var(--text)",
+          "inner_transform": "translateX(2px)"
+        },
+        "active": {
+          "background": "var(--accent-bg)",
+          "color": "var(--accent)"
+        }
+      },
+      "rule": "No border-left stripe for active state — background tint + text color is the full signal"
+    },
+    "list_row": {
+      "description": "Standard content list item",
+      "tokens": {
+        "padding": "0.85rem 1rem",
+        "border_bottom": "1px solid var(--border)",
+        "display": "flex",
+        "align_items": "center",
+        "gap": "0.75rem",
+        "transition": "background 150ms var(--ease)"
+      },
+      "states": {
+        "hover": {
+          "background": "rgba(255, 255, 255, 0.03)",
+          "inner_transform": "translateX(2px)"
+        }
+      }
+    },
+    "metric_card": {
+      "description": "Dashboard summary metric — used sparingly",
+      "tokens": {
+        "background": "var(--surface-2)",
+        "border": "1px solid var(--border)",
+        "border_radius": "10px",
+        "padding": "1.25rem",
+        "transition": "transform 150ms var(--ease), border-color 150ms var(--ease)"
+      },
+      "states": {
+        "hover": {
+          "transform": "translateY(-2px)",
+          "border_color": "rgba(248, 248, 248, 0.12)"
+        }
+      },
+      "structure": {
+        "value": { "font_size": "display", "font_weight": 800, "color": "var(--text)" },
+        "label": { "font_size": "0.875rem", "color": "var(--text-2)", "margin_top": "0.45rem" }
+      },
+      "rule": "No gradient fills. No nested stat grids inside metric cards."
+    },
+    "bdd_panel": {
+      "description": "BDD / code display block for test step content",
+      "tokens": {
+        "background": "var(--surface-1)",
+        "border": "1px solid var(--border)",
+        "border_radius": "10px",
+        "padding": "1rem 1.25rem",
+        "font_family": "var(--font-mono)",
+        "font_size": "0.875rem",
+        "line_height": 1.7
+      },
+      "keyword_colors": {
+        "Given": "var(--accent)",
+        "When": "var(--cyan)",
+        "Then": "var(--cyan)",
+        "And": "var(--text-2)"
+      },
+      "rule": "Monospace is non-negotiable in this panel — do not substitute Inter"
+    },
+    "state_message": {
+      "description": "Inline workflow notification (success, warning, error, info)",
+      "tokens": {
+        "border_radius": "8px",
+        "padding": "0.85rem 1rem",
+        "font_size": "0.875rem"
+      },
+      "variants": {
+        "success": { "background": "var(--green-bg)", "border": "1px solid var(--green-border)", "color": "var(--green)" },
+        "warning": { "background": "var(--amber-bg)", "border": "1px solid var(--amber-border)", "color": "var(--amber)" },
+        "error": { "background": "var(--red-bg)", "border": "1px solid var(--red-border)", "color": "var(--red)" },
+        "info": { "background": "var(--purple-bg)", "border": "1px solid var(--purple-border)", "color": "var(--purple)" }
+      },
+      "rule": "Full border on all four sides — never a border-left-only stripe"
+    }
+  },
+  "bans": [
+    "border-left or border-right > 1px as colored accent (use full border + bg tint instead)",
+    "background-clip: text with gradient (use solid color)",
+    "Semantic colors used outside their workflow meaning",
+    "Cards nested inside cards",
+    "box-shadow for structural elevation (shadows are hover glow only)",
+    "Wide-tracked uppercase eyebrows above sections",
+    "Phosphor green used decoratively without interactive intent"
+  ]
+}
