@@ -25,21 +25,25 @@ public class AiController {
     }
 
     @PostMapping("/analyze")
+    @org.springframework.security.access.prepost.PreAuthorize("!@securityEnforcement.isEnforced() or hasAnyRole('ADMIN', 'QA_ENGINEER')")
     public ResponseEntity<StoryAnalysisResult> analyzeStory(@PathVariable UUID storyId) {
         return ResponseEntity.ok(aiGenerationService.analyzeStory(storyId));
     }
 
     @PostMapping("/generate-tests")
+    @org.springframework.security.access.prepost.PreAuthorize("!@securityEnforcement.isEnforced() or hasAnyRole('ADMIN', 'QA_ENGINEER')")
     public ResponseEntity<GeneratedTestSuiteResult> generateTests(@PathVariable UUID storyId) {
         return ResponseEntity.ok(aiGenerationService.generateTestCases(storyId));
     }
 
     @GetMapping("/analysis")
+    @org.springframework.security.access.prepost.PreAuthorize("!@securityEnforcement.isEnforced() or hasAnyRole('ADMIN', 'QA_ENGINEER', 'VIEWER')")
     public ResponseEntity<StoryAnalysisResult> getAnalysis(@PathVariable UUID storyId) {
         return ResponseEntity.ok(aiGenerationService.getAnalysis(storyId));
     }
 
     @GetMapping("/test-suites")
+    @org.springframework.security.access.prepost.PreAuthorize("!@securityEnforcement.isEnforced() or hasAnyRole('ADMIN', 'QA_ENGINEER', 'VIEWER')")
     public ResponseEntity<List<GeneratedTestSuiteResult>> getTestSuites(@PathVariable UUID storyId) {
         return ResponseEntity.ok(aiGenerationService.getTestSuites(storyId));
     }

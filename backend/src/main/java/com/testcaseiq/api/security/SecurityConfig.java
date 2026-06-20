@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -24,6 +25,7 @@ import com.testcaseiq.api.user.UserAccountRepository;
 
 @Configuration
 @EnableConfigurationProperties(SecurityProperties.class)
+@EnableMethodSecurity
 public class SecurityConfig {
 
     @Bean
@@ -38,19 +40,34 @@ public class SecurityConfig {
         http.formLogin(AbstractHttpConfigurer::disable);
         http.logout(AbstractHttpConfigurer::disable);
         http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
-        http.exceptionHandling(exceptions -> exceptions.authenticationEntryPoint((request, response, exception) -> {
-            response.setStatus(HttpStatus.UNAUTHORIZED.value());
-            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-            ApiErrorResponse body = new ApiErrorResponse(
-                    Instant.now(),
-                    HttpStatus.UNAUTHORIZED.value(),
-                    HttpStatus.UNAUTHORIZED.getReasonPhrase(),
-                    "Authentication required",
-                    request.getRequestURI(),
-                    Map.of()
-            );
-            objectMapper.writeValue(response.getOutputStream(), body);
-        }));
+        http.exceptionHandling(exceptions -> exceptions
+                .authenticationEntryPoint((request, response, exception) -> {
+                    response.setStatus(HttpStatus.UNAUTHORIZED.value());
+                    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                    ApiErrorResponse body = new ApiErrorResponse(
+                            Instant.now(),
+                            HttpStatus.UNAUTHORIZED.value(),
+                            HttpStatus.UNAUTHORIZED.getReasonPhrase(),
+                            "Authentication required",
+                            request.getRequestURI(),
+                            Map.of()
+                    );
+                    objectMapper.writeValue(response.getOutputStream(), body);
+                })
+                .accessDeniedHandler((request, response, exception) -> {
+                    response.setStatus(HttpStatus.FORBIDDEN.value());
+                    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                    ApiErrorResponse body = new ApiErrorResponse(
+                            Instant.now(),
+                            HttpStatus.FORBIDDEN.value(),
+                            HttpStatus.FORBIDDEN.getReasonPhrase(),
+                            "Access denied",
+                            request.getRequestURI(),
+                            Map.of()
+                    );
+                    objectMapper.writeValue(response.getOutputStream(), body);
+                })
+        );
         http.authorizeHttpRequests(authorize -> {
             authorize.requestMatchers("/api/auth/register", "/api/auth/login", "/api/health").permitAll();
             authorize.requestMatchers("/api/auth/me").authenticated();
@@ -78,6 +95,11 @@ public class SecurityConfig {
     @Bean
     JwtAuthenticationFilter jwtAuthenticationFilter(JwtService jwtService, UserAccountRepository userAccountRepository) {
         return new JwtAuthenticationFilter(jwtService, userAccountRepository);
+    }
+
+    @Bean
+    SecurityEnforcement securityEnforcement(SecurityProperties securityProperties) {
+        return new SecurityEnforcement(securityProperties);
     }
 
     @Bean

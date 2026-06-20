@@ -33,6 +33,7 @@ public class TestCaseReviewController {
     }
 
     @PatchMapping("/review-status")
+    @org.springframework.security.access.prepost.PreAuthorize("!@securityEnforcement.isEnforced() or hasAnyRole('ADMIN', 'QA_ENGINEER')")
     public ResponseEntity<TestCaseResponse> updateReviewStatus(
             @PathVariable UUID testCaseId,
             @Valid @RequestBody TestCaseReviewStatusUpdateRequest request
@@ -41,6 +42,7 @@ public class TestCaseReviewController {
     }
 
     @PatchMapping("/priority")
+    @org.springframework.security.access.prepost.PreAuthorize("!@securityEnforcement.isEnforced() or hasAnyRole('ADMIN', 'QA_ENGINEER')")
     public ResponseEntity<TestCaseResponse> updatePriority(
             @PathVariable UUID testCaseId,
             @Valid @RequestBody TestCasePriorityUpdateRequest request
@@ -49,6 +51,7 @@ public class TestCaseReviewController {
     }
 
     @PatchMapping("/risk")
+    @org.springframework.security.access.prepost.PreAuthorize("!@securityEnforcement.isEnforced() or hasAnyRole('ADMIN', 'QA_ENGINEER')")
     public ResponseEntity<TestCaseResponse> updateRisk(
             @PathVariable UUID testCaseId,
             @Valid @RequestBody TestCaseRiskUpdateRequest request
@@ -57,6 +60,7 @@ public class TestCaseReviewController {
     }
 
     @PatchMapping("/automation-candidate")
+    @org.springframework.security.access.prepost.PreAuthorize("!@securityEnforcement.isEnforced() or hasAnyRole('ADMIN', 'QA_ENGINEER')")
     public ResponseEntity<TestCaseResponse> updateAutomationCandidate(
             @PathVariable UUID testCaseId,
             @Valid @RequestBody TestCaseAutomationCandidateUpdateRequest request
@@ -65,6 +69,7 @@ public class TestCaseReviewController {
     }
 
     @PatchMapping
+    @org.springframework.security.access.prepost.PreAuthorize("!@securityEnforcement.isEnforced() or hasAnyRole('ADMIN', 'QA_ENGINEER')")
     public ResponseEntity<TestCaseResponse> updateTestCase(
             @PathVariable UUID testCaseId,
             @Valid @RequestBody TestCaseUpdateRequest request
@@ -73,6 +78,7 @@ public class TestCaseReviewController {
     }
 
     @GetMapping("/review-events")
+    @org.springframework.security.access.prepost.PreAuthorize("!@securityEnforcement.isEnforced() or hasAnyRole('ADMIN', 'QA_ENGINEER', 'VIEWER')")
     public ResponseEntity<List<ReviewEventResponse>> getReviewEvents(@PathVariable UUID testCaseId) {
         return ResponseEntity.ok(testCaseReviewService.getReviewEvents(testCaseId));
     }

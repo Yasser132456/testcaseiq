@@ -16,10 +16,10 @@ export const routes: Routes = [
     component: AppLayoutComponent,
     canActivateChild: [authGuard],
     children: [
-      { path: '', pathMatch: 'full', component: DashboardPageComponent },
-      { path: 'projects', component: ProjectListPageComponent },
-      { path: 'projects/:projectId', component: ProjectDetailPageComponent },
-      { path: 'stories/:storyId', component: StoryDetailPageComponent }
+      { path: '', pathMatch: 'full', component: DashboardPageComponent, data: { requiresAuth: true } },
+      { path: 'projects', component: ProjectListPageComponent, data: { requiresAuth: true } },
+      { path: 'projects/:projectId', component: ProjectDetailPageComponent, data: { requiresAuth: true } },
+      { path: 'stories/:storyId', component: StoryDetailPageComponent, data: { requiresAuth: true } }
     ]
   },
   { path: '**', redirectTo: '' }

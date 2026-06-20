@@ -1,5 +1,5 @@
-import { Component, inject } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Component, inject, signal } from '@angular/core';
+import { ActivatedRoute, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../core/services/auth.service';
 
 @Component({
@@ -31,7 +31,7 @@ import { AuthService } from '../core/services/auth.service';
         <div class="sidebar-footer">
           <span class="status-dot"></span>
           @if (authService.currentUser(); as user) {
-            <span>{{ user.role }}</span>
+            <span [class]="roleBadgeClass(user.role)">{{ user.role }}</span>
           } @else {
             <span>Demo mode</span>
           }
@@ -59,6 +59,13 @@ import { AuthService } from '../core/services/auth.service';
           </div>
         </header>
 
+        @if (accessRestricted()) {
+          <div class="inline-note amber-note" style="margin: 1rem 1.5rem 0; border-radius: 6px;">
+            <strong>Access restricted.</strong>
+            You do not have permission to perform that action. Contact your administrator to request additional access.
+          </div>
+        }
+
         <router-outlet />
       </section>
     </div>
@@ -67,6 +74,13 @@ import { AuthService } from '../core/services/auth.service';
 export class AppLayoutComponent {
   readonly authService = inject(AuthService);
   private readonly router = inject(Router);
+  readonly accessRestricted = signal(false);
+
+  constructor() {
+    inject(ActivatedRoute).queryParamMap.subscribe(params => {
+      this.accessRestricted.set(params.get('access') === 'restricted');
+    });
+  }
 
   initials(displayName: string): string {
     return displayName
@@ -80,5 +94,11 @@ export class AppLayoutComponent {
   logout(): void {
     this.authService.logout();
     void this.router.navigateByUrl('/login');
+  }
+
+  roleBadgeClass(role: string): string {
+    if (role === 'VIEWER') return 'role-tag role-viewer';
+    if (role === 'QA_ENGINEER') return 'role-tag role-qa';
+    return 'role-tag role-admin';
   }
 }
