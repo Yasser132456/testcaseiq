@@ -39,19 +39,22 @@ public class ExportService {
     private final ExportJobRepository exportJobRepository;
     private final ObjectMapper objectMapper;
     private final PlaywrightScriptGenerator playwrightScriptGenerator;
+    private final PostmanCollectionGenerator postmanCollectionGenerator;
 
     public ExportService(
             StoryRepository storyRepository,
             TestSuiteRepository testSuiteRepository,
             ExportJobRepository exportJobRepository,
             ObjectMapper objectMapper,
-            PlaywrightScriptGenerator playwrightScriptGenerator
+            PlaywrightScriptGenerator playwrightScriptGenerator,
+            PostmanCollectionGenerator postmanCollectionGenerator
     ) {
         this.storyRepository = storyRepository;
         this.testSuiteRepository = testSuiteRepository;
         this.exportJobRepository = exportJobRepository;
         this.objectMapper = objectMapper;
         this.playwrightScriptGenerator = playwrightScriptGenerator;
+        this.postmanCollectionGenerator = postmanCollectionGenerator;
     }
 
     @Transactional
@@ -59,7 +62,9 @@ public class ExportService {
         Story story = storyRepository.findById(storyId)
                 .orElseThrow(() -> new ResourceNotFoundException("Story not found: " + storyId));
         TestCaseExportDocument document = documentForStory(story);
-        String filename = "story-%s-approved-test-cases.%s".formatted(storyId, format.extension());
+        String filename = format == ExportFormat.POSTMAN
+                ? "story-%s-approved-api-tests.postman_collection.json".formatted(storyId)
+                : "story-%s-approved-test-cases.%s".formatted(storyId, format.extension());
         return export(story, format, filename, document);
     }
 
@@ -69,7 +74,9 @@ public class ExportService {
                 .orElseThrow(() -> new ResourceNotFoundException("Test suite not found: " + testSuiteId));
         Story story = testSuite.getStory();
         TestCaseExportDocument document = documentForTestSuite(story, testSuite);
-        String filename = "test-suite-%s-approved-test-cases.%s".formatted(testSuiteId, format.extension());
+        String filename = format == ExportFormat.POSTMAN
+                ? "test-suite-%s-approved-api-tests.postman_collection.json".formatted(testSuiteId)
+                : "test-suite-%s-approved-test-cases.%s".formatted(testSuiteId, format.extension());
         return export(story, format, filename, document);
     }
 
@@ -83,6 +90,7 @@ public class ExportService {
                 case CSV -> toCsv(document);
                 case JSON -> toJson(document);
                 case PLAYWRIGHT -> playwrightScriptGenerator.generate(document);
+                case POSTMAN -> postmanCollectionGenerator.generate(document);
             };
             exportJob.setStatus(ExportStatus.COMPLETED);
             exportJob.setExportDetailsJson(toMetadataJson(format, filename, document.testCases().size()));

@@ -64,6 +64,16 @@ public class ExportController {
         return downloadable(exportService.exportTestSuite(testSuiteId, ExportFormat.PLAYWRIGHT));
     }
 
+    @GetMapping("/stories/{storyId}/exports/postman")
+    ResponseEntity<String> exportStoryPostman(@PathVariable UUID storyId) {
+        return downloadable(exportService.exportStory(storyId, ExportFormat.POSTMAN));
+    }
+
+    @GetMapping("/test-suites/{testSuiteId}/exports/postman")
+    ResponseEntity<String> exportTestSuitePostman(@PathVariable UUID testSuiteId) {
+        return downloadable(exportService.exportTestSuite(testSuiteId, ExportFormat.POSTMAN));
+    }
+
     private ResponseEntity<String> downloadable(ExportResult result) {
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(result.contentType()))

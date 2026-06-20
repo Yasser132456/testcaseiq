@@ -36,6 +36,7 @@ import com.testcaseiq.api.domain.repository.ExportJobRepository;
 import com.testcaseiq.api.domain.repository.StoryRepository;
 import com.testcaseiq.api.domain.repository.TestSuiteRepository;
 import com.testcaseiq.api.export.dto.ExportFormat;
+import com.testcaseiq.api.export.service.PostmanCollectionGenerator;
 
 @ExtendWith(MockitoExtension.class)
 class PlaywrightExportServiceTests {
@@ -53,12 +54,14 @@ class PlaywrightExportServiceTests {
 
     @BeforeEach
     void setUp() {
+        ObjectMapper objectMapper = new ObjectMapper();
         exportService = new ExportService(
                 storyRepository,
                 testSuiteRepository,
                 exportJobRepository,
-                new ObjectMapper(),
-                new PlaywrightScriptGenerator()
+                objectMapper,
+                new PlaywrightScriptGenerator(),
+                new PostmanCollectionGenerator(objectMapper)
         );
     }
 
