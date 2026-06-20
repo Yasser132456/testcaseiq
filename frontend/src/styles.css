@@ -1022,6 +1022,19 @@ input:focus-visible, textarea:focus-visible, select:focus-visible {
 }
 .playwright-card strong { color: var(--purple); }
 
+.postman-card { border-color: var(--amber-border); }
+.postman-card:hover:not(:disabled) {
+  border-color: rgba(251, 191, 36, 0.62);
+  background: rgba(251, 191, 36, 0.06);
+  box-shadow: 0 6px 20px rgba(251, 191, 36, 0.10);
+}
+.postman-card > span {
+  border-color: var(--amber-border);
+  color: var(--amber);
+  background: var(--amber-bg);
+}
+.postman-card strong { color: var(--amber); }
+
 /* ── Animations ───────────────────────────────────────── */
 
 @keyframes fadeInUp {
