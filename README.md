@@ -130,7 +130,7 @@ The app runs at `http://localhost:4200`.
 
 The frontend development server proxies `/api` requests to `http://localhost:8080`.
 
-By default, local/demo mode keeps existing project, story, analysis, review, and export endpoints accessible while the login UI is still being built. Authentication endpoints are available now, and protected enforcement can be enabled with `TESTCASEIQ_SECURITY_ENFORCE_AUTH=true`.
+By default, local/demo mode keeps existing project, story, analysis, review, and export endpoints accessible. The Angular login/register UI is available, stores the returned JWT locally for this project stage, restores the session through `/api/auth/me` on refresh, and attaches `Authorization: Bearer <token>` to API calls when a token exists. Protected backend enforcement can be enabled with `TESTCASEIQ_SECURITY_ENFORCE_AUTH=true`.
 
 ## Testing And Quality
 
@@ -183,7 +183,7 @@ AI output is validated before persistence so malformed or unsafe generated struc
 
 ## Authentication
 
-The backend includes a JWT authentication foundation with BCrypt password hashing and role-aware user profiles.
+The app includes a JWT authentication foundation with BCrypt password hashing on the backend and Angular session handling on the frontend.
 
 Auth endpoints:
 
@@ -193,7 +193,12 @@ Auth endpoints:
 
 Supported roles are `ADMIN`, `QA_ENGINEER`, and `VIEWER`. Password hashes are stored server-side only and are never returned in API responses.
 
-Security enforcement is controlled by `TESTCASEIQ_SECURITY_ENFORCE_AUTH`. It defaults to `false` so the current local/demo workflow remains usable before the Angular login UI exists. When set to `true`, business endpoints require a valid JWT. Use a real `TESTCASEIQ_JWT_SECRET` in shared or production-like environments; the documented default is only a local development fallback and should not be treated as a secret.
+Frontend routes:
+
+- `/login`: signs in with the backend login endpoint and restores the requested route when present.
+- `/register`: creates a local account through the backend register endpoint.
+
+Security enforcement is controlled by `TESTCASEIQ_SECURITY_ENFORCE_AUTH`. It defaults to `false` so the current local/demo workflow remains usable. When set to `true`, business endpoints require a valid JWT. Use a real `TESTCASEIQ_JWT_SECRET` in shared or production-like environments; the documented default is only a local development fallback and should not be treated as a secret.
 
 No development admin seed is created yet. Use `POST /api/auth/register` for local account creation until a controlled seed/user-management workflow exists.
 
