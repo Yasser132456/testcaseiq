@@ -28,6 +28,7 @@ The project is built around a careful QA workflow:
 | Playwright skeleton export   | Generate draft `.spec.ts` automation skeletons               | Implemented |
 | Postman collection export    | Generate draft Postman Collection JSON for API testing       | Implemented |
 | Backend authentication       | Register/login/me endpoints with JWT and role foundation     | Implemented |
+| User administration          | ADMIN-only UI to view users, change roles, enable/disable    | Implemented |
 | Real AI provider support     | Use a real provider through configuration                    | Implemented |
 | Mock provider support        | Run locally and in tests without real AI credentials         | Implemented |
 | AI output validation         | Validate generated structures before persistence             | Implemented |
@@ -249,7 +250,42 @@ Frontend restrictions are cosmetic reinforcement — the backend enforces role p
 
 ### Creating Accounts
 
-No development admin seed is created automatically. Use `POST /api/auth/register` to create a `QA_ENGINEER` account locally. Admin accounts must be promoted directly in the database until a user-management workflow exists.
+No development admin seed is created automatically. Use `POST /api/auth/register` to create a `QA_ENGINEER` account locally. Admin accounts must be promoted directly in the database for the first setup, after which the User Administration UI can be used to manage roles.
+
+## User Administration
+
+The User Administration area is accessible only to users with the `ADMIN` role. It is reachable at `/admin/users` and appears in the sidebar navigation only for admins.
+
+### Supported actions
+
+| Action | Description |
+|--------|-------------|
+| View all users | List all registered accounts with id, display name, email, role, account status, and timestamps |
+| Change role | Update a user's role between `ADMIN`, `QA_ENGINEER`, and `VIEWER` |
+| Enable / disable account | Deactivate or reactivate a user account |
+
+### Safety rules
+
+- An admin cannot disable their own account.
+- The last remaining active `ADMIN` cannot be demoted or disabled.
+- Changes require confirmation before they are applied.
+
+### Backend endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/admin/users` | List all users |
+| `PATCH` | `/api/admin/users/{id}/role` | Update a user's role |
+| `PATCH` | `/api/admin/users/{id}/status` | Enable or disable a user account |
+
+All three endpoints always require an authenticated `ADMIN` JWT regardless of the `enforce-auth` flag. Password hashes are never returned by any admin endpoint.
+
+### Access control
+
+- `ADMIN` can access all user administration endpoints and UI.
+- `QA_ENGINEER` and `VIEWER` receive `403 Forbidden` on any `/api/admin/**` request.
+- Unauthenticated requests receive `401 Unauthorized`.
+- Non-admin users who navigate directly to `/admin/users` are redirected to the dashboard with an access-restricted notice.
 
 ## Exports
 

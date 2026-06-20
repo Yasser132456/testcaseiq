@@ -72,4 +72,8 @@ public class UserAccount extends AuditableEntity {
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
     }
+
+    public void setRole(UserRole role) {
+        this.role = role;
+    }
 }

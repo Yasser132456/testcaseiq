@@ -71,6 +71,7 @@ public class SecurityConfig {
         http.authorizeHttpRequests(authorize -> {
             authorize.requestMatchers("/api/auth/register", "/api/auth/login", "/api/health").permitAll();
             authorize.requestMatchers("/api/auth/me").authenticated();
+            authorize.requestMatchers("/api/admin/**").hasRole("ADMIN");
             if (securityProperties.enforceAuth()) {
                 authorize.requestMatchers("/api/projects/**", "/api/stories/**", "/api/test-suites/**").authenticated();
                 authorize.anyRequest().authenticated();
