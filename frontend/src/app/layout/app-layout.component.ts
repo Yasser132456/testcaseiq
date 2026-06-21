@@ -38,12 +38,12 @@ import { AuthService } from '../core/services/auth.service';
           }
           @if (authService.hasRole('ADMIN')) {
             <a routerLink="/admin/users" routerLinkActive="active">
-              <span class="nav-icon" aria-hidden="true">UA</span>
-              User Administration
+              <span class="nav-icon" aria-hidden="true">US</span>
+              Users
             </a>
             <a routerLink="/admin/audit" routerLinkActive="active">
-              <span class="nav-icon" aria-hidden="true">AL</span>
-              Activity Log
+              <span class="nav-icon" aria-hidden="true">AT</span>
+              Audit Trail
             </a>
           }
         </nav>

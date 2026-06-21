@@ -14,7 +14,7 @@ import { StateMessageComponent } from '../../shared/components/state-message.com
   template: `
     <section class="page-stack">
       <div class="section-header">
-        <h2>Project intake</h2>
+        <h2>Projects</h2>
       </div>
 
       <div class="content-grid">
