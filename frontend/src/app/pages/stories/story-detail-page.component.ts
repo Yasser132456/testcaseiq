@@ -422,6 +422,10 @@ interface ReviewDraft {
                     </div>
                   </div>
 
+                  @if (suite.explainabilitySummary) {
+                    <div class="inline-note">{{ suite.explainabilitySummary }}</div>
+                  }
+
                   @if (suiteWarnings(suite).length > 0) {
                     <div class="list-stack compact">
                       @for (warning of suiteWarnings(suite); track warning) {
@@ -457,6 +461,12 @@ interface ReviewDraft {
                                 {{ testCase.automationCandidate ? 'Automation candidate' : 'Manual priority' }}
                               </span>
                               <span class="badge">{{ formatScore(testCase.confidenceScore) }} confidence</span>
+                              @if (testCase.qualityScore != null) {
+                                <span class="badge" [style.color]="qualityColor(testCase)">Quality {{ testCase.qualityScore }}/100</span>
+                              }
+                              @if (testCase.confidenceLevel) {
+                                <span class="badge" [style.color]="qualityColor(testCase)">{{ testCase.confidenceLevel }}</span>
+                              }
                               <span
                                 class="badge review-status-badge"
                                 [class.review-approved]="displayReviewStatus(testCase) === 'APPROVED'"
@@ -535,6 +545,14 @@ interface ReviewDraft {
 
                           @if (testCase.sourceEvidence) {
                             <div class="inline-note">{{ testCase.sourceEvidence }}</div>
+                          }
+
+                          @if (testCase.generationRationale) {
+                            <div class="inline-note">Rationale: {{ testCase.generationRationale }}</div>
+                          }
+
+                          @if (testCase.linkedAcceptanceCriteriaText) {
+                            <div class="inline-note">AC: {{ testCase.linkedAcceptanceCriteriaText }}</div>
                           }
 
                           @if (testCase.id && canEdit()) {
@@ -1159,6 +1177,12 @@ export class StoryDetailPageComponent implements OnInit {
 
   displayReviewStatus(testCase: GeneratedTestCase): ReviewStatus {
     return testCase.reviewStatus ?? 'DRAFT';
+  }
+
+  qualityColor(testCase: GeneratedTestCase): string {
+    if (testCase.confidenceLevel === 'HIGH') return 'var(--green)';
+    if (testCase.confidenceLevel === 'MEDIUM') return 'var(--amber)';
+    return 'var(--red)';
   }
 
   formatScore(score: number | null | undefined): string {

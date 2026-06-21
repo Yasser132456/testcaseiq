@@ -72,7 +72,7 @@ class TestSuiteControllerTests {
 
     private TestSuiteDetailResponse detailResponse() {
         return new TestSuiteDetailResponse(SUITE_ID, STORY_ID, "My Story", PROJECT_ID, "My Project",
-                "Suite Alpha", "Generated suite", "API", 5, 3, 1, List.of(), Instant.now(), Instant.now());
+                "Suite Alpha", "Generated suite", "API", 5, 3, 1, List.of(), Instant.now(), Instant.now(), null);
     }
 
     @Test

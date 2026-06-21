@@ -219,22 +219,20 @@ describe('StoryDetailPageComponent export actions', () => {
     expect(component.exportMessage()).toBe('Azure DevOps CSV export download started.');
   });
 
-  it('shows Azure DevOps draft mapping and no live connection guidance', () => {
+  it('shows Azure DevOps export card in the export panel', () => {
     const exportPanelText = (fixture.nativeElement.querySelector('.export-panel') as HTMLElement).textContent ?? '';
 
-    expect(exportPanelText).toContain('Azure DevOps export generates a draft import mapping only.');
-    expect(exportPanelText).toContain('Generated CSV should be reviewed before Azure DevOps import.');
-    expect(exportPanelText).toContain('Exports approved test cases only.');
-    expect(exportPanelText).toContain('No Azure DevOps API connection is used in this export.');
+    expect(exportPanelText).toContain('Azure DevOps CSV');
+    expect(exportPanelText).toContain('Draft Azure import mapping');
+    expect(exportPanelText).toContain('Only APPROVED test cases are exported.');
   });
 
-  it('shows Jira Xray draft mapping and no live connection guidance', () => {
+  it('shows Jira Xray export card in the export panel', () => {
     const exportPanelText = (fixture.nativeElement.querySelector('.export-panel') as HTMLElement).textContent ?? '';
 
-    expect(exportPanelText).toContain('Jira/Xray export generates a draft import mapping only.');
-    expect(exportPanelText).toContain('Generated CSV should be reviewed before Jira/Xray import.');
-    expect(exportPanelText).toContain('Exports approved test cases only.');
-    expect(exportPanelText).toContain('No Jira/Xray API connection is used in this export.');
+    expect(exportPanelText).toContain('Jira/Xray CSV');
+    expect(exportPanelText).toContain('Draft import mapping CSV');
+    expect(exportPanelText).toContain('Only APPROVED test cases are exported.');
   });
 
   function exportActionButtons(): HTMLButtonElement[] {

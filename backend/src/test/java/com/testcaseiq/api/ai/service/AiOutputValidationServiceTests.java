@@ -198,7 +198,9 @@ class AiOutputValidationServiceTests {
                 null,
                 List.of(),
                 List.of(new GeneratedTestStepDto(1, "Submit valid data.", "The workflow succeeds.")),
-                List.of(new GeneratedTestDataDto("validInput", "{\"state\":\"valid\"}"))
+                List.of(new GeneratedTestDataDto("validInput", "{\"state\":\"valid\"}")),
+                null,
+                null
         );
 
         var result = validationService.validateTestGeneration(suite(List.of(testCase)));
@@ -263,7 +265,9 @@ class AiOutputValidationServiceTests {
                 "Given a valid user",
                 List.of("REQ-1"),
                 steps,
-                List.of(new GeneratedTestDataDto("validInput", "{\"state\":\"valid\"}"))
+                List.of(new GeneratedTestDataDto("validInput", "{\"state\":\"valid\"}")),
+                null,
+                null
         );
     }
 

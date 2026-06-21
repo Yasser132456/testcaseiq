@@ -54,6 +54,7 @@ import com.testcaseiq.api.domain.model.TestStep;
 import com.testcaseiq.api.domain.model.TestSuite;
 import com.testcaseiq.api.domain.repository.AiJobRepository;
 import com.testcaseiq.api.domain.repository.StoryRepository;
+import com.testcaseiq.api.ai.service.TestCaseQualityScoringService;
 
 @ExtendWith(MockitoExtension.class)
 class AiGenerationServiceTests {
@@ -76,6 +77,7 @@ class AiGenerationServiceTests {
                 aiJobRepository,
                 aiGenerationProvider,
                 new AiOutputValidationService(),
+                new TestCaseQualityScoringService(),
                 new ObjectMapper()
         );
     }
@@ -326,7 +328,9 @@ class AiGenerationServiceTests {
                         "Given a valid user",
                         List.of("REQ-1"),
                         List.of(new GeneratedTestStepDto(1, "Submit valid data.", "The workflow succeeds.")),
-                        List.of(new GeneratedTestDataDto("validInput", "{\"state\":\"valid\"}"))
+                        List.of(new GeneratedTestDataDto("validInput", "{\"state\":\"valid\"}")),
+                        null,
+                        null
                 )),
                 new QaValidationResult(0.8, 0.9, List.of()),
                 "mock-ai-provider",

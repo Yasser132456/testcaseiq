@@ -139,7 +139,9 @@ public class MockAiGenerationProvider implements AiGenerationProvider {
                                 new GeneratedTestStepDto(2, "Enter valid inputs for the story workflow.", "The inputs are accepted."),
                                 new GeneratedTestStepDto(3, "Submit the workflow.", "The system confirms the successful outcome.")
                         ),
-                        List.of(new GeneratedTestDataDto("validUserInput", "{\"state\":\"valid\",\"role\":\"standard-user\"}"))
+                        List.of(new GeneratedTestDataDto("validUserInput", "{\"state\":\"valid\",\"role\":\"standard-user\"}")),
+                        "Covers the primary acceptance criterion: the user can complete the core workflow successfully.",
+                        "Given a valid user context, When the user completes the workflow, Then the expected outcome is shown."
                 ),
                 new GeneratedTestCaseDto(
                         "Reject incomplete required input",
@@ -157,7 +159,9 @@ public class MockAiGenerationProvider implements AiGenerationProvider {
                                 new GeneratedTestStepDto(2, "Leave required inputs empty.", "The form remains editable."),
                                 new GeneratedTestStepDto(3, "Submit the workflow.", "Validation feedback identifies the missing inputs.")
                         ),
-                        List.of(new GeneratedTestDataDto("missingRequiredInput", "{\"state\":\"invalid\",\"missingFields\":true}"))
+                        List.of(new GeneratedTestDataDto("missingRequiredInput", "{\"state\":\"invalid\",\"missingFields\":true}")),
+                        "Targets the validation failure path identified in REQ-2 (validation and feedback).",
+                        "Given required fields are missing, When the user submits the workflow, Then validation messages are displayed."
                 ),
                 new GeneratedTestCaseDto(
                         "Handle boundary-length input",
@@ -175,7 +179,9 @@ public class MockAiGenerationProvider implements AiGenerationProvider {
                                 new GeneratedTestStepDto(2, "Enter a maximum-length value.", "The value is accepted without truncation."),
                                 new GeneratedTestStepDto(3, "Submit each boundary case.", "The system response is clear and consistent.")
                         ),
-                        List.of(new GeneratedTestDataDto("boundaryInput", "{\"min\":\"a\",\"maxLengthCandidate\":255}"))
+                        List.of(new GeneratedTestDataDto("boundaryInput", "{\"min\":\"a\",\"maxLengthCandidate\":255}")),
+                        "Addresses the boundary coverage gap from coverage planning (BOUNDARY category).",
+                        "Given boundary-length data, When the workflow is submitted, Then the system handles the value consistently."
                 )
         );
 

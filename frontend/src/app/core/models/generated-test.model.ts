@@ -34,6 +34,7 @@ export interface GeneratedTestSuiteResult {
   };
   provider: string;
   generatedAt: string | null;
+  explainabilitySummary?: string | null;
 }
 
 export interface GeneratedTestCase {
@@ -54,6 +55,10 @@ export interface GeneratedTestCase {
   bddScenario: string | null;
   steps: GeneratedTestStep[];
   testData: GeneratedTestData[];
+  qualityScore?: number | null;
+  confidenceLevel?: 'LOW' | 'MEDIUM' | 'HIGH' | null;
+  generationRationale?: string | null;
+  linkedAcceptanceCriteriaText?: string | null;
 }
 
 export interface GeneratedTestStep {

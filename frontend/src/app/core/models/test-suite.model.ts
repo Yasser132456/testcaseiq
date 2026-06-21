@@ -31,10 +31,13 @@ export interface TestCaseSummary {
   priority: string | null;
   reviewStatus: string | null;
   automationCandidate: boolean;
+  qualityScore?: number | null;
+  confidenceLevel?: string | null;
 }
 
 export interface TestSuiteDetail extends TestSuiteSummary {
   testCases: TestCaseSummary[];
+  explainabilitySummary?: string | null;
 }
 
 export interface TestSuiteUpdateRequest {
