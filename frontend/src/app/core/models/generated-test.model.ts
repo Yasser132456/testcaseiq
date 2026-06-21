@@ -23,6 +23,7 @@ export type ReviewStatus =
   | 'EXPORTED';
 
 export interface GeneratedTestSuiteResult {
+  id: string | null;
   storyId: string;
   suiteName: string;
   testCases: GeneratedTestCase[];
