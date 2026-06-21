@@ -12,6 +12,7 @@ import { SettingsPageComponent } from './pages/settings/settings-page.component'
 import { StoryDetailPageComponent } from './pages/stories/story-detail-page.component';
 import { TestSuitesListPageComponent } from './pages/test-suites/test-suites-list-page.component';
 import { TestSuiteDetailPageComponent } from './pages/test-suites/test-suite-detail-page.component';
+import { ReviewBoardPageComponent } from './pages/review-board/review-board-page.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginPageComponent },
@@ -27,6 +28,7 @@ export const routes: Routes = [
       { path: 'stories/:storyId', component: StoryDetailPageComponent, data: { requiresAuth: true } },
       { path: 'test-suites', component: TestSuitesListPageComponent, data: { requiresAuth: true } },
       { path: 'test-suites/:id', component: TestSuiteDetailPageComponent, data: { requiresAuth: true } },
+      { path: 'review-board', component: ReviewBoardPageComponent, data: { requiresAuth: true } },
       {
         path: 'admin/users',
         component: AdminUsersPageComponent,
