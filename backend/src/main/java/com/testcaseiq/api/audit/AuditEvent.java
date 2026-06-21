@@ -55,6 +55,9 @@ public class AuditEvent {
     @Column(name = "ip_address", length = 64)
     private String ipAddress;
 
+    @Column(columnDefinition = "text")
+    private String metadata;
+
     protected AuditEvent() {
     }
 
@@ -81,10 +84,13 @@ public class AuditEvent {
     public String getRequestMethod() { return requestMethod; }
     public String getIpAddress() { return ipAddress; }
 
+    public String getMetadata() { return metadata; }
+
     public void setActorUserId(UUID actorUserId) { this.actorUserId = actorUserId; }
     public void setActorEmail(String actorEmail) { this.actorEmail = actorEmail; }
     public void setActorRole(String actorRole) { this.actorRole = actorRole; }
     public void setRequestPath(String requestPath) { this.requestPath = requestPath; }
     public void setRequestMethod(String requestMethod) { this.requestMethod = requestMethod; }
     public void setIpAddress(String ipAddress) { this.ipAddress = ipAddress; }
+    public void setMetadata(String metadata) { this.metadata = metadata; }
 }

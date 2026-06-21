@@ -12,6 +12,7 @@ export interface AuditEvent {
   requestPath: string | null;
   requestMethod: string | null;
   ipAddress: string | null;
+  metadata: Record<string, string> | null;
 }
 
 export interface AuditEventPage {
@@ -28,4 +29,8 @@ export interface AuditEventFilters {
   action?: string;
   outcome?: string;
   resourceType?: string;
+  resourceId?: string;
+  actor?: string;
+  from?: string;
+  to?: string;
 }

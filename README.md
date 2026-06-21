@@ -319,11 +319,59 @@ The Activity Log provides a tamper-resistant record of all significant actions t
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET` | `/api/audit/events` | List audit events, paginated |
-
-Query parameters: `action`, `outcome`, `resourceType` (optional filters), `page` (default 0), `size` (default 50, max 200).
+| `GET` | `/api/audit/events` | List audit events, paginated and filterable |
 
 The endpoint always requires an authenticated `ADMIN` JWT regardless of the `enforce-auth` flag.
+
+#### Query parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `action` | string | Filter by action name (e.g. `USER_LOGIN_SUCCESS`) |
+| `outcome` | string | Filter by outcome: `SUCCESS`, `FAILURE`, or `BLOCKED` |
+| `resourceType` | string | Filter by resource type (e.g. `PROJECT`, `STORY`) |
+| `resourceId` | string (UUID) | Filter by specific resource UUID |
+| `actor` | string | Filter by actor email address (exact match) |
+| `from` | ISO 8601 string | Include only events on or after this timestamp |
+| `to` | ISO 8601 string | Include only events on or before this timestamp |
+| `page` | integer | Page index, 0-based (default: `0`) |
+| `size` | integer | Page size, 1–200 (default: `50`) |
+
+Results are sorted newest-first. If `from` or `to` are provided but not a valid ISO 8601 instant, the API returns `400 Bad Request`. If `from` is after `to`, the API also returns `400`.
+
+#### Example queries
+
+```
+# Most recent 50 events
+GET /api/audit/events
+
+# All failed login attempts
+GET /api/audit/events?action=USER_LOGIN_FAILED&outcome=FAILURE
+
+# Events by a specific user in a date range
+GET /api/audit/events?actor=qa@example.com&from=2026-01-01T00:00:00Z&to=2026-12-31T23:59:59Z
+
+# All events for a specific story
+GET /api/audit/events?resourceType=STORY&resourceId=<uuid>
+
+# Second page of export events
+GET /api/audit/events?action=TESTS_EXPORTED&page=1&size=20
+```
+
+### Traceability metadata
+
+Key events carry a `metadata` field in the response with contextual identifiers for connecting audit entries to domain entities:
+
+| Action | Metadata keys |
+|--------|---------------|
+| `STORY_CREATED`, `STORY_UPDATED` | `projectId` |
+| `STORY_ANALYSIS_REQUESTED`, `TEST_GENERATION_REQUESTED` | `storyId`, `aiProvider` |
+| `TESTS_EXPORTED` | `exportType` (e.g. `MARKDOWN`, `CSV`, `PLAYWRIGHT`) |
+| `TEST_CASE_STATUS_CHANGED` (approve/reject) | `reviewDecision` |
+| `USER_ROLE_CHANGED` | `targetUserId`, `newRole` |
+| `USER_STATUS_CHANGED` | `targetUserId`, `enabled` |
+
+The `aiProvider` value is the provider name (`mock`, `openai`) — no API keys or secrets are included.
 
 ## Exports
 

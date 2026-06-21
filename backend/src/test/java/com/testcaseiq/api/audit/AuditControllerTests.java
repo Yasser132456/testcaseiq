@@ -1,6 +1,7 @@
 package com.testcaseiq.api.audit;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -55,7 +56,8 @@ class AuditControllerTests {
                 UUID.randomUUID().toString(), "SUCCESS", "Login successful");
         ReflectionTestUtils.setField(event, "id", UUID.randomUUID());
         ReflectionTestUtils.setField(event, "actorEmail", "admin@example.com");
-        given(auditEventRepository.findWithFilters(isNull(), isNull(), isNull(), any(Pageable.class)))
+        given(auditEventRepository.findWithFilters(isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), isNull(),
+                any(Pageable.class)))
                 .willReturn(new PageImpl<>(List.of(event)));
         String token = tokenFor("admin@test.com", UserRole.ADMIN);
 
@@ -96,7 +98,8 @@ class AuditControllerTests {
         AuditEvent event = new AuditEvent("USER_REGISTERED", "USER",
                 UUID.randomUUID().toString(), "SUCCESS", null);
         ReflectionTestUtils.setField(event, "id", UUID.randomUUID());
-        given(auditEventRepository.findWithFilters(isNull(), isNull(), isNull(), any(Pageable.class)))
+        given(auditEventRepository.findWithFilters(isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), isNull(),
+                any(Pageable.class)))
                 .willReturn(new PageImpl<>(List.of(event)));
         String token = tokenFor("admin@test.com", UserRole.ADMIN);
 
@@ -107,6 +110,76 @@ class AuditControllerTests {
                 .andExpect(jsonPath("$.content[0].token").doesNotExist())
                 .andExpect(jsonPath("$.content[0].apiKey").doesNotExist())
                 .andExpect(jsonPath("$.content[0].secret").doesNotExist());
+    }
+
+    @Test
+    void adminCanFilterByActor() throws Exception {
+        AuditEvent event = new AuditEvent("PROJECT_CREATED", "PROJECT",
+                UUID.randomUUID().toString(), "SUCCESS", null);
+        ReflectionTestUtils.setField(event, "id", UUID.randomUUID());
+        ReflectionTestUtils.setField(event, "actorEmail", "qa@example.com");
+        given(auditEventRepository.findWithFilters(isNull(), isNull(), isNull(), isNull(),
+                eq("qa@example.com"), isNull(), isNull(), any(Pageable.class)))
+                .willReturn(new PageImpl<>(List.of(event)));
+        String token = tokenFor("admin@test.com", UserRole.ADMIN);
+
+        mockMvc.perform(get("/api/audit/events").param("actor", "qa@example.com")
+                .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].actorEmail").value("qa@example.com"));
+    }
+
+    @Test
+    void adminCanFilterByResourceId() throws Exception {
+        String resourceId = UUID.randomUUID().toString();
+        AuditEvent event = new AuditEvent("STORY_CREATED", "STORY", resourceId, "SUCCESS", null);
+        ReflectionTestUtils.setField(event, "id", UUID.randomUUID());
+        given(auditEventRepository.findWithFilters(isNull(), isNull(), isNull(), eq(resourceId),
+                isNull(), isNull(), isNull(), any(Pageable.class)))
+                .willReturn(new PageImpl<>(List.of(event)));
+        String token = tokenFor("admin@test.com", UserRole.ADMIN);
+
+        mockMvc.perform(get("/api/audit/events").param("resourceId", resourceId)
+                .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].resourceId").value(resourceId));
+    }
+
+    @Test
+    void adminCanFilterByDateRange() throws Exception {
+        AuditEvent event = new AuditEvent("USER_LOGIN_SUCCESS", "USER",
+                UUID.randomUUID().toString(), "SUCCESS", null);
+        ReflectionTestUtils.setField(event, "id", UUID.randomUUID());
+        given(auditEventRepository.findWithFilters(isNull(), isNull(), isNull(), isNull(),
+                isNull(), any(), any(), any(Pageable.class)))
+                .willReturn(new PageImpl<>(List.of(event)));
+        String token = tokenFor("admin@test.com", UserRole.ADMIN);
+
+        mockMvc.perform(get("/api/audit/events")
+                .param("from", "2026-01-01T00:00:00Z")
+                .param("to", "2026-12-31T23:59:59Z")
+                .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void invalidFromDateReturnsBadRequest() throws Exception {
+        String token = tokenFor("admin@test.com", UserRole.ADMIN);
+
+        mockMvc.perform(get("/api/audit/events").param("from", "not-a-date")
+                .header("Authorization", "Bearer " + token))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void fromAfterToReturnsBadRequest() throws Exception {
+        String token = tokenFor("admin@test.com", UserRole.ADMIN);
+
+        mockMvc.perform(get("/api/audit/events")
+                .param("from", "2026-12-31T00:00:00Z")
+                .param("to", "2026-01-01T00:00:00Z")
+                .header("Authorization", "Bearer " + token))
+                .andExpect(status().isBadRequest());
     }
 
     private String tokenFor(String email, UserRole role) {

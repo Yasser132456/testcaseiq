@@ -16,7 +16,8 @@ const MOCK_EVENT: AuditEvent = {
   summary: 'Login successful',
   requestPath: '/api/auth/login',
   requestMethod: 'POST',
-  ipAddress: '127.0.0.1'
+  ipAddress: '127.0.0.1',
+  metadata: null
 };
 
 const MOCK_PAGE: AuditEventPage = {
@@ -68,6 +69,37 @@ describe('AuditEventService', () => {
     });
     const req = http.expectOne(r => r.url === '/api/audit/events');
     expect(req.request.params.get('outcome')).toBe('FAILURE');
+    req.flush(MOCK_PAGE);
+  });
+
+  it('should list events with actor filter', () => {
+    service.listEvents({ actor: 'qa@example.com' }).subscribe();
+    const req = http.expectOne(r => r.url === '/api/audit/events');
+    expect(req.request.params.get('actor')).toBe('qa@example.com');
+    req.flush(MOCK_PAGE);
+  });
+
+  it('should list events with date range filter', () => {
+    service.listEvents({ from: '2026-01-01T00:00:00Z', to: '2026-12-31T23:59:59Z' }).subscribe();
+    const req = http.expectOne(r => r.url === '/api/audit/events');
+    expect(req.request.params.get('from')).toBe('2026-01-01T00:00:00Z');
+    expect(req.request.params.get('to')).toBe('2026-12-31T23:59:59Z');
+    req.flush(MOCK_PAGE);
+  });
+
+  it('should list events with resourceId filter', () => {
+    const id = '00000000-0000-0000-0000-000000000099';
+    service.listEvents({ resourceId: id }).subscribe();
+    const req = http.expectOne(r => r.url === '/api/audit/events');
+    expect(req.request.params.get('resourceId')).toBe(id);
+    req.flush(MOCK_PAGE);
+  });
+
+  it('should omit empty filter params', () => {
+    service.listEvents({ action: '', actor: '' }).subscribe();
+    const req = http.expectOne(r => r.url === '/api/audit/events');
+    expect(req.request.params.has('action')).toBeFalse();
+    expect(req.request.params.has('actor')).toBeFalse();
     req.flush(MOCK_PAGE);
   });
 });

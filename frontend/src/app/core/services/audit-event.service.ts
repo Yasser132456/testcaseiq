@@ -15,6 +15,10 @@ export class AuditEventService {
     if (filters?.action) params = params.set('action', filters.action);
     if (filters?.outcome) params = params.set('outcome', filters.outcome);
     if (filters?.resourceType) params = params.set('resourceType', filters.resourceType);
+    if (filters?.resourceId) params = params.set('resourceId', filters.resourceId);
+    if (filters?.actor) params = params.set('actor', filters.actor);
+    if (filters?.from) params = params.set('from', filters.from);
+    if (filters?.to) params = params.set('to', filters.to);
     return this.http.get<AuditEventPage>(this.baseUrl, { params });
   }
 }
