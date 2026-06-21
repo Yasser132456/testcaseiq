@@ -1,0 +1,26 @@
+# TestCaseIQ — Production Profile
+#
+# Activate with: --spring.profiles.active=prod
+#
+# All sensitive values MUST be supplied via environment variables.
+# Do NOT commit real secrets, API keys, or database credentials.
+#
+# Required environment variables:
+#   TESTCASEIQ_DATABASE_URL      jdbc:postgresql://<host>:5432/testcaseiq
+#   TESTCASEIQ_DATABASE_USERNAME <db-user>
+#   TESTCASEIQ_DATABASE_PASSWORD <db-password>
+#   TESTCASEIQ_JWT_SECRET        <minimum 32-character random secret>
+#   AI_PROVIDER                  mock | openai
+#   OPENAI_API_KEY               (required when AI_PROVIDER=openai)
+
+app:
+  security:
+    enforce-auth: true
+
+logging:
+  level:
+    root: WARN
+    com.testcaseiq: INFO
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN
+    org.flywaydb: INFO

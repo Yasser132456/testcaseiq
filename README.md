@@ -1,126 +1,187 @@
 # TestCaseIQ
 
-TestCaseIQ converts user stories and requirements into traceable, reviewable QA assets. It is designed for QA engineers, test automation engineers, and software quality teams who need to move from product intent to reliable test coverage without losing human judgment along the way.
+> AI-powered QA platform transforming user stories into traceable, testable assets with full lifecycle management.
 
-The application combines AI-assisted story analysis and test generation with human-in-the-loop review gates. Its focus is reliability, traceability, and exportable QA artifacts: manual test cases, Markdown/CSV/JSON reports, Playwright draft specs, and Postman draft collections.
+[![CI](https://github.com/Yasser132456/testcaseiq/actions/workflows/ci.yml/badge.svg)](https://github.com/Yasser132456/testcaseiq/actions/workflows/ci.yml)
 
-## Why It Matters
+TestCaseIQ bridges the gap between product requirements and QA delivery. It takes user stories, runs AI-assisted analysis to surface requirements, ambiguities, risks, and coverage gaps, then generates structured, reviewable test cases that teams can approve and export directly into their testing toolchain.
 
-Manual test design is valuable work, but it is also repetitive and easy to disconnect from the original requirement. TestCaseIQ helps reduce that effort by turning stories into structured, reviewable test assets while keeping humans in control.
+Built for QA engineers, test automation engineers, and software quality teams who need reliable, traceable test coverage without disconnecting from the original requirement.
 
-The project is built around a careful QA workflow:
+---
 
-- Analyze stories for requirements, risks, ambiguity, and coverage ideas.
-- Generate draft test cases that can be reviewed before approval.
-- Preserve traceability from stories to requirements and test assets.
-- Export approved tests into formats teams can inspect, share, or adapt.
-- Validate AI output before persistence instead of blindly trusting generated content.
+## Tech Stack
 
-## Feature Matrix
+| Layer | Technology | Version |
+|-------|-----------|---------|
+| Frontend | Angular (standalone components, signals) | 22 |
+| Backend | Spring Boot | 3.3.5 |
+| Language | Java | 21 |
+| Database | PostgreSQL | 16 |
+| Cache | Redis | 7 |
+| Auth | JWT (HS256, custom implementation) | — |
+| AI Provider | OpenAI / Mock abstraction layer | gpt-4o-mini |
+| Migrations | Flyway | — |
+| CI | GitHub Actions | — |
+| Build | Maven (backend), Angular CLI (frontend) | — |
+| Containers | Docker Compose | — |
 
-| Area                         | Capability                                                   | Status      |
-| ---------------------------- | ------------------------------------------------------------ | ----------- |
-| Project and story management | Organize projects and user stories for QA workflow           | Implemented |
-| AI story analysis            | Extract requirements, ambiguity, risk, and coverage signals  | Implemented |
-| Test case generation         | Generate reviewable manual test cases from story context     | Implemented |
-| Review board                 | Review, update, approve, and track generated tests           | Implemented |
-| Markdown/CSV/JSON export     | Export approved test assets for documentation and handoff    | Implemented |
-| Playwright skeleton export   | Generate draft `.spec.ts` automation skeletons               | Implemented |
-| Postman collection export    | Generate draft Postman Collection JSON for API testing       | Implemented |
-| Backend authentication       | Register/login/me endpoints with JWT and role foundation     | Implemented |
-| User administration          | ADMIN-only UI to view users, change roles, enable/disable    | Implemented |
-| Audit trail                  | System-wide activity log, ADMIN-only, filterable/paginated   | Implemented |
-| Real AI provider support     | Use a real provider through configuration                    | Implemented |
-| Mock provider support        | Run locally and in tests without real AI credentials         | Implemented |
-| AI output validation         | Validate generated structures before persistence             | Implemented |
-| CI quality gates             | Run backend tests, frontend build, and secret hygiene checks | Implemented |
+---
 
-## Architecture Overview
+## Architecture
 
-TestCaseIQ is a full-stack monorepo with a clear separation between product UI, backend workflow logic, persistence, AI provider integration, export services, and CI quality gates.
-
-```text
-Angular frontend
-  -> Spring Boot backend API
-      -> Story, project, review, and export services
-      -> AI provider abstraction
-          -> Mock provider by default
-          -> OpenAI-compatible provider when configured
-      -> AI output validation
-      -> PostgreSQL persistence
+```
+Angular Frontend (port 4200)
+  └── HTTP + JWT → Spring Boot API (port 8080)
+        ├── Auth & Role Enforcement (JWT filter + @PreAuthorize)
+        ├── Project / Story / Test Suite / Test Case Services
+        ├── AI Provider Abstraction Layer
+        │     ├── Mock Provider (default, no credentials needed)
+        │     └── OpenAI Provider (configurable)
+        ├── AI Output Validation (structured schema enforcement)
+        ├── Review Workflow (DRAFT → NEEDS_REVIEW → APPROVED / REJECTED)
+        ├── Export Services (Markdown, CSV, JSON, Playwright, Postman, Jira, Azure DevOps)
+        ├── Audit Trail (tamper-resistant, ADMIN-only)
+        ├── Dashboard Metrics
+        └── PostgreSQL 16 (via Flyway schema migrations)
 
 GitHub Actions CI
-  -> Secret hygiene checks
-  -> Backend Maven tests on Java 21
-  -> Frontend npm install and Angular build on Node.js 24.15.0
+  ├── Secret hygiene scan
+  ├── Backend: Maven tests on Java 21 (cached)
+  └── Frontend: npm install + Angular build on Node.js 24 (cached)
 ```
 
-Core pieces:
+### Key design decisions
 
-- `frontend/`: Angular UI for project, story, analysis, generation, review, and export workflows.
-- `backend/`: Spring Boot API with domain services, persistence, AI provider abstraction, validation, export generation, and JWT auth foundation.
-- PostgreSQL: local relational persistence through Docker Compose.
-- Export services: Markdown, CSV, JSON, Playwright draft specs, and Postman Collection JSON.
-- Review workflow: keeps generated tests in a human approval path before export.
-- `.github/workflows/ci.yml`: GitHub Actions quality gates for pull requests and `main`.
+- **AI provider abstraction** — swap between mock and OpenAI with a single config value. No code changes, no provider lock-in.
+- **AI output validation** — generated content is validated against a schema before persistence. Malformed AI output is rejected, not silently stored.
+- **Human-in-the-loop review gate** — all AI-generated test cases start in `DRAFT` and must be explicitly approved before they can be exported.
+- **Role enforcement at every layer** — Spring Security `@PreAuthorize` on all write endpoints, UI role checks for display, and `requiresAuth` guards on every route.
+- **Audit trail independence** — audit records use `REQUIRES_NEW` transaction propagation so audit failures never break the main workflow.
 
-## Demo Workflow
+---
 
-1. Create a project.
-2. Add a user story with enough requirement context for QA analysis.
-3. Run story analysis to identify requirements, ambiguities, risks, and coverage ideas.
-4. Generate draft test cases from the analyzed story.
-5. Review, edit, and approve tests through the review workflow.
-6. Export approved tests as Markdown, CSV, or JSON.
-7. Export draft automation skeletons as Playwright `.spec.ts` or Postman Collection JSON.
+## Features
 
-Generated automation is intentionally treated as draft, review-required output. It is a starting point for test automation work, not a claim of production-ready coverage.
+### Story → Test Generation
+- Create projects and add user stories with acceptance criteria
+- AI analysis extracts requirements, ambiguities, risks, and coverage signals
+- AI generates structured test cases: title, type, priority, risk, preconditions, steps, expected results
+- Each test case scored with a quality score (0–100) and confidence level
 
-## Repository Structure
+### Review Workflow
+- Generated tests start in `DRAFT` status
+- QA engineers review, edit inline, and approve or reject
+- Full review history with reviewer identity and comments
+- Only `APPROVED` tests are eligible for export
 
-```text
-testcaseiq/
-  frontend/          Angular application
-  backend/           Spring Boot API
-  docker/            Docker-related notes and example environment values
-  docs/              Architecture, roadmap, sprint, AI pipeline, and contribution notes
-  prompts/           Prompt assets
-  evals/             Evaluation assets
-  docker-compose.yml Local PostgreSQL and Redis
+### Export Pipelines
+- **Markdown** — readable QA documentation
+- **CSV** — spreadsheet-friendly handoff
+- **JSON** — structured downstream processing
+- **Playwright `.spec.ts`** — draft automation skeletons
+- **Postman Collection JSON** — draft API test collections
+- **Jira/Xray CSV** — draft import mappings
+- **Azure DevOps CSV** — draft import mappings
+
+### Audit Trail
+- System-wide tamper-resistant activity log
+- Logs: logins, project/story CRUD, AI generation, review decisions, exports, user management
+- Filterable by action, outcome, resource type, actor, and date range
+- ADMIN-only access; no secrets, tokens, or passwords ever logged
+
+### Dashboard & Metrics
+- Total projects, stories, test suites, test cases
+- Approval rate, rejection rate, pending review rate, export readiness rate
+- Stories with / without generated tests
+- Recent platform activity feed
+
+### AI Quality Scoring & Explainability
+- Each test case carries a quality score and confidence level
+- Generation rationale explains why each test case was created
+- Linked acceptance criteria text provides traceability to the source requirement
+
+### Settings & AI Provider Configuration
+- Configure AI provider (mock / OpenAI) without redeployment
+- Manage model and temperature settings from the UI (ADMIN / QA_ENGINEER)
+
+### User & Role Management
+- ADMIN-only user administration: view, change role, enable/disable accounts
+- Self-registration creates `QA_ENGINEER` accounts by default
+- Promoted admin accounts can manage all users from the UI
+
+---
+
+## Demo Mode
+
+Demo mode seeds a realistic QA dataset on startup so the platform is immediately usable without manual data entry.
+
+### Activate
+
+```bash
+cd backend
+mvn spring-boot:run -Dspring-boot.run.profiles=demo
 ```
 
-## Prerequisites
+### Seeded data
+
+| Entity | Count | Details |
+|--------|-------|---------|
+| Users | 3 | One per role (see credentials below) |
+| Projects | 3 | E-commerce Platform QA, Banking API QA, HR System QA |
+| Stories | 6 | Realistic acceptance criteria; mix of statuses |
+| Test Suites | 4 | Checkout Flow, Product Search, Fund Transfer API, MFA Security, Onboarding |
+| Test Cases | 9 | Mix of APPROVED / NEEDS_REVIEW / REJECTED / DRAFT with steps |
+| Audit Events | 14 | Login, generation, review decisions, export |
+
+### Demo credentials
+
+| Role | Email | Password |
+|------|-------|----------|
+| `ADMIN` | `admin@demo.testcaseiq.io` | `demo123!` |
+| `QA_ENGINEER` | `qa@demo.testcaseiq.io` | `demo123!` |
+| `VIEWER` | `viewer@demo.testcaseiq.io` | `demo123!` |
+
+**Idempotent:** seeding skips automatically if any users already exist. Safe to restart.
+
+---
+
+## Getting Started
+
+### Prerequisites
 
 - Java 21
 - Maven 3.9+
 - Node.js 24.15.0+
 - npm
-- Docker Desktop or Docker Engine with Compose
+- Docker Desktop (for PostgreSQL and Redis)
 
-## Local Setup
-
-Start PostgreSQL and Redis:
+### 1. Start infrastructure
 
 ```bash
 docker compose up -d
 ```
 
-Start the backend:
+### 2. Start the backend
 
 ```bash
 cd backend
 mvn spring-boot:run
 ```
 
-The backend runs at `http://localhost:8080`.
-
-Check backend health:
+Backend available at `http://localhost:8080`. Health check:
 
 ```bash
 curl http://localhost:8080/api/health
 ```
 
-Start the frontend:
+To start with demo seed data:
+
+```bash
+mvn spring-boot:run -Dspring-boot.run.profiles=demo
+```
+
+### 3. Start the frontend
 
 ```bash
 cd frontend
@@ -128,302 +189,150 @@ npm ci
 npm start
 ```
 
-The app runs at `http://localhost:4200`.
+App available at `http://localhost:4200`. The dev server proxies `/api` to `http://localhost:8080`.
 
-The frontend development server proxies `/api` requests to `http://localhost:8080`.
+---
 
-By default, local/demo mode keeps existing project, story, analysis, review, and export endpoints accessible. The Angular login/register UI is available, stores the returned JWT locally for this project stage, restores the session through `/api/auth/me` on refresh, and attaches `Authorization: Bearer <token>` to API calls when a token exists. Protected backend enforcement can be enabled with `TESTCASEIQ_SECURITY_ENFORCE_AUTH=true`.
+## Screenshots
 
-## Testing And Quality
+> Screenshots to be added. Key views to capture for portfolio presentation:
 
-Run backend tests:
+| View | Description |
+|------|-------------|
+| Dashboard | KPI cards, quality rates, coverage stats, recent activity |
+| Test Suite detail | Generated test cases with quality scores and review status badges |
+| Review board | Approve / reject workflow with inline editing |
+| Audit Trail | Filterable activity log with resource traceability |
+| Settings | AI provider configuration panel |
+
+---
+
+## Security Model
+
+### Authentication
+
+JWT-based authentication using HS256 HMAC signing.
+
+- Tokens are short-lived (default: 1 hour, configurable via `TESTCASEIQ_ACCESS_TOKEN_EXPIRATION_SECONDS`)
+- Expiration is validated on every request
+- Constant-time signature comparison to prevent timing attacks
+- Invalid or expired tokens are silently rejected — the request proceeds as unauthenticated
+- No session state is stored server-side
+
+Auth endpoints:
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/api/auth/register` | Create a `QA_ENGINEER` account; returns token |
+| `POST` | `/api/auth/login` | Authenticate; returns token |
+| `GET` | `/api/auth/me` | Return current user profile |
+
+### Role Model
+
+| Role | Access |
+|------|--------|
+| `ADMIN` | Full access: all CRUD, generation, review, export, user management, audit trail |
+| `QA_ENGINEER` | Create and manage projects/stories, run AI analysis, generate and review tests, export approved tests |
+| `VIEWER` | Read-only across all modules; no create, update, delete, generate, or review actions |
+
+### Enforcement strategy
+
+Role enforcement operates at two independent layers:
+
+1. **Backend** — Spring Security `@PreAuthorize` annotations on all write endpoints enforce roles on every request, regardless of how the client reached the endpoint. Admin and audit endpoints always require an authenticated `ADMIN` JWT even when the global enforcement flag is off.
+
+2. **Frontend** — Angular route guards redirect unauthenticated users and role-restricted users. The UI conditionally renders or hides actions based on role. These are cosmetic reinforcements only — the backend is the authoritative enforcement point.
+
+### Security enforcement flag
+
+`TESTCASEIQ_SECURITY_ENFORCE_AUTH` (default: `false`) controls whether unauthenticated requests to business endpoints are allowed through:
+
+- `false` (default for local/demo): business endpoints accessible without a token. Useful for quick exploration without logging in.
+- `true` (production): all business endpoints require a valid JWT. Set automatically in the `prod` profile.
+
+### What is never logged or returned
+
+- Passwords or password hashes
+- JWT tokens or signing secrets
+- OpenAI API keys
+- Stack traces in API responses (all 500s return `"Internal server error"` to clients)
+
+---
+
+## API Overview
+
+All endpoints are under `/api`. Consistent error response format:
+
+```json
+{
+  "timestamp": "2026-06-21T18:00:00Z",
+  "status": 404,
+  "error": "Not Found",
+  "message": "Story not found",
+  "path": "/api/stories/abc",
+  "fieldErrors": {}
+}
+```
+
+| Prefix | Scope |
+|--------|-------|
+| `/api/auth/**` | Authentication (always public) |
+| `/api/projects/**` | Project management |
+| `/api/stories/**` | Story management, analysis, generation |
+| `/api/test-suites/**` | Test suite listing and detail |
+| `/api/review/**` | Test case review workflow |
+| `/api/export/**` | Test export (Markdown, CSV, JSON, Playwright, Postman, Jira, Azure DevOps) |
+| `/api/dashboard/**` | Metrics and recent activity |
+| `/api/settings/**` | AI provider and application settings |
+| `/api/audit/**` | Audit trail (ADMIN only) |
+| `/api/admin/**` | User administration (ADMIN only) |
+| `/api/health` | Health check (always public) |
+
+---
+
+## Testing & CI
+
+### Run backend tests
 
 ```bash
 cd backend
 mvn test
 ```
 
-Run the frontend build:
+Tests use a mock AI provider. No real AI credentials or database required for unit/slice tests.
+
+### Run frontend build
 
 ```bash
 cd frontend
 npm run build
 ```
 
-GitHub Actions runs the quality gates on pull requests targeting `main` and on pushes to `main`:
+### CI pipeline (GitHub Actions)
 
-- Secret hygiene check for committed `.env` files and obvious OpenAI-style API keys.
-- Backend tests with Java 21 and cached Maven dependencies.
-- Frontend install and build with Node.js 24.15.0 and cached npm dependencies.
+Runs on every push and pull request to `main`:
 
-Backend CI sets the mock AI provider and leaves the OpenAI key empty, so tests do not require real AI credentials and should not make external AI calls.
+1. **Secret hygiene** — blocks committed `.env` files and obvious API keys
+2. **Backend tests** — Maven test suite on Java 21 with cached dependencies
+3. **Frontend build** — Angular production build on Node.js 24 with cached npm dependencies
 
-## AI Configuration
+---
 
-The mock AI provider is the default configuration. It is used for local development and automated tests when no real provider is enabled.
-
-Safe example values live in:
-
-- `.env.example`
-- `backend/.env.example`
-- `frontend/.env.example`
-- `docker/.env.example`
-
-Relevant backend configuration keys include:
-
-- `AI_PROVIDER=mock`
-- `OPENAI_API_KEY=`
-- `OPENAI_MODEL=gpt-4o-mini`
-- `OPENAI_BASE_URL=https://api.openai.com`
-- `TESTCASEIQ_SECURITY_ENFORCE_AUTH=false`
-- `TESTCASEIQ_JWT_SECRET=testcaseiq-local-development-jwt-secret-change-me`
-- `TESTCASEIQ_ACCESS_TOKEN_EXPIRATION_SECONDS=3600`
-
-To enable a real AI provider, configure the provider and key through local environment/config values. Do not commit real `.env` files, production secrets, or API keys.
-
-AI output is validated before persistence so malformed or unsafe generated structures can be rejected before they become reviewable test assets.
-
-## Authentication and Role-Based Access
-
-The app includes JWT authentication with BCrypt password hashing on the backend and Angular session handling on the frontend.
-
-Auth endpoints:
-
-- `POST /api/auth/register`: accepts `displayName`, `email`, and `password`; creates a `QA_ENGINEER` user by default and returns an access token plus profile.
-- `POST /api/auth/login`: accepts `email` and `password`; returns an access token plus profile for valid enabled users.
-- `GET /api/auth/me`: returns the current user profile when called with `Authorization: Bearer <token>`.
-
-Auth endpoints are always public regardless of the enforcement flag.
-
-### Role Model
-
-| Role | Permissions |
-|------|-------------|
-| `ADMIN` | Full access: create, update, delete, generate, analyze, review, approve/reject, export, manage all resources |
-| `QA_ENGINEER` | Create and manage projects and stories; run analysis; generate tests; review and approve/reject test cases; export approved tests. Cannot delete or manage users. |
-| `VIEWER` | Read-only: view projects, stories, analysis results, generated tests, review history, and exports. Cannot create, update, delete, generate, or approve/reject. |
-
-Password hashes are stored server-side only and are never returned in API responses.
-
-### Security Enforcement Flag
-
-Security enforcement is controlled by `TESTCASEIQ_SECURITY_ENFORCE_AUTH` (mapped to `app.security.enforce-auth`).
-
-**Default behavior (`enforce-auth=false`):**
-
-- All business endpoints remain accessible without authentication.
-- The existing demo workflow works without logging in.
-- Auth endpoints still work normally.
-- This is the default for local and demo use.
-
-**Enforced mode (`enforce-auth=true`):**
-
-- Business endpoints require a valid JWT (`Authorization: Bearer <token>`).
-- Unauthenticated requests to business endpoints return `401 Unauthorized`.
-- Authenticated requests to endpoints outside the user's role return `403 Forbidden`.
-- Auth endpoints remain public.
-- Health endpoint remains public.
-
-### Enabling Enforcement Locally
-
-```bash
-# Set the env var before starting the backend
-TESTCASEIQ_SECURITY_ENFORCE_AUTH=true mvn spring-boot:run
-```
-
-Or add to `backend/.env`:
+## Repository Structure
 
 ```
-TESTCASEIQ_SECURITY_ENFORCE_AUTH=true
+testcaseiq/
+  frontend/          Angular 22 application
+  backend/           Spring Boot 3 API
+  docker/            Docker environment notes and example values
+  docs/              Architecture, roadmap, sprint, AI pipeline, and contribution notes
+  prompts/           AI prompt templates
+  evals/             Evaluation assets
+  docker-compose.yml Local PostgreSQL 16 and Redis 7
+  .github/workflows/ CI pipeline
 ```
 
-Use a real `TESTCASEIQ_JWT_SECRET` in shared or production-like environments; the documented default is only a local development fallback.
-
-### Frontend Route Protection
-
-When `enforce-auth=true` is set on the backend, the Angular route guard also redirects unauthenticated users to `/login`. The UI additionally hides or disables mutating actions based on the authenticated user's role:
-
-- ADMIN sees all actions.
-- QA_ENGINEER sees create, edit, analyze, generate, and review actions; no delete or admin controls.
-- VIEWER sees read-only views with no create, edit, delete, generate, or review buttons.
-
-Frontend restrictions are cosmetic reinforcement — the backend enforces role permissions on every request.
-
-### Creating Accounts
-
-No development admin seed is created automatically. Use `POST /api/auth/register` to create a `QA_ENGINEER` account locally. Admin accounts must be promoted directly in the database for the first setup, after which the User Administration UI can be used to manage roles.
-
-## User Administration
-
-The User Administration area is accessible only to users with the `ADMIN` role. It is reachable at `/admin/users` and appears in the sidebar navigation only for admins.
-
-### Supported actions
-
-| Action | Description |
-|--------|-------------|
-| View all users | List all registered accounts with id, display name, email, role, account status, and timestamps |
-| Change role | Update a user's role between `ADMIN`, `QA_ENGINEER`, and `VIEWER` |
-| Enable / disable account | Deactivate or reactivate a user account |
-
-### Safety rules
-
-- An admin cannot disable their own account.
-- The last remaining active `ADMIN` cannot be demoted or disabled.
-- Changes require confirmation before they are applied.
-
-### Backend endpoints
-
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/api/admin/users` | List all users |
-| `PATCH` | `/api/admin/users/{id}/role` | Update a user's role |
-| `PATCH` | `/api/admin/users/{id}/status` | Enable or disable a user account |
-
-All three endpoints always require an authenticated `ADMIN` JWT regardless of the `enforce-auth` flag. Password hashes are never returned by any admin endpoint.
-
-### Access control
-
-- `ADMIN` can access all user administration endpoints and UI.
-- `QA_ENGINEER` and `VIEWER` receive `403 Forbidden` on any `/api/admin/**` request.
-- Unauthenticated requests receive `401 Unauthorized`.
-- Non-admin users who navigate directly to `/admin/users` are redirected to the dashboard with an access-restricted notice.
-
-## Audit Trail
-
-The Activity Log provides a tamper-resistant record of all significant actions taken in the system. It is accessible only to users with the `ADMIN` role and is available at `/admin/audit` in the sidebar navigation.
-
-### Audited actions
-
-| Action | Trigger |
-|--------|---------|
-| `USER_REGISTERED` | Account registration |
-| `USER_LOGIN_SUCCESS` | Successful login |
-| `USER_LOGIN_FAILED` | Failed login attempt |
-| `PROJECT_CREATED`, `PROJECT_UPDATED`, `PROJECT_DELETED` | Project lifecycle |
-| `STORY_CREATED`, `STORY_UPDATED`, `STORY_DELETED` | Story lifecycle |
-| `STORY_ANALYSIS_REQUESTED` | AI story analysis |
-| `TEST_GENERATION_REQUESTED` | AI test case generation |
-| `TEST_CASE_STATUS_CHANGED` | Approve / reject a test case |
-| `TEST_CASE_UPDATED` | Priority, risk, automation-candidate, or inline update |
-| `TESTS_EXPORTED` | Any story or test-suite export |
-| `USER_ROLE_CHANGED` | Admin changes a user's role |
-| `USER_STATUS_CHANGED` | Admin enables or disables a user account |
-
-### Security constraints
-
-- Passwords, password hashes, JWT tokens, API keys, and raw credentials are never logged or returned.
-- The `AuditService` uses `REQUIRES_NEW` transaction propagation so audit records are written independently; an audit failure never breaks the main workflow.
-- Actor identity is extracted from `SecurityContextHolder` — no sensitive fields are passed through call sites.
-
-### Backend endpoint
-
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/api/audit/events` | List audit events, paginated and filterable |
-
-The endpoint always requires an authenticated `ADMIN` JWT regardless of the `enforce-auth` flag.
-
-#### Query parameters
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `action` | string | Filter by action name (e.g. `USER_LOGIN_SUCCESS`) |
-| `outcome` | string | Filter by outcome: `SUCCESS`, `FAILURE`, or `BLOCKED` |
-| `resourceType` | string | Filter by resource type (e.g. `PROJECT`, `STORY`) |
-| `resourceId` | string (UUID) | Filter by specific resource UUID |
-| `actor` | string | Filter by actor email address (exact match) |
-| `from` | ISO 8601 string | Include only events on or after this timestamp |
-| `to` | ISO 8601 string | Include only events on or before this timestamp |
-| `page` | integer | Page index, 0-based (default: `0`) |
-| `size` | integer | Page size, 1–200 (default: `50`) |
-
-Results are sorted newest-first. If `from` or `to` are provided but not a valid ISO 8601 instant, the API returns `400 Bad Request`. If `from` is after `to`, the API also returns `400`.
-
-#### Example queries
-
-```
-# Most recent 50 events
-GET /api/audit/events
-
-# All failed login attempts
-GET /api/audit/events?action=USER_LOGIN_FAILED&outcome=FAILURE
-
-# Events by a specific user in a date range
-GET /api/audit/events?actor=qa@example.com&from=2026-01-01T00:00:00Z&to=2026-12-31T23:59:59Z
-
-# All events for a specific story
-GET /api/audit/events?resourceType=STORY&resourceId=<uuid>
-
-# Second page of export events
-GET /api/audit/events?action=TESTS_EXPORTED&page=1&size=20
-```
-
-### Traceability metadata
-
-Key events carry a `metadata` field in the response with contextual identifiers for connecting audit entries to domain entities:
-
-| Action | Metadata keys |
-|--------|---------------|
-| `STORY_CREATED`, `STORY_UPDATED` | `projectId` |
-| `STORY_ANALYSIS_REQUESTED`, `TEST_GENERATION_REQUESTED` | `storyId`, `aiProvider` |
-| `TESTS_EXPORTED` | `exportType` (e.g. `MARKDOWN`, `CSV`, `PLAYWRIGHT`) |
-| `TEST_CASE_STATUS_CHANGED` (approve/reject) | `reviewDecision` |
-| `USER_ROLE_CHANGED` | `targetUserId`, `newRole` |
-| `USER_STATUS_CHANGED` | `targetUserId`, `enabled` |
-
-The `aiProvider` value is the provider name (`mock`, `openai`) — no API keys or secrets are included.
-
-## Exports
-
-Exports are based on approved test cases from the review workflow.
-
-Supported export targets:
-
-- Markdown for readable QA documentation.
-- CSV for spreadsheet-friendly review and handoff.
-- JSON for structured downstream processing.
-- Playwright `.spec.ts` draft skeletons for UI automation starting points.
-- Postman Collection JSON drafts for API testing starting points.
-- Jira/Xray CSV draft import mappings.
-- Azure DevOps CSV draft import mappings.
-
-Automation exports are draft and review-required. Test automation engineers should inspect, adapt, and harden generated skeletons before relying on them in an execution pipeline.
-
-## Screenshots
-
-No real screenshots are committed yet. Planned screenshot placeholders:
-
-- Dashboard
-- Story analysis
-- Generated test cases
-- Review board
-- Export panel
-
-## Roadmap
-
-Realistic next steps include:
-
-- Jira and Xray integration.
-- Azure DevOps integration.
-- Authentication and role-based access.
-- Team collaboration features.
-- Test execution feedback loop.
-- Better AI evaluation metrics.
-- Importing requirements from files.
-
-See [docs/ROADMAP.md](docs/ROADMAP.md) for broader product direction.
-
-## Professional Positioning
-
-TestCaseIQ demonstrates practical work across:
-
-- QA engineering and test design.
-- API testing and export workflows.
-- Test automation thinking with Playwright and Postman.
-- AI-assisted testing with validation and review gates.
-- Spring Boot and Angular full-stack development.
-- CI quality gates for repository reliability.
-- Product-oriented QA workflow design.
+---
 
 ## Documentation
 
@@ -432,6 +341,8 @@ TestCaseIQ demonstrates practical work across:
 - [Sprints](docs/SPRINTS.md)
 - [AI Pipeline](docs/AI_PIPELINE.md)
 - [Contributing](docs/CONTRIBUTING.md)
+
+---
 
 ## License
 
