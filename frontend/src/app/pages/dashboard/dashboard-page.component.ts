@@ -1,71 +1,99 @@
-import { DatePipe } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import {
+  Component, ElementRef, Injector, OnDestroy, OnInit, ViewChild,
+  afterNextRender, computed, inject, signal
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { CountUp } from 'countup.js';
+import { gsap } from 'gsap';
+import VanillaTilt from 'vanilla-tilt';
 import { DashboardMetrics } from '../../core/models/dashboard.model';
 import { AuthService } from '../../core/services/auth.service';
 import { DashboardService } from '../../core/services/dashboard.service';
+import { BadgeComponent } from '../../shared/components/badge.component';
 import { StateMessageComponent } from '../../shared/components/state-message.component';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
 
 @Component({
   selector: 'app-dashboard-page',
   standalone: true,
-  imports: [DatePipe, RouterLink, StateMessageComponent, SkeletonComponent],
+  imports: [RouterLink, BadgeComponent, StateMessageComponent, SkeletonComponent],
+  styleUrl: './dashboard-page.component.css',
   template: `
     <section class="page-stack">
-      <div class="hero-panel">
-        <h2>QA workspace.</h2>
-        <p>Track generated test assets, review status, export readiness, and recent platform activity.</p>
-      </div>
-
       @if (loading()) {
         <app-skeleton [rows]="3" [cols]="4" />
       } @else if (error()) {
         <app-state-message title="Dashboard unavailable" [message]="error()" tone="error" />
       } @else if (metrics()) {
-        <!-- KPI cards -->
-        <div class="metric-grid kpi-grid">
-          <article class="metric-card">
-            <span>Projects</span>
-            <strong>{{ metrics()!.totalProjects }}</strong>
+        <!-- KPI grid -->
+        <div class="kpi-grid">
+          <article class="metric-card card--accent">
+            <span class="metric-label">Projects</span>
+            <span class="metric-value" data-count="totalProjects">0</span>
           </article>
-          <article class="metric-card">
-            <span>Stories</span>
-            <strong>{{ metrics()!.totalStories }}</strong>
+          <article class="metric-card card--accent">
+            <span class="metric-label">Stories</span>
+            <span class="metric-value" data-count="totalStories">0</span>
           </article>
-          <article class="metric-card">
-            <span>Test suites</span>
-            <strong>{{ metrics()!.totalTestSuites }}</strong>
+          <article class="metric-card card--accent">
+            <span class="metric-label">Test suites</span>
+            <span class="metric-value" data-count="totalTestSuites">0</span>
           </article>
-          <article class="metric-card">
-            <span>Test cases</span>
-            <strong>{{ metrics()!.totalTestCases }}</strong>
+          <article class="metric-card card--accent">
+            <span class="metric-label">Test cases</span>
+            <span class="metric-value" data-count="totalTestCases">0</span>
           </article>
-          <article class="metric-card green">
-            <span>Approved</span>
-            <strong>{{ metrics()!.approvedTestCases }}</strong>
+          <article class="metric-card card--green">
+            <span class="metric-label">Approved</span>
+            <span class="metric-value" data-count="approvedTestCases">0</span>
           </article>
-          <article class="metric-card amber">
-            <span>Pending review</span>
-            <strong>{{ metrics()!.pendingReviewTestCases }}</strong>
+          <article class="metric-card card--amber">
+            <span class="metric-label">Pending review</span>
+            <span class="metric-value" data-count="pendingReviewTestCases">0</span>
           </article>
-          <article class="metric-card">
-            <span>Exports</span>
-            <strong>{{ metrics()!.totalExports }}</strong>
+          <article class="metric-card card--red">
+            <span class="metric-label">Rejected</span>
+            <span class="metric-value" data-count="rejectedTestCases">0</span>
+          </article>
+          <article class="metric-card card--accent">
+            <span class="metric-label">Exports</span>
+            <span class="metric-value" data-count="totalExports">0</span>
           </article>
         </div>
 
-        <!-- Quality rates + coverage -->
+        <!-- Attention chip strip -->
+        <div class="chip-strip">
+          @if (metrics()!.pendingReviewTestCases > 0) {
+            <span class="chip-group">
+              <app-badge status="NEEDS_REVIEW" />
+              <span class="chip-detail">{{ metrics()!.pendingReviewTestCases }} cases awaiting review</span>
+            </span>
+          }
+          @if (metrics()!.rejectedTestCases > 0) {
+            <span class="chip-group">
+              <app-badge status="REJECTED" />
+              <span class="chip-detail">{{ metrics()!.rejectedTestCases }} cases rejected</span>
+            </span>
+          }
+          @if (isAllClear()) {
+            <span class="chip-group">
+              <app-badge status="APPROVED" />
+              <span class="chip-detail">All test cases reviewed — no pending items</span>
+            </span>
+          }
+        </div>
+
+        <!-- Quality workflow + coverage donut -->
         <div class="content-grid">
           <section class="panel">
-            <div class="section-header">
-              <h3>Quality workflow</h3>
-            </div>
+            <div class="section-header"><h3>Quality workflow</h3></div>
             <div class="rate-list">
               <div class="rate-item">
                 <div class="rate-header">
                   <span>Approval rate</span>
-                  <strong class="rate-val green-val">{{ metrics()!.approvalRate }}%</strong>
+                  <strong class="green-val rate-val">
+                    <span data-count="approvalRate" data-rate="1">0%</span>
+                  </strong>
                 </div>
                 <div class="rate-bar-track">
                   <div class="rate-bar-fill green-fill" [style.width.%]="metrics()!.approvalRate"></div>
@@ -73,8 +101,10 @@ import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
               </div>
               <div class="rate-item">
                 <div class="rate-header">
-                  <span>Pending review</span>
-                  <strong class="rate-val amber-val">{{ metrics()!.pendingReviewRate }}%</strong>
+                  <span>Pending rate</span>
+                  <strong class="amber-val rate-val">
+                    <span data-count="pendingReviewRate" data-rate="1">0%</span>
+                  </strong>
                 </div>
                 <div class="rate-bar-track">
                   <div class="rate-bar-fill amber-fill" [style.width.%]="metrics()!.pendingReviewRate"></div>
@@ -83,7 +113,9 @@ import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
               <div class="rate-item">
                 <div class="rate-header">
                   <span>Rejection rate</span>
-                  <strong class="rate-val red-val">{{ metrics()!.rejectionRate }}%</strong>
+                  <strong class="red-val rate-val">
+                    <span data-count="rejectionRate" data-rate="1">0%</span>
+                  </strong>
                 </div>
                 <div class="rate-bar-track">
                   <div class="rate-bar-fill red-fill" [style.width.%]="metrics()!.rejectionRate"></div>
@@ -92,7 +124,9 @@ import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
               <div class="rate-item">
                 <div class="rate-header">
                   <span>Export readiness</span>
-                  <strong class="rate-val green-val">{{ metrics()!.exportReadinessRate }}%</strong>
+                  <strong class="green-val rate-val">
+                    <span data-count="exportReadinessRate" data-rate="1">0%</span>
+                  </strong>
                 </div>
                 <div class="rate-bar-track">
                   <div class="rate-bar-fill green-fill" [style.width.%]="metrics()!.exportReadinessRate"></div>
@@ -102,53 +136,52 @@ import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
           </section>
 
           <section class="panel">
-            <div class="section-header">
-              <h3>Test asset coverage</h3>
-            </div>
-            <div class="rate-list">
-              <div class="coverage-row">
-                <span>Stories with generated tests</span>
-                <strong class="green-val">{{ metrics()!.storiesWithGeneratedTests }}</strong>
-              </div>
-              <div class="coverage-row">
-                <span>Stories without tests</span>
-                <strong class="amber-val">{{ metrics()!.storiesWithoutGeneratedTests }}</strong>
-              </div>
-              <div class="coverage-row">
-                <span>Test suites created</span>
-                <strong>{{ metrics()!.totalTestSuites }}</strong>
-              </div>
-              <div class="coverage-row">
-                <span>Avg cases per suite</span>
-                <strong>{{ avgCasesPerSuite() }}</strong>
+            <div class="section-header"><h3>Story coverage</h3></div>
+            <div class="donut-wrap">
+              <svg class="donut-svg" viewBox="0 0 100 100"
+                role="img" [attr.aria-label]="'Story coverage: ' + coveragePct()">
+                <circle class="donut-bg" cx="50" cy="50" r="44" />
+                <circle #donutArc class="donut-arc" cx="50" cy="50" r="44"
+                  transform="rotate(-90 50 50)" />
+                <text x="50" y="50" class="donut-text">{{ coveragePct() }}</text>
+              </svg>
+              <div class="donut-legend">
+                <div class="legend-row">
+                  <span class="dot dot--green"></span>
+                  <span>{{ metrics()!.storiesWithGeneratedTests }} with tests</span>
+                </div>
+                <div class="legend-row">
+                  <span class="dot dot--text3"></span>
+                  <span>{{ metrics()!.storiesWithoutGeneratedTests }} without</span>
+                </div>
+                <div class="legend-row">
+                  <span class="legend-note">Avg {{ avgCasesPerSuite() }} cases / suite</span>
+                </div>
               </div>
             </div>
           </section>
         </div>
 
-        <!-- Recent activity -->
+        <!-- Activity timeline -->
         <section class="panel">
           <div class="section-header">
             <h3>Recent activity</h3>
             @if (isAdmin()) {
-              <a routerLink="/admin/audit">View full log</a>
+              <a routerLink="/admin/audit" class="view-all-link">View audit trail →</a>
             }
           </div>
           @if (metrics()!.recentActivity.length === 0) {
-            <app-state-message title="No activity yet" message="Events will appear here as the platform is used." />
+            <p class="empty-note">No activity yet — events will appear here as the platform is used.</p>
           } @else {
-            <div class="list-stack compact">
-              @for (item of metrics()!.recentActivity; track item.timestamp + item.action) {
-                <div class="activity-row">
-                  <div class="activity-main">
-                    <span class="activity-action">{{ formatAction(item.action) }}</span>
-                    @if (item.actorEmail) {
-                      <small class="activity-actor">{{ item.actorEmail }}</small>
-                    }
-                  </div>
-                  <div class="activity-meta">
-                    <span [class]="outcomeClass(item.outcome)">{{ item.outcome }}</span>
-                    <small class="text-muted">{{ item.timestamp | date:'short' }}</small>
+            <div class="timeline">
+              @for (item of metrics()!.recentActivity.slice(0, 10); track item.timestamp + item.action) {
+                <div class="timeline-entry">
+                  <span [class]="dotClass(item.outcome)"></span>
+                  <div class="timeline-body">
+                    <span class="timeline-action">{{ formatAction(item.action) }}</span>
+                    <span class="timeline-meta">
+                      @if (item.actorEmail) { {{ item.actorEmail }} · }{{ relativeTime(item.timestamp) }}
+                    </span>
                   </div>
                 </div>
               }
@@ -158,15 +191,14 @@ import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
 
         <!-- Quick actions -->
         <section class="panel">
-          <div class="section-header">
-            <h3>Quick actions</h3>
-          </div>
+          <div class="section-header"><h3>Quick actions</h3></div>
           <div class="action-grid">
             <a class="button secondary" routerLink="/projects">Open projects</a>
             @if (canMutate()) {
-              <a class="button secondary" [routerLink]="['/projects']" [queryParams]="{ create: '1' }">New project</a>
+              <a class="button secondary" routerLink="/projects">New project</a>
             }
             <a class="button secondary" routerLink="/test-suites">Browse test suites</a>
+            <a class="button secondary" routerLink="/review-board">Review board</a>
             @if (isAdmin()) {
               <a class="button secondary" routerLink="/admin/users">User administration</a>
               <a class="button secondary" routerLink="/admin/audit">Activity log</a>
@@ -175,53 +207,35 @@ import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
         </section>
       }
     </section>
-  `,
-  styles: [`
-    .kpi-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
-    .metric-card.green strong { color: var(--green); }
-    .metric-card.amber strong { color: var(--amber); }
-    .metric-card.red strong   { color: var(--red); }
-    .rate-list { display: grid; gap: 1rem; }
-    .rate-item { display: grid; gap: 0.35rem; }
-    .rate-header { display: flex; justify-content: space-between; align-items: baseline; }
-    .rate-header span { font-size: 0.85rem; color: var(--text-2); }
-    .rate-val { font-size: 0.88rem; }
-    .rate-bar-track { height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
-    .rate-bar-fill { height: 100%; border-radius: 3px; min-width: 2px; transition: width 0.4s; }
-    .green-fill { background: var(--green); }
-    .amber-fill { background: var(--amber); }
-    .red-fill   { background: var(--red); }
-    .green-val { color: var(--green); }
-    .amber-val { color: var(--amber); }
-    .red-val   { color: var(--red); }
-    .coverage-row { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border); font-size: 0.875rem; }
-    .coverage-row span { color: var(--text-2); }
-    .activity-row { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 0.5rem 0.75rem; border-radius: 6px; }
-    .activity-row:hover { background: rgba(255,255,255,0.03); }
-    .activity-main { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
-    .activity-action { font-size: 0.82rem; font-family: monospace; }
-    .activity-actor { color: var(--text-2); font-size: 0.75rem; }
-    .activity-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 0.1rem; flex-shrink: 0; }
-    .outcome-ok { color: var(--green); font-size: 0.75rem; font-weight: 600; }
-    .outcome-fail { color: var(--red); font-size: 0.75rem; font-weight: 600; }
-    .outcome-other { color: var(--amber); font-size: 0.75rem; font-weight: 600; }
-    .text-muted { color: var(--text-2); font-size: 0.72rem; }
-    .action-grid { display: flex; flex-wrap: wrap; gap: 0.75rem; }
-  `]
+  `
 })
-export class DashboardPageComponent implements OnInit {
+export class DashboardPageComponent implements OnInit, OnDestroy {
   private readonly dashboardService = inject(DashboardService);
-  readonly authService = inject(AuthService);
+  private readonly authService = inject(AuthService);
+  private readonly el = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly injector = inject(Injector);
+
+  @ViewChild('donutArc') private donutArc?: ElementRef<SVGCircleElement>;
 
   readonly loading = signal(true);
   readonly error = signal('');
   readonly metrics = signal<DashboardMetrics | null>(null);
+  readonly hasAnimated = signal(false);
+
+  readonly coveragePct = computed(() => {
+    const m = this.metrics();
+    if (!m || m.totalStories === 0) return '0%';
+    return `${Math.round(m.storiesWithGeneratedTests / m.totalStories * 100)}%`;
+  });
+
+  private tiltTargets: HTMLElement[] = [];
 
   ngOnInit(): void {
     this.dashboardService.getMetrics().subscribe({
       next: (m) => {
         this.metrics.set(m);
         this.loading.set(false);
+        afterNextRender(() => this.runAnimations(m), { injector: this.injector });
       },
       error: () => {
         this.error.set('Unable to load dashboard metrics. Confirm the backend is running.');
@@ -230,12 +244,16 @@ export class DashboardPageComponent implements OnInit {
     });
   }
 
-  isAdmin(): boolean {
-    return this.authService.hasRole('ADMIN');
+  ngOnDestroy(): void {
+    this.tiltTargets.forEach(el => (el as HTMLElement & { vanillaTilt?: { destroy(): void } }).vanillaTilt?.destroy());
   }
 
-  canMutate(): boolean {
-    return this.authService.hasRole(['ADMIN', 'QA_ENGINEER']);
+  isAdmin(): boolean { return this.authService.hasRole('ADMIN'); }
+  canMutate(): boolean { return this.authService.hasRole(['ADMIN', 'QA_ENGINEER']); }
+
+  isAllClear(): boolean {
+    const m = this.metrics();
+    return !!m && m.totalTestCases > 0 && m.pendingReviewTestCases === 0 && m.rejectedTestCases === 0;
   }
 
   avgCasesPerSuite(): string {
@@ -248,9 +266,69 @@ export class DashboardPageComponent implements OnInit {
     return action.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
   }
 
-  outcomeClass(outcome: string): string {
-    if (outcome === 'SUCCESS') return 'outcome-ok';
-    if (outcome === 'FAILURE') return 'outcome-fail';
-    return 'outcome-other';
+  dotClass(outcome: string): string {
+    const base = 'timeline-dot ';
+    if (outcome === 'SUCCESS') return base + 'dot--outcome-ok';
+    if (outcome === 'FAILURE') return base + 'dot--outcome-fail';
+    if (outcome === 'BLOCKED') return base + 'dot--outcome-block';
+    return base + 'dot--outcome-other';
+  }
+
+  relativeTime(ts: string): string {
+    const mins = Math.floor((Date.now() - new Date(ts).getTime()) / 60000);
+    if (mins < 60) return `${Math.max(0, mins)}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    return `${Math.floor(hrs / 24)}d ago`;
+  }
+
+  private runAnimations(m: DashboardMetrics): void {
+    if (this.hasAnimated()) return;
+    this.hasAnimated.set(true);
+    const rm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    this.initTilt(rm);
+    this.runCountUp(m, rm);
+    this.animateDonut(m, rm);
+    if (!rm) this.animateTimeline();
+  }
+
+  private initTilt(rm: boolean): void {
+    if (rm) return;
+    const cards = Array.from(this.el.nativeElement.querySelectorAll<HTMLElement>('.metric-card'));
+    if (!cards.length) return;
+    VanillaTilt.init(cards, { max: 6, speed: 500, glare: true, 'max-glare': 0.08, scale: 1.02, gyroscope: false });
+    this.tiltTargets = cards;
+  }
+
+  private runCountUp(m: DashboardMetrics, rm: boolean): void {
+    this.el.nativeElement.querySelectorAll<HTMLElement>('[data-count]').forEach((el: HTMLElement) => {
+      const key = el.dataset['count'] as keyof DashboardMetrics;
+      const value = m[key] as number;
+      const isRate = el.dataset['rate'] === '1';
+      if (rm) { el.textContent = isRate ? `${value.toFixed(1)}%` : value.toLocaleString(); return; }
+      const cu = new CountUp(el, value, {
+        duration: 1.2, useEasing: true, useGrouping: true, separator: ',',
+        ...(isRate ? { suffix: '%', decimalPlaces: 1 } : {})
+      });
+      cu.start();
+    });
+  }
+
+  private animateDonut(m: DashboardMetrics, rm: boolean): void {
+    const arc = this.donutArc?.nativeElement;
+    if (!arc) return;
+    const c = 2 * Math.PI * 44;
+    const rate = m.totalStories > 0 ? m.storiesWithGeneratedTests / m.totalStories : 0;
+    const target = c * (1 - rate);
+    arc.style.strokeDasharray = `${c}`;
+    if (rm) { arc.style.strokeDashoffset = `${target}`; return; }
+    arc.style.strokeDashoffset = `${c}`;
+    gsap.to(arc, { strokeDashoffset: target, duration: 1.1, ease: 'power2.out', delay: 0.2 });
+  }
+
+  private animateTimeline(): void {
+    const entries = this.el.nativeElement.querySelectorAll('.timeline-entry');
+    if (!entries.length) return;
+    gsap.from(entries, { x: 12, opacity: 0, stagger: 0.06, duration: 0.35, ease: 'power2.out', clearProps: 'all' });
   }
 }
