@@ -62,6 +62,7 @@ describe('StoryDetailPageComponent export actions', () => {
           useValue: jasmine.createSpyObj<TestGenerationService>('TestGenerationService', {
             getTestSuites: of([
               {
+                id: null,
                 storyId: 'story-1',
                 suiteName: 'Regression suite',
                 testCases: [
