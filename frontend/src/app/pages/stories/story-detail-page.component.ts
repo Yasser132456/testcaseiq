@@ -27,6 +27,7 @@ import { ReviewService } from '../../core/services/review.service';
 import { StoryService } from '../../core/services/story.service';
 import { TestGenerationService } from '../../core/services/test-generation.service';
 import { StateMessageComponent } from '../../shared/components/state-message.component';
+import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
 
 interface ReviewDraft {
   title?: string;
@@ -38,11 +39,11 @@ interface ReviewDraft {
 @Component({
   selector: 'app-story-detail-page',
   standalone: true,
-  imports: [DatePipe, ReactiveFormsModule, RouterLink, StateMessageComponent],
+  imports: [DatePipe, ReactiveFormsModule, RouterLink, StateMessageComponent, SkeletonComponent],
   template: `
     <section class="page-stack">
       @if (loading()) {
-        <app-state-message title="Loading story" message="Opening story detail." />
+        <app-skeleton [rows]="5" [cols]="3" />
       } @else if (error()) {
         <app-state-message title="Story unavailable" [message]="error()" tone="error" />
       } @else if (story()) {
@@ -153,7 +154,7 @@ interface ReviewDraft {
           </div>
 
           @if (analysisLoading()) {
-            <app-state-message title="Loading analysis" message="Checking for existing story analysis." />
+            <app-skeleton [rows]="3" [cols]="3" />
           } @else if (analysisError()) {
             <app-state-message title="Analysis unavailable" [message]="analysisError()" tone="error" />
           } @else if (!hasAnalysis()) {
@@ -391,7 +392,7 @@ interface ReviewDraft {
           </section>
 
           @if (testSuitesLoading()) {
-            <app-state-message title="Loading test suites" message="Checking for existing generated manual test cases." />
+            <app-skeleton [rows]="3" [cols]="4" />
           } @else if (testGenerationError()) {
             <app-state-message title="Test generation unavailable" [message]="testGenerationError()" tone="error" />
           } @else if (!hasTestSuites()) {
@@ -621,7 +622,7 @@ interface ReviewDraft {
                               </div>
                               @if (selectedHistoryTestCaseId() === testCase.id) {
                                 @if (reviewHistoryLoading()) {
-                                  <app-state-message title="Loading history" message="Reading review events." />
+                                  <app-skeleton [rows]="3" [cols]="2" />
                                 } @else if (reviewHistoryError()) {
                                   <app-state-message title="History unavailable" [message]="reviewHistoryError()" tone="error" />
                                 } @else if (reviewEvents().length === 0) {

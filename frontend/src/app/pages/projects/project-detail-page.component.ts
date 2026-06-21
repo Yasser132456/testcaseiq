@@ -8,15 +8,16 @@ import { AuthService } from '../../core/services/auth.service';
 import { ProjectService } from '../../core/services/project.service';
 import { StoryService } from '../../core/services/story.service';
 import { StateMessageComponent } from '../../shared/components/state-message.component';
+import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
 
 @Component({
   selector: 'app-project-detail-page',
   standalone: true,
-  imports: [DatePipe, ReactiveFormsModule, RouterLink, StateMessageComponent],
+  imports: [DatePipe, ReactiveFormsModule, RouterLink, StateMessageComponent, SkeletonComponent],
   template: `
     <section class="page-stack">
       @if (loading()) {
-        <app-state-message title="Loading project" message="Opening project workspace." />
+        <app-skeleton [rows]="4" [cols]="3" />
       } @else if (error()) {
         <app-state-message title="Project unavailable" [message]="error()" tone="error" />
       } @else if (project()) {

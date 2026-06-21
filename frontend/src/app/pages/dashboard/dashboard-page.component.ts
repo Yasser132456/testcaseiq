@@ -5,11 +5,12 @@ import { DashboardMetrics } from '../../core/models/dashboard.model';
 import { AuthService } from '../../core/services/auth.service';
 import { DashboardService } from '../../core/services/dashboard.service';
 import { StateMessageComponent } from '../../shared/components/state-message.component';
+import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
 
 @Component({
   selector: 'app-dashboard-page',
   standalone: true,
-  imports: [DatePipe, RouterLink, StateMessageComponent],
+  imports: [DatePipe, RouterLink, StateMessageComponent, SkeletonComponent],
   template: `
     <section class="page-stack">
       <div class="hero-panel">
@@ -18,7 +19,7 @@ import { StateMessageComponent } from '../../shared/components/state-message.com
       </div>
 
       @if (loading()) {
-        <app-state-message title="Loading dashboard" message="Computing QA metrics." />
+        <app-skeleton [rows]="3" [cols]="4" />
       } @else if (error()) {
         <app-state-message title="Dashboard unavailable" [message]="error()" tone="error" />
       } @else if (metrics()) {

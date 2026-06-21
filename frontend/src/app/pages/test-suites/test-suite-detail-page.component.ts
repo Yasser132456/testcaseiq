@@ -6,15 +6,16 @@ import { TestCaseSummary, TestSuiteDetail } from '../../core/models/test-suite.m
 import { AuthService } from '../../core/services/auth.service';
 import { TestSuiteService } from '../../core/services/test-suite.service';
 import { StateMessageComponent } from '../../shared/components/state-message.component';
+import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
 
 @Component({
   selector: 'app-test-suite-detail-page',
   standalone: true,
-  imports: [DatePipe, FormsModule, RouterLink, StateMessageComponent],
+  imports: [DatePipe, FormsModule, RouterLink, StateMessageComponent, SkeletonComponent],
   template: `
     <section class="page-stack">
       @if (loading()) {
-        <app-state-message title="Loading test suite" message="Fetching suite details." />
+        <app-skeleton [rows]="4" [cols]="3" />
       } @else if (loadError()) {
         <app-state-message title="Could not load test suite" [message]="loadError()" tone="error" />
       } @else if (suite()) {

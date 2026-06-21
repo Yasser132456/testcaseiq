@@ -2,15 +2,20 @@ import { DatePipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { FolderKanban, LucideAngularModule } from 'lucide-angular';
 import { Project } from '../../core/models/project.model';
 import { AuthService } from '../../core/services/auth.service';
 import { ProjectService } from '../../core/services/project.service';
 import { StateMessageComponent } from '../../shared/components/state-message.component';
+import { EmptyStateComponent } from '../../shared/empty-state/empty-state.component';
+import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
+import { TableStaggerDirective } from '../../shared/directives/table-stagger.directive';
 
 @Component({
   selector: 'app-project-list-page',
   standalone: true,
-  imports: [DatePipe, ReactiveFormsModule, RouterLink, StateMessageComponent],
+  imports: [DatePipe, ReactiveFormsModule, RouterLink, LucideAngularModule, StateMessageComponent, SkeletonComponent, EmptyStateComponent, TableStaggerDirective],
+  styles: [`.td-muted { color: var(--color-text-2); white-space: nowrap; }`],
   template: `
     <section class="page-stack">
       <div class="section-header">
@@ -53,20 +58,38 @@ import { StateMessageComponent } from '../../shared/components/state-message.com
           }
 
           @if (loading()) {
-            <app-state-message title="Loading projects" message="Fetching project workspace." />
+            <app-skeleton [rows]="5" [cols]="3" />
           } @else if (loadError()) {
             <app-state-message title="Projects unavailable" [message]="loadError()" tone="error" />
           } @else if (projects().length === 0) {
-            <app-state-message title="No projects yet" message="Create a project to start adding stories." />
+            <app-empty-state
+              [icon]="FolderKanban"
+              title="No projects yet"
+              message="Create a project to start mapping your product to stories and generate your first test suite."
+            />
           } @else {
-            <div class="list-stack">
-              @for (project of projects(); track project.id) {
-                <a class="list-row" [routerLink]="['/projects', project.id]">
-                  <strong>{{ project.name }}</strong>
-                  <span>{{ project.createdAt | date:'mediumDate' }}</span>
-                </a>
-              }
-            </div>
+            <table class="data-table" tableStagger>
+              <thead>
+                <tr>
+                  <th>Project</th>
+                  <th>Created</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (project of projects(); track project.id) {
+                  <tr [routerLink]="['/projects', project.id]">
+                    <td><div class="row-inner"><strong>{{ project.name }}</strong></div></td>
+                    <td><div class="row-inner td-muted">{{ project.createdAt | date:'mediumDate' }}</div></td>
+                    <td>
+                      <a class="button ghost" [routerLink]="['/projects', project.id]" (click)="$event.stopPropagation()">
+                        Open →
+                      </a>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
           }
         </section>
       </div>
@@ -74,6 +97,8 @@ import { StateMessageComponent } from '../../shared/components/state-message.com
   `
 })
 export class ProjectListPageComponent implements OnInit {
+  readonly FolderKanban = FolderKanban;
+
   private readonly fb = inject(FormBuilder);
   private readonly projectService = inject(ProjectService);
   private readonly router = inject(Router);

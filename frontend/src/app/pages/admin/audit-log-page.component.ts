@@ -2,9 +2,13 @@ import { DatePipe, SlicePipe } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { ShieldCheck, LucideAngularModule } from 'lucide-angular';
 import { AuditEvent, AuditEventFilters, AuditEventPage } from '../../core/models/audit-event.model';
 import { AuditEventService } from '../../core/services/audit-event.service';
 import { StateMessageComponent } from '../../shared/components/state-message.component';
+import { EmptyStateComponent } from '../../shared/empty-state/empty-state.component';
+import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
+import { TableStaggerDirective } from '../../shared/directives/table-stagger.directive';
 
 const AUDIT_ACTIONS = [
   'USER_REGISTERED', 'USER_LOGIN_SUCCESS', 'USER_LOGIN_FAILED',
@@ -26,7 +30,7 @@ const TRACEABILITY_ROUTES: Record<string, string> = {
 @Component({
   selector: 'app-audit-log-page',
   standalone: true,
-  imports: [DatePipe, SlicePipe, FormsModule, RouterLink, StateMessageComponent],
+  imports: [DatePipe, SlicePipe, FormsModule, RouterLink, LucideAngularModule, StateMessageComponent, SkeletonComponent, EmptyStateComponent, TableStaggerDirective],
   template: `
     <section class="page-stack">
       <div class="section-header">
@@ -67,14 +71,20 @@ const TRACEABILITY_ROUTES: Record<string, string> = {
       </div>
 
       @if (loading()) {
-        <app-state-message title="Loading activity log" message="Fetching audit events." />
+        <app-skeleton [rows]="5" [cols]="6" />
       } @else if (loadError()) {
         <app-state-message title="Could not load activity log" [message]="loadError()" tone="error" />
       } @else if (page()?.content?.length === 0) {
-        <app-state-message title="No events found" message="No audit events match the current filters." />
+        <div class="panel">
+          <app-empty-state
+            [icon]="ShieldCheck"
+            title="No events found"
+            message="No audit events match the current filters — try resetting filters or check back after more platform activity."
+          />
+        </div>
       } @else {
         <div class="panel">
-          <table class="data-table">
+          <table class="data-table" tableStagger>
             <thead>
               <tr>
                 <th>Time</th>
@@ -88,57 +98,65 @@ const TRACEABILITY_ROUTES: Record<string, string> = {
             <tbody>
               @for (event of page()?.content ?? []; track event.id) {
                 <tr>
-                  <td class="text-muted text-nowrap">{{ event.timestamp | date:'short' }}</td>
+                  <td><div class="row-inner td-muted">{{ event.timestamp | date:'short' }}</div></td>
                   <td>
-                    @if (event.actorEmail) {
-                      <span>{{ event.actorEmail }}</span>
-                      @if (event.actorRole) {
-                        <small class="text-muted"> ({{ event.actorRole }})</small>
+                    <div class="row-inner">
+                      @if (event.actorEmail) {
+                        <span>{{ event.actorEmail }}</span>
+                        @if (event.actorRole) {
+                          <small class="td-muted"> ({{ event.actorRole }})</small>
+                        }
+                      } @else {
+                        <span class="td-muted">System</span>
                       }
-                    } @else {
-                      <span class="text-muted">System</span>
-                    }
+                    </div>
                   </td>
-                  <td class="action-name">{{ event.action }}</td>
+                  <td><div class="row-inner action-name">{{ event.action }}</div></td>
                   <td>
-                    @if (resourceLink(event); as link) {
-                      <a [routerLink]="link" class="trace-link">
-                        {{ event.resourceType }}
+                    <div class="row-inner">
+                      @if (resourceLink(event); as link) {
+                        <a [routerLink]="link" class="trace-link">
+                          {{ event.resourceType }}
+                          @if (event.resourceId) {
+                            <small class="resource-id">{{ event.resourceId | slice:0:8 }}…</small>
+                          }
+                        </a>
+                      } @else {
+                        @if (event.resourceType) {
+                          <span>{{ event.resourceType }}</span>
+                        }
                         @if (event.resourceId) {
                           <small class="resource-id">{{ event.resourceId | slice:0:8 }}…</small>
                         }
-                      </a>
-                    } @else {
-                      @if (event.resourceType) {
-                        <span>{{ event.resourceType }}</span>
                       }
-                      @if (event.resourceId) {
-                        <small class="resource-id">{{ event.resourceId | slice:0:8 }}…</small>
-                      }
-                    }
+                    </div>
                   </td>
                   <td>
-                    <span [class]="outcomeBadgeClass(event.outcome)">{{ event.outcome }}</span>
+                    <div class="row-inner">
+                      <span [class]="outcomeBadgeClass(event.outcome)">{{ event.outcome }}</span>
+                    </div>
                   </td>
-                  <td class="context-col">
-                    @if (event.summary) {
-                      <span class="context-summary">{{ event.summary }}</span>
-                    }
-                    @if (event.metadata && metadataEntries(event).length > 0) {
-                      <ul class="meta-list">
-                        @for (entry of metadataEntries(event); track entry.key) {
-                          <li>
-                            @if (traceLink(entry.key, entry.value); as link) {
-                              <span class="meta-key">{{ entry.key }}</span>
-                              <a [routerLink]="link" class="trace-link meta-val">{{ entry.value | slice:0:8 }}…</a>
-                            } @else {
-                              <span class="meta-key">{{ entry.key }}</span>
-                              <span class="meta-val">{{ entry.value }}</span>
-                            }
-                          </li>
-                        }
-                      </ul>
-                    }
+                  <td>
+                    <div class="row-inner context-col">
+                      @if (event.summary) {
+                        <span class="context-summary">{{ event.summary }}</span>
+                      }
+                      @if (event.metadata && metadataEntries(event).length > 0) {
+                        <ul class="meta-list">
+                          @for (entry of metadataEntries(event); track entry.key) {
+                            <li>
+                              @if (traceLink(entry.key, entry.value); as link) {
+                                <span class="meta-key">{{ entry.key }}</span>
+                                <a [routerLink]="link" class="trace-link meta-val">{{ entry.value | slice:0:8 }}…</a>
+                              } @else {
+                                <span class="meta-key">{{ entry.key }}</span>
+                                <span class="meta-val">{{ entry.value }}</span>
+                              }
+                            </li>
+                          }
+                        </ul>
+                      }
+                    </div>
                   </td>
                 </tr>
               }
@@ -166,37 +184,33 @@ const TRACEABILITY_ROUTES: Record<string, string> = {
     </section>
   `,
   styles: [`
-    .section-subtitle { color: var(--text-muted); margin-top: 0.25rem; font-size: 0.875rem; }
+    .section-subtitle { color: var(--color-text-2); margin-top: 0.25rem; font-size: 0.875rem; }
     .filter-panel { padding: 0.75rem 1rem; margin-bottom: 0; border-radius: 6px 6px 0 0; }
     .filter-row { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; }
     .filter-row + .filter-row { margin-top: 0.5rem; }
-    .filter-select, .filter-input { background: var(--input-bg, #0f1923); color: var(--text, #d0d8e8); border: 1px solid var(--border, #2a3444); border-radius: 4px; padding: 0.3rem 0.5rem; font-size: 0.85rem; min-width: 160px; }
+    .filter-select, .filter-input { background: var(--color-surface-2); color: var(--color-text); border: 1px solid var(--color-border); border-radius: 4px; padding: 0.3rem 0.5rem; font-size: 0.85rem; min-width: 160px; }
     .filter-input[type="datetime-local"] { min-width: 200px; color-scheme: dark; }
-    .data-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
-    .data-table th { text-align: left; padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--border, #2a3444); color: var(--text-muted, #8899aa); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; }
-    .data-table td { padding: 0.65rem 0.75rem; border-bottom: 1px solid var(--border-subtle, #1e2a38); vertical-align: top; }
-    .text-muted { color: var(--text-muted, #8899aa); }
-    .text-nowrap { white-space: nowrap; }
-    .action-name, .resource-id, .meta-key, .meta-val { font-family: monospace; }
+    .td-muted { color: var(--color-text-2); white-space: nowrap; }
+    .action-name, .resource-id, .meta-key, .meta-val { font-family: var(--font-mono); }
     .action-name { font-size: 0.8rem; }
-    .resource-id { display: block; font-size: 0.75rem; color: var(--text-muted, #8899aa); }
-    .trace-link { color: var(--accent, #58a6ff); text-decoration: none; }
+    .resource-id { display: block; font-size: 0.75rem; color: var(--color-text-2); }
+    .trace-link { color: var(--color-accent); text-decoration: none; }
     .trace-link:hover { text-decoration: underline; }
-    .context-summary { display: block; color: var(--text-muted); font-size: 0.8rem; margin-bottom: 0.2rem; }
+    .context-summary { display: block; color: var(--color-text-2); font-size: 0.8rem; margin-bottom: 0.2rem; }
     .meta-list { list-style: none; margin: 0; padding: 0; }
     .meta-list li { display: flex; gap: 0.35rem; font-size: 0.78rem; flex-wrap: wrap; }
-    .meta-key { color: var(--text-muted); }
+    .meta-key { color: var(--color-text-2); }
     .outcome-success, .outcome-failure, .outcome-blocked { font-size: 0.8rem; font-weight: 600; }
-    .outcome-success { color: var(--green, #4ade80); }
-    .outcome-failure { color: var(--red, #f87171); }
-    .outcome-blocked { color: var(--amber, #fbbf24); }
+    .outcome-success { color: var(--color-green); }
+    .outcome-failure { color: var(--color-red); }
+    .outcome-blocked { color: var(--color-amber); }
     .pagination-bar { display: flex; align-items: center; gap: 1rem; padding: 0.75rem 0; justify-content: center; }
-    .page-info { color: var(--text-muted, #8899aa); font-size: 0.875rem; }
-    .button.small { padding: 0.25rem 0.6rem; font-size: 0.8rem; }
-    .button[disabled] { opacity: 0.4; cursor: not-allowed; }
+    .page-info { color: var(--color-text-2); font-size: 0.875rem; }
   `]
 })
 export class AuditLogPageComponent implements OnInit {
+  readonly ShieldCheck = ShieldCheck;
+
   private readonly auditEventService = inject(AuditEventService);
 
   readonly page = signal<AuditEventPage | null>(null);

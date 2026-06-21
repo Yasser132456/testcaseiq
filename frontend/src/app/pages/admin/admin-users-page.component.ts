@@ -5,6 +5,7 @@ import { UserRole } from '../../core/models/auth.model';
 import { AdminUserService } from '../../core/services/admin-user.service';
 import { AuthService } from '../../core/services/auth.service';
 import { StateMessageComponent } from '../../shared/components/state-message.component';
+import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
 
 const ROLE_LABELS: Record<UserRole, string> = {
   ADMIN: 'Admin',
@@ -15,7 +16,7 @@ const ROLE_LABELS: Record<UserRole, string> = {
 @Component({
   selector: 'app-admin-users-page',
   standalone: true,
-  imports: [DatePipe, StateMessageComponent],
+  imports: [DatePipe, StateMessageComponent, SkeletonComponent],
   template: `
     <section class="page-stack">
       <div class="section-header">
@@ -24,7 +25,7 @@ const ROLE_LABELS: Record<UserRole, string> = {
       </div>
 
       @if (loading()) {
-        <app-state-message title="Loading users" message="Fetching user accounts." />
+        <app-skeleton [rows]="5" [cols]="6" />
       } @else if (loadError()) {
         <app-state-message title="Could not load users" [message]="loadError()" tone="error" />
       } @else if (users().length === 0) {
@@ -55,7 +56,7 @@ const ROLE_LABELS: Record<UserRole, string> = {
                       <span class="badge-you">you</span>
                     }
                   </td>
-                  <td class="text-muted">{{ user.email }}</td>
+                  <td class="td-muted">{{ user.email }}</td>
                   <td>
                     <span [class]="roleBadgeClass(user.role)">{{ roleLabel(user.role) }}</span>
                   </td>
@@ -66,7 +67,7 @@ const ROLE_LABELS: Record<UserRole, string> = {
                       <span class="status-disabled">Disabled</span>
                     }
                   </td>
-                  <td class="text-muted">{{ user.createdAt | date:'mediumDate' }}</td>
+                  <td class="td-muted">{{ user.createdAt | date:'mediumDate' }}</td>
                   <td class="action-cell">
                     <select
                       class="role-select"
@@ -99,20 +100,16 @@ const ROLE_LABELS: Record<UserRole, string> = {
     </section>
   `,
   styles: [`
-    .section-subtitle { color: var(--text-muted, #8899aa); margin-top: 0.25rem; font-size: 0.875rem; }
-    .data-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-    .data-table th { text-align: left; padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--border, #2a3444); color: var(--text-muted, #8899aa); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; }
-    .data-table td { padding: 0.7rem 0.75rem; border-bottom: 1px solid var(--border-subtle, #1e2a38); vertical-align: middle; }
+    .section-subtitle { color: var(--color-text-2); margin-top: 0.25rem; font-size: 0.875rem; }
     .data-table tr.row-disabled td { opacity: 0.5; }
     .user-name { font-weight: 600; }
-    .badge-you { margin-left: 0.4rem; font-size: 0.7rem; background: var(--accent-muted, #1e3a5f); color: var(--accent, #4da6ff); border-radius: 4px; padding: 0.1rem 0.35rem; vertical-align: middle; }
-    .text-muted { color: var(--text-muted, #8899aa); }
-    .status-active { color: var(--green, #4ade80); font-size: 0.8rem; }
-    .status-disabled { color: var(--text-muted, #8899aa); font-size: 0.8rem; }
+    .badge-you { margin-left: 0.4rem; font-size: 0.7rem; background: var(--color-accent-bg); color: var(--color-accent); border-radius: 4px; padding: 0.1rem 0.35rem; vertical-align: middle; }
+    .td-muted { color: var(--color-text-2); }
+    .status-active { color: var(--color-green); font-size: 0.8rem; }
+    .status-disabled { color: var(--color-text-2); font-size: 0.8rem; }
     .action-cell { display: flex; gap: 0.5rem; align-items: center; }
-    .role-select { background: var(--input-bg, #0f1923); color: var(--text, #d0d8e8); border: 1px solid var(--border, #2a3444); border-radius: 4px; padding: 0.25rem 0.4rem; font-size: 0.85rem; cursor: pointer; }
+    .role-select { background: var(--color-surface-2); color: var(--color-text); border: 1px solid var(--color-border); border-radius: 4px; padding: 0.25rem 0.4rem; font-size: 0.85rem; cursor: pointer; }
     .role-select:disabled { opacity: 0.5; cursor: not-allowed; }
-    .button.small { padding: 0.25rem 0.6rem; font-size: 0.8rem; }
   `]
 })
 export class AdminUsersPageComponent implements OnInit {
