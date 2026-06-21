@@ -19,7 +19,7 @@ const ROLE_LABELS: Record<UserRole, string> = {
   template: `
     <section class="page-stack">
       <div class="section-header">
-        <h2>User Administration</h2>
+        <h2>Users</h2>
         <p class="section-subtitle">Manage user accounts and roles. Changes take effect on next login.</p>
       </div>
 
