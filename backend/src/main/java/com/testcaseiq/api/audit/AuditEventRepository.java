@@ -13,13 +13,13 @@ public interface AuditEventRepository extends JpaRepository<AuditEvent, UUID> {
 
     @Query("""
             SELECT e FROM AuditEvent e
-            WHERE (:action IS NULL OR e.action = :action)
-            AND (:outcome IS NULL OR e.outcome = :outcome)
-            AND (:resourceType IS NULL OR e.resourceType = :resourceType)
-            AND (:resourceId IS NULL OR e.resourceId = :resourceId)
-            AND (:actor IS NULL OR e.actorEmail = :actor)
-            AND (:fromTime IS NULL OR e.timestamp >= :fromTime)
-            AND (:toTime IS NULL OR e.timestamp <= :toTime)
+            WHERE (cast(:action as String) IS NULL OR e.action = :action)
+            AND (cast(:outcome as String) IS NULL OR e.outcome = :outcome)
+            AND (cast(:resourceType as String) IS NULL OR e.resourceType = :resourceType)
+            AND (cast(:resourceId as String) IS NULL OR e.resourceId = :resourceId)
+            AND (cast(:actor as String) IS NULL OR e.actorEmail = :actor)
+            AND (cast(:fromTime as Instant) IS NULL OR e.timestamp >= :fromTime)
+            AND (cast(:toTime as Instant) IS NULL OR e.timestamp <= :toTime)
             ORDER BY e.timestamp DESC
             """)
     Page<AuditEvent> findWithFilters(
