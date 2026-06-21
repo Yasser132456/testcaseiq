@@ -4,13 +4,14 @@ import { AuthService } from '../../core/services/auth.service';
 import { SettingsService } from '../../core/services/settings.service';
 import { AppSettings, AppSettingsUpdate, AiProvider, GenerationMode } from '../../core/models/settings.model';
 import { StateMessageComponent } from '../../shared/components/state-message.component';
+import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
 
 type SettingsTab = 'ai' | 'qa' | 'system';
 
 @Component({
   selector: 'app-settings-page',
   standalone: true,
-  imports: [FormsModule, StateMessageComponent],
+  imports: [FormsModule, StateMessageComponent, SkeletonComponent],
   template: `
     <section class="page-stack">
       <div class="page-header">
@@ -45,7 +46,7 @@ type SettingsTab = 'ai' | 'qa' | 'system';
         @if (loadError()) {
           <app-state-message title="Could not load settings" [message]="loadError()" tone="error" />
         } @else if (loading()) {
-          <app-state-message title="Loading settings" message="Fetching current configuration." />
+          <app-skeleton [rows]="4" [cols]="2" />
         } @else {
           @if (saveSuccess()) {
             <app-state-message title="Settings saved" message="Your changes have been applied." tone="success" />

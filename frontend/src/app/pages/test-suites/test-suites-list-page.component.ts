@@ -2,14 +2,18 @@ import { DatePipe } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { ClipboardList, LucideAngularModule } from 'lucide-angular';
 import { TestSuiteFilters, TestSuitePage, TestSuiteSummary } from '../../core/models/test-suite.model';
 import { TestSuiteService } from '../../core/services/test-suite.service';
 import { StateMessageComponent } from '../../shared/components/state-message.component';
+import { EmptyStateComponent } from '../../shared/empty-state/empty-state.component';
+import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
+import { TableStaggerDirective } from '../../shared/directives/table-stagger.directive';
 
 @Component({
   selector: 'app-test-suites-list-page',
   standalone: true,
-  imports: [DatePipe, FormsModule, RouterLink, StateMessageComponent],
+  imports: [DatePipe, FormsModule, RouterLink, LucideAngularModule, StateMessageComponent, SkeletonComponent, EmptyStateComponent, TableStaggerDirective],
   template: `
     <section class="page-stack">
       <div class="section-header">
@@ -32,14 +36,20 @@ import { StateMessageComponent } from '../../shared/components/state-message.com
       </div>
 
       @if (loading()) {
-        <app-state-message title="Loading test suites" message="Fetching suites." />
+        <app-skeleton [rows]="5" [cols]="6" />
       } @else if (loadError()) {
         <app-state-message title="Could not load test suites" [message]="loadError()" tone="error" />
       } @else if (page()?.content?.length === 0) {
-        <app-state-message title="No test suites found" message="No suites match the current filters." />
+        <div class="panel">
+          <app-empty-state
+            [icon]="ClipboardList"
+            title="No test suites found"
+            message="No suites match the current filters — try resetting filters, or generate a test suite from a story to build coverage."
+          />
+        </div>
       } @else {
         <div class="panel">
-          <table class="data-table">
+          <table class="data-table" tableStagger>
             <thead>
               <tr>
                 <th>Suite name</th>
@@ -52,25 +62,31 @@ import { StateMessageComponent } from '../../shared/components/state-message.com
             </thead>
             <tbody>
               @for (suite of page()?.content ?? []; track suite.id) {
-                <tr class="clickable-row" [routerLink]="['/test-suites', suite.id]">
-                  <td class="suite-name">{{ suite.name }}</td>
+                <tr [routerLink]="['/test-suites', suite.id]">
+                  <td><div class="row-inner suite-name">{{ suite.name }}</div></td>
                   <td>
-                    <a [routerLink]="['/stories', suite.storyId]" class="link" (click)="$event.stopPropagation()">
-                      {{ suite.storyTitle }}
-                    </a>
+                    <div class="row-inner">
+                      <a [routerLink]="['/stories', suite.storyId]" class="row-link" (click)="$event.stopPropagation()">
+                        {{ suite.storyTitle }}
+                      </a>
+                    </div>
                   </td>
                   <td>
-                    <a [routerLink]="['/projects', suite.projectId]" class="link" (click)="$event.stopPropagation()">
-                      {{ suite.projectName }}
-                    </a>
+                    <div class="row-inner">
+                      <a [routerLink]="['/projects', suite.projectId]" class="row-link" (click)="$event.stopPropagation()">
+                        {{ suite.projectName }}
+                      </a>
+                    </div>
                   </td>
                   <td>
-                    @if (suite.testLayer) {
-                      <span class="layer-tag">{{ suite.testLayer }}</span>
-                    }
+                    <div class="row-inner">
+                      @if (suite.testLayer) {
+                        <span class="layer-badge">{{ suite.testLayer }}</span>
+                      }
+                    </div>
                   </td>
                   <td>
-                    <span class="case-counts">
+                    <div class="row-inner">
                       <span class="count-total">{{ suite.totalCases }}</span>
                       @if (suite.approvedCases > 0) {
                         <span class="count-approved"> ✓{{ suite.approvedCases }}</span>
@@ -78,9 +94,9 @@ import { StateMessageComponent } from '../../shared/components/state-message.com
                       @if (suite.rejectedCases > 0) {
                         <span class="count-rejected"> ✗{{ suite.rejectedCases }}</span>
                       }
-                    </span>
+                    </div>
                   </td>
-                  <td class="text-muted text-nowrap">{{ suite.createdAt | date:'mediumDate' }}</td>
+                  <td><div class="row-inner td-muted">{{ suite.createdAt | date:'mediumDate' }}</div></td>
                 </tr>
               }
             </tbody>
@@ -103,32 +119,26 @@ import { StateMessageComponent } from '../../shared/components/state-message.com
     </section>
   `,
   styles: [`
-    .section-subtitle { color: var(--text-muted); margin-top: 0.25rem; font-size: 0.875rem; }
+    .section-subtitle { color: var(--color-text-2); margin-top: 0.25rem; font-size: 0.875rem; }
     .filter-panel { padding: 0.75rem 1rem; margin-bottom: 0; border-radius: 6px 6px 0 0; }
     .filter-row { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; }
-    .filter-input { background: var(--input-bg); color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 0.3rem 0.5rem; font-size: 0.85rem; min-width: 200px; }
-    .check-label { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: var(--text); cursor: pointer; }
-    .data-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
-    .data-table th { text-align: left; padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--border); color: var(--text-muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; }
-    .data-table td { padding: 0.65rem 0.75rem; border-bottom: 1px solid var(--border-subtle); vertical-align: middle; }
-    .clickable-row { cursor: pointer; }
-    .clickable-row:hover td { background: var(--surface-hover, rgba(255,255,255,0.03)); }
+    .filter-input { background: var(--color-surface-2); color: var(--color-text); border: 1px solid var(--color-border); border-radius: 4px; padding: 0.3rem 0.5rem; font-size: 0.85rem; min-width: 200px; }
+    .check-label { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: var(--color-text); cursor: pointer; }
     .suite-name { font-weight: 500; }
-    .link { color: var(--accent); text-decoration: none; }
-    .link:hover { text-decoration: underline; }
-    .layer-tag { font-family: monospace; font-size: 0.78rem; background: var(--chip-bg, rgba(88,166,255,0.1)); color: var(--accent); padding: 0.15rem 0.4rem; border-radius: 3px; }
+    .row-link { color: var(--color-text-2); text-decoration: none; transition: color var(--dur) var(--ease); }
+    .row-link:hover { color: var(--color-accent); }
+    .layer-badge { font-family: var(--font-mono); font-size: 0.72rem; background: var(--color-surface-2); border: 1px solid var(--color-border); color: var(--color-text-2); padding: 0.15rem 0.45rem; border-radius: 4px; }
+    .td-muted { color: var(--color-text-2); white-space: nowrap; }
     .count-total { font-weight: 600; }
-    .count-approved { color: var(--green); font-size: 0.82rem; }
-    .count-rejected { color: var(--red); font-size: 0.82rem; }
-    .text-muted { color: var(--text-muted); }
-    .text-nowrap { white-space: nowrap; }
+    .count-approved { color: var(--color-green); font-size: 0.82rem; }
+    .count-rejected { color: var(--color-red); font-size: 0.82rem; }
     .pagination-bar { display: flex; align-items: center; gap: 1rem; padding: 0.75rem 0; justify-content: center; }
-    .page-info { color: var(--text-muted); font-size: 0.875rem; }
-    .button.small { padding: 0.25rem 0.6rem; font-size: 0.8rem; }
-    .button[disabled] { opacity: 0.4; cursor: not-allowed; }
+    .page-info { color: var(--color-text-2); font-size: 0.875rem; }
   `]
 })
 export class TestSuitesListPageComponent implements OnInit {
+  readonly ClipboardList = ClipboardList;
+
   private readonly testSuiteService = inject(TestSuiteService);
 
   readonly page = signal<TestSuitePage | null>(null);
