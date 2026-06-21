@@ -30,6 +30,12 @@ import { AuthService } from '../core/services/auth.service';
             <span class="nav-icon" aria-hidden="true">TS</span>
             Test Suites
           </a>
+          @if (authService.hasRole(['ADMIN', 'QA_ENGINEER'])) {
+            <a routerLink="/settings" routerLinkActive="active">
+              <span class="nav-icon" aria-hidden="true">ST</span>
+              Settings
+            </a>
+          }
           @if (authService.hasRole('ADMIN')) {
             <a routerLink="/admin/users" routerLinkActive="active">
               <span class="nav-icon" aria-hidden="true">UA</span>

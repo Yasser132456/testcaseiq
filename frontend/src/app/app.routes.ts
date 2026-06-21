@@ -8,6 +8,7 @@ import { LoginPageComponent } from './pages/auth/login-page.component';
 import { ProjectDetailPageComponent } from './pages/projects/project-detail-page.component';
 import { ProjectListPageComponent } from './pages/projects/project-list-page.component';
 import { RegisterPageComponent } from './pages/auth/register-page.component';
+import { SettingsPageComponent } from './pages/settings/settings-page.component';
 import { StoryDetailPageComponent } from './pages/stories/story-detail-page.component';
 import { TestSuitesListPageComponent } from './pages/test-suites/test-suites-list-page.component';
 import { TestSuiteDetailPageComponent } from './pages/test-suites/test-suite-detail-page.component';
@@ -35,6 +36,11 @@ export const routes: Routes = [
         path: 'admin/audit',
         component: AuditLogPageComponent,
         data: { requiresAuth: true, roles: ['ADMIN'] }
+      },
+      {
+        path: 'settings',
+        component: SettingsPageComponent,
+        data: { requiresAuth: true, roles: ['ADMIN', 'QA_ENGINEER'] }
       }
     ]
   },
