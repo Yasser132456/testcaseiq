@@ -11,7 +11,8 @@ public record GeneratedTestSuiteResult(
         List<GeneratedTestCaseDto> testCases,
         QaValidationResult qaValidation,
         String provider,
-        Instant generatedAt
+        Instant generatedAt,
+        String explainabilitySummary
 ) {
     public GeneratedTestSuiteResult(
             UUID storyId,
@@ -21,6 +22,6 @@ public record GeneratedTestSuiteResult(
             String provider,
             Instant generatedAt
     ) {
-        this(null, storyId, suiteName, testCases, qaValidation, provider, generatedAt);
+        this(null, storyId, suiteName, testCases, qaValidation, provider, generatedAt, null);
     }
 }

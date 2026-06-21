@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.testcaseiq.api.domain.enums.ConfidenceLevel;
 import com.testcaseiq.api.domain.enums.Priority;
 import com.testcaseiq.api.domain.enums.ReviewStatus;
 import com.testcaseiq.api.domain.enums.RiskLevel;
@@ -74,6 +75,19 @@ public class TestCase extends AuditableEntity {
 
     @Column(name = "automation_candidate", nullable = false)
     private boolean automationCandidate;
+
+    @Column(name = "quality_score")
+    private Integer qualityScore;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "confidence_level", length = 16)
+    private ConfidenceLevel confidenceLevel;
+
+    @Column(name = "generation_rationale", columnDefinition = "text")
+    private String generationRationale;
+
+    @Column(name = "linked_acceptance_criteria_text", columnDefinition = "text")
+    private String linkedAcceptanceCriteriaText;
 
     @OneToMany(mappedBy = "testCase", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TestStep> testSteps = new ArrayList<>();
@@ -218,6 +232,38 @@ public class TestCase extends AuditableEntity {
 
     public void setAutomationCandidate(boolean automationCandidate) {
         this.automationCandidate = automationCandidate;
+    }
+
+    public Integer getQualityScore() {
+        return qualityScore;
+    }
+
+    public void setQualityScore(Integer qualityScore) {
+        this.qualityScore = qualityScore;
+    }
+
+    public ConfidenceLevel getConfidenceLevel() {
+        return confidenceLevel;
+    }
+
+    public void setConfidenceLevel(ConfidenceLevel confidenceLevel) {
+        this.confidenceLevel = confidenceLevel;
+    }
+
+    public String getGenerationRationale() {
+        return generationRationale;
+    }
+
+    public void setGenerationRationale(String generationRationale) {
+        this.generationRationale = generationRationale;
+    }
+
+    public String getLinkedAcceptanceCriteriaText() {
+        return linkedAcceptanceCriteriaText;
+    }
+
+    public void setLinkedAcceptanceCriteriaText(String linkedAcceptanceCriteriaText) {
+        this.linkedAcceptanceCriteriaText = linkedAcceptanceCriteriaText;
     }
 
     public void replaceSteps(List<TestStep> replacementSteps) {

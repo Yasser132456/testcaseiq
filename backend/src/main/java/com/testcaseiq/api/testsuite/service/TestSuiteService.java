@@ -8,7 +8,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.testcaseiq.api.common.error.ResourceNotFoundException;
+import com.testcaseiq.api.domain.enums.ConfidenceLevel;
 import com.testcaseiq.api.domain.enums.ReviewStatus;
+import com.testcaseiq.api.domain.model.TestCase;
 import com.testcaseiq.api.domain.model.TestSuite;
 import com.testcaseiq.api.domain.repository.TestSuiteRepository;
 import com.testcaseiq.api.testsuite.dto.TestSuiteDetailResponse;
@@ -79,7 +81,29 @@ public class TestSuiteService {
                 rejected,
                 summaries,
                 suite.getCreatedAt(),
-                suite.getUpdatedAt()
+                suite.getUpdatedAt(),
+                buildExplainabilitySummary(cases)
+        );
+    }
+
+    private String buildExplainabilitySummary(java.util.List<TestCase> cases) {
+        if (cases == null || cases.isEmpty()) {
+            return "No test cases in this suite.";
+        }
+        long scored = cases.stream().filter(tc -> tc.getQualityScore() != null).count();
+        if (scored == 0) {
+            return "Quality metadata is not available for this suite (generated before scoring was enabled).";
+        }
+        long high = cases.stream().filter(tc -> tc.getConfidenceLevel() == ConfidenceLevel.HIGH).count();
+        long medium = cases.stream().filter(tc -> tc.getConfidenceLevel() == ConfidenceLevel.MEDIUM).count();
+        long low = cases.stream().filter(tc -> tc.getConfidenceLevel() == ConfidenceLevel.LOW).count();
+        java.util.OptionalDouble avg = cases.stream()
+                .filter(tc -> tc.getQualityScore() != null)
+                .mapToInt(TestCase::getQualityScore)
+                .average();
+        return String.format(
+                "%d test case(s) scored: %d HIGH confidence, %d MEDIUM, %d LOW. Average quality score: %.0f/100.",
+                scored, high, medium, low, avg.orElse(0.0)
         );
     }
 }

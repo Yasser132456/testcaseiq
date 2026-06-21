@@ -205,11 +205,16 @@ class AiControllerTests {
                         "Given a valid user",
                         List.of("REQ-1"),
                         List.of(new GeneratedTestStepDto(UUID.randomUUID(), 1, "Submit valid data.", "The workflow succeeds.")),
-                        List.of(new GeneratedTestDataDto(UUID.randomUUID(), "validInput", "{\"state\":\"valid\"}"))
+                        List.of(new GeneratedTestDataDto(UUID.randomUUID(), "validInput", "{\"state\":\"valid\"}")),
+                        95,
+                        null,
+                        "Covers core acceptance criterion.",
+                        "Given a valid user, When valid data submitted, Then workflow succeeds."
                 )),
                 new QaValidationResult(0.8, 0.9, List.of()),
                 "mock-ai-provider",
-                null
+                null,
+                "1 test case(s) scored: 1 HIGH confidence, 0 MEDIUM, 0 LOW. Average quality score: 95/100."
         );
     }
 }

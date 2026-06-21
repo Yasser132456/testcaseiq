@@ -92,6 +92,12 @@ import { StateMessageComponent } from '../../shared/components/state-message.com
           }
         </div>
 
+        @if (suite()!.explainabilitySummary) {
+          <div class="panel">
+            <p class="suite-description">{{ suite()!.explainabilitySummary }}</p>
+          </div>
+        }
+
         @if (suite()!.testCases.length > 0) {
           <div class="panel">
             <table class="data-table">
@@ -101,6 +107,8 @@ import { StateMessageComponent } from '../../shared/components/state-message.com
                   <th>Type</th>
                   <th>Priority</th>
                   <th>Status</th>
+                  <th>Quality</th>
+                  <th>Confidence</th>
                   <th>Auto</th>
                 </tr>
               </thead>
@@ -111,6 +119,8 @@ import { StateMessageComponent } from '../../shared/components/state-message.com
                     <td><span class="type-tag">{{ tc.type ?? '—' }}</span></td>
                     <td><span class="priority-tag">{{ tc.priority ?? '—' }}</span></td>
                     <td><span [class]="statusClass(tc)">{{ tc.reviewStatus ?? 'DRAFT' }}</span></td>
+                    <td><span [style.color]="confidenceColor(tc)">{{ tc.qualityScore != null ? tc.qualityScore + '/100' : '—' }}</span></td>
+                    <td><span [style.color]="confidenceColor(tc)">{{ tc.confidenceLevel ?? '—' }}</span></td>
                     <td>{{ tc.automationCandidate ? '✓' : '' }}</td>
                   </tr>
                 }
@@ -229,6 +239,13 @@ export class TestSuiteDetailPageComponent implements OnInit {
     if (tc.reviewStatus === 'APPROVED') return 'status-approved';
     if (tc.reviewStatus === 'REJECTED') return 'status-rejected';
     return 'status-other';
+  }
+
+  confidenceColor(tc: TestCaseSummary): string {
+    if (tc.confidenceLevel === 'HIGH') return 'var(--green)';
+    if (tc.confidenceLevel === 'MEDIUM') return 'var(--amber)';
+    if (tc.confidenceLevel === 'LOW') return 'var(--red)';
+    return 'var(--text-muted)';
   }
 
   private load(id: string): void {

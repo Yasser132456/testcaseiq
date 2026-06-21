@@ -3,6 +3,7 @@ package com.testcaseiq.api.ai.dto;
 import java.util.List;
 import java.util.UUID;
 
+import com.testcaseiq.api.domain.enums.ConfidenceLevel;
 import com.testcaseiq.api.domain.enums.Priority;
 import com.testcaseiq.api.domain.enums.ReviewStatus;
 import com.testcaseiq.api.domain.enums.RiskLevel;
@@ -23,7 +24,11 @@ public record GeneratedTestCaseDto(
         String bddScenario,
         List<String> linkedRequirementReferences,
         List<GeneratedTestStepDto> steps,
-        List<GeneratedTestDataDto> testData
+        List<GeneratedTestDataDto> testData,
+        int qualityScore,
+        ConfidenceLevel confidenceLevel,
+        String generationRationale,
+        String linkedAcceptanceCriteriaText
 ) {
     public GeneratedTestCaseDto(
             String title,
@@ -37,7 +42,9 @@ public record GeneratedTestCaseDto(
             String bddScenario,
             List<String> linkedRequirementReferences,
             List<GeneratedTestStepDto> steps,
-            List<GeneratedTestDataDto> testData
+            List<GeneratedTestDataDto> testData,
+            String generationRationale,
+            String linkedAcceptanceCriteriaText
     ) {
         this(
                 null,
@@ -53,7 +60,11 @@ public record GeneratedTestCaseDto(
                 bddScenario,
                 linkedRequirementReferences,
                 steps,
-                testData
+                testData,
+                0,
+                null,
+                generationRationale,
+                linkedAcceptanceCriteriaText
         );
     }
 }

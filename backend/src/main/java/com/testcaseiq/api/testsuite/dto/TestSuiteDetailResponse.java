@@ -20,7 +20,8 @@ public record TestSuiteDetailResponse(
         int rejectedCases,
         List<TestCaseSummary> testCases,
         Instant createdAt,
-        Instant updatedAt
+        Instant updatedAt,
+        String explainabilitySummary
 ) {
     public record TestCaseSummary(
             UUID id,
@@ -28,7 +29,9 @@ public record TestSuiteDetailResponse(
             String type,
             String priority,
             String reviewStatus,
-            boolean automationCandidate
+            boolean automationCandidate,
+            Integer qualityScore,
+            String confidenceLevel
     ) {
         public static TestCaseSummary from(TestCase tc) {
             return new TestCaseSummary(
@@ -37,7 +40,9 @@ public record TestSuiteDetailResponse(
                     tc.getType() != null ? tc.getType().name() : null,
                     tc.getPriority() != null ? tc.getPriority().name() : null,
                     tc.getReviewStatus() != null ? tc.getReviewStatus().name() : null,
-                    tc.isAutomationCandidate()
+                    tc.isAutomationCandidate(),
+                    tc.getQualityScore(),
+                    tc.getConfidenceLevel() != null ? tc.getConfidenceLevel().name() : null
             );
         }
     }
