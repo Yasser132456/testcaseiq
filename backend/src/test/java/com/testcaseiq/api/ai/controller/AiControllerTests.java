@@ -1,6 +1,7 @@
 package com.testcaseiq.api.ai.controller;
 
 import static org.hamcrest.Matchers.hasSize;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -10,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.util.List;
 import java.util.UUID;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -30,6 +32,7 @@ import com.testcaseiq.api.ai.dto.QaValidationResult;
 import com.testcaseiq.api.ai.dto.RequirementExtractionResult;
 import com.testcaseiq.api.ai.dto.StoryAnalysisResult;
 import com.testcaseiq.api.ai.provider.AiProviderException;
+import com.testcaseiq.api.ai.provider.AiProviderProperties;
 import com.testcaseiq.api.ai.service.AiGenerationService;
 import com.testcaseiq.api.audit.AuditService;
 import com.testcaseiq.api.common.error.ResourceNotFoundException;
@@ -54,6 +57,14 @@ class AiControllerTests {
 
     @MockBean
     private AuditService auditService;
+
+    @MockBean
+    private AiProviderProperties aiProviderProperties;
+
+    @BeforeEach
+    void setupProviderMock() {
+        given(aiProviderProperties.getProvider()).willReturn(AiProviderProperties.Provider.MOCK);
+    }
 
     @Test
     void analyzeStoryReturnsAnalysisResult() throws Exception {

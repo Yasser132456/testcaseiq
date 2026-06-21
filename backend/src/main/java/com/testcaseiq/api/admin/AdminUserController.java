@@ -1,6 +1,7 @@
 package com.testcaseiq.api.admin;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -45,7 +46,8 @@ public class AdminUserController {
     ) {
         AdminUserResponse response = adminUserService.updateRole(userId, currentUser.getId(), request.role());
         auditService.log(AuditAction.USER_ROLE_CHANGED, "USER", userId.toString(), AuditOutcome.SUCCESS,
-                "Role changed to " + request.role().name());
+                "Role changed to " + request.role().name(),
+                Map.of("targetUserId", userId.toString(), "newRole", request.role().name()));
         return response;
     }
 
@@ -57,7 +59,8 @@ public class AdminUserController {
     ) {
         AdminUserResponse response = adminUserService.updateStatus(userId, currentUser.getId(), request.enabled());
         auditService.log(AuditAction.USER_STATUS_CHANGED, "USER", userId.toString(), AuditOutcome.SUCCESS,
-                request.enabled() ? "Account enabled" : "Account disabled");
+                request.enabled() ? "Account enabled" : "Account disabled",
+                Map.of("targetUserId", userId.toString(), "enabled", String.valueOf(request.enabled())));
         return response;
     }
 }

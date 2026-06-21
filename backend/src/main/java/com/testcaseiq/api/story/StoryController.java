@@ -2,6 +2,7 @@ package com.testcaseiq.api.story;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
@@ -39,7 +40,8 @@ public class StoryController {
             @Valid @RequestBody StoryCreateRequest request
     ) {
         StoryResponse response = storyService.create(projectId, request);
-        auditService.log(AuditAction.STORY_CREATED, "STORY", response.id().toString(), AuditOutcome.SUCCESS, null);
+        auditService.log(AuditAction.STORY_CREATED, "STORY", response.id().toString(), AuditOutcome.SUCCESS, null,
+                Map.of("projectId", projectId.toString()));
         return ResponseEntity.created(URI.create("/api/stories/" + response.id())).body(response);
     }
 
@@ -59,7 +61,8 @@ public class StoryController {
     @org.springframework.security.access.prepost.PreAuthorize("!@securityEnforcement.isEnforced() or hasAnyRole('ADMIN', 'QA_ENGINEER')")
     public StoryResponse update(@PathVariable UUID storyId, @Valid @RequestBody StoryUpdateRequest request) {
         StoryResponse response = storyService.update(storyId, request);
-        auditService.log(AuditAction.STORY_UPDATED, "STORY", storyId.toString(), AuditOutcome.SUCCESS, null);
+        auditService.log(AuditAction.STORY_UPDATED, "STORY", storyId.toString(), AuditOutcome.SUCCESS, null,
+                Map.of("projectId", response.projectId().toString()));
         return response;
     }
 

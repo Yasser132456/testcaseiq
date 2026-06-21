@@ -1,6 +1,7 @@
 package com.testcaseiq.api.review.controller;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
@@ -45,9 +46,12 @@ public class TestCaseReviewController {
             @Valid @RequestBody TestCaseReviewStatusUpdateRequest request
     ) {
         TestCaseResponse response = testCaseReviewService.updateReviewStatus(testCaseId, request);
-        AuditAction action = (request.status() == ReviewStatus.APPROVED || request.status() == ReviewStatus.REJECTED)
-                ? AuditAction.TEST_CASE_STATUS_CHANGED : AuditAction.TEST_CASE_UPDATED;
-        auditService.log(action, "TEST_CASE", testCaseId.toString(), AuditOutcome.SUCCESS, null);
+        boolean isDecision = request.status() == ReviewStatus.APPROVED || request.status() == ReviewStatus.REJECTED;
+        AuditAction action = isDecision ? AuditAction.TEST_CASE_STATUS_CHANGED : AuditAction.TEST_CASE_UPDATED;
+        Map<String, String> metadata = isDecision
+                ? Map.of("reviewDecision", request.status().name())
+                : Map.of();
+        auditService.log(action, "TEST_CASE", testCaseId.toString(), AuditOutcome.SUCCESS, null, metadata);
         return ResponseEntity.ok(response);
     }
 
