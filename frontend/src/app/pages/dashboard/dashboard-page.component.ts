@@ -29,35 +29,35 @@ import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
         <div class="kpi-grid">
           <article class="metric-card card--accent">
             <span class="metric-label">Projects</span>
-            <span class="metric-value" data-count="totalProjects">0</span>
+            <span class="metric-value" data-count="totalProjects">{{ metrics()!.totalProjects.toLocaleString() }}</span>
           </article>
           <article class="metric-card card--accent">
             <span class="metric-label">Stories</span>
-            <span class="metric-value" data-count="totalStories">0</span>
+            <span class="metric-value" data-count="totalStories">{{ metrics()!.totalStories.toLocaleString() }}</span>
           </article>
           <article class="metric-card card--accent">
             <span class="metric-label">Test suites</span>
-            <span class="metric-value" data-count="totalTestSuites">0</span>
+            <span class="metric-value" data-count="totalTestSuites">{{ metrics()!.totalTestSuites.toLocaleString() }}</span>
           </article>
           <article class="metric-card card--accent">
             <span class="metric-label">Test cases</span>
-            <span class="metric-value" data-count="totalTestCases">0</span>
+            <span class="metric-value" data-count="totalTestCases">{{ metrics()!.totalTestCases.toLocaleString() }}</span>
           </article>
           <article class="metric-card card--green">
             <span class="metric-label">Approved</span>
-            <span class="metric-value" data-count="approvedTestCases">0</span>
+            <span class="metric-value" data-count="approvedTestCases">{{ metrics()!.approvedTestCases.toLocaleString() }}</span>
           </article>
           <article class="metric-card card--amber">
             <span class="metric-label">Pending review</span>
-            <span class="metric-value" data-count="pendingReviewTestCases">0</span>
+            <span class="metric-value" data-count="pendingReviewTestCases">{{ metrics()!.pendingReviewTestCases.toLocaleString() }}</span>
           </article>
           <article class="metric-card card--red">
             <span class="metric-label">Rejected</span>
-            <span class="metric-value" data-count="rejectedTestCases">0</span>
+            <span class="metric-value" data-count="rejectedTestCases">{{ metrics()!.rejectedTestCases.toLocaleString() }}</span>
           </article>
           <article class="metric-card card--accent">
             <span class="metric-label">Exports</span>
-            <span class="metric-value" data-count="totalExports">0</span>
+            <span class="metric-value" data-count="totalExports">{{ metrics()!.totalExports.toLocaleString() }}</span>
           </article>
         </div>
 
@@ -92,7 +92,7 @@ import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
                 <div class="rate-header">
                   <span>Approval rate</span>
                   <strong class="green-val rate-val">
-                    <span data-count="approvalRate" data-rate="1">0%</span>
+                    <span data-count="approvalRate" data-rate="1">{{ metrics()!.approvalRate.toFixed(1) }}%</span>
                   </strong>
                 </div>
                 <div class="rate-bar-track">
@@ -103,7 +103,7 @@ import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
                 <div class="rate-header">
                   <span>Pending rate</span>
                   <strong class="amber-val rate-val">
-                    <span data-count="pendingReviewRate" data-rate="1">0%</span>
+                    <span data-count="pendingReviewRate" data-rate="1">{{ metrics()!.pendingReviewRate.toFixed(1) }}%</span>
                   </strong>
                 </div>
                 <div class="rate-bar-track">
@@ -114,7 +114,7 @@ import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
                 <div class="rate-header">
                   <span>Rejection rate</span>
                   <strong class="red-val rate-val">
-                    <span data-count="rejectionRate" data-rate="1">0%</span>
+                    <span data-count="rejectionRate" data-rate="1">{{ metrics()!.rejectionRate.toFixed(1) }}%</span>
                   </strong>
                 </div>
                 <div class="rate-bar-track">
@@ -125,7 +125,7 @@ import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
                 <div class="rate-header">
                   <span>Export readiness</span>
                   <strong class="green-val rate-val">
-                    <span data-count="exportReadinessRate" data-rate="1">0%</span>
+                    <span data-count="exportReadinessRate" data-rate="1">{{ metrics()!.exportReadinessRate.toFixed(1) }}%</span>
                   </strong>
                 </div>
                 <div class="rate-bar-track">
