@@ -17,7 +17,6 @@
   gap: 0.5rem;
   cursor: default;
   transition: transform var(--dur) var(--ease), border-color var(--dur) var(--ease);
-  transform-style: preserve-3d;
 }
 
 .metric-card::before {
