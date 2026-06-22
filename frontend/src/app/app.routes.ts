@@ -23,9 +23,16 @@ export const routes: Routes = [
     component: AppLayoutComponent,
     canActivateChild: [authGuard],
     children: [
-      { path: '', pathMatch: 'full', component: DashboardPageComponent, data: { requiresAuth: true } },
+      { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
+      { path: 'dashboard', component: DashboardPageComponent, data: { requiresAuth: true } },
       { path: 'projects', component: ProjectListPageComponent, data: { requiresAuth: true } },
       { path: 'projects/:projectId', component: ProjectDetailPageComponent, data: { requiresAuth: true } },
+      {
+        path: 'stories',
+        loadComponent: () => import('./pages/stories/stories-list-page.component')
+          .then((m) => m.StoriesListPageComponent),
+        data: { requiresAuth: true }
+      },
       { path: 'stories/:storyId', component: StoryDetailPageComponent, data: { requiresAuth: true } },
       { path: 'test-suites', component: TestSuitesListPageComponent, data: { requiresAuth: true } },
       { path: 'test-suites/:id', component: TestSuiteDetailPageComponent, data: { requiresAuth: true } },

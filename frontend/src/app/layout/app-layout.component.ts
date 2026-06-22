@@ -1,5 +1,5 @@
 import {
-  AfterViewInit, Component, ElementRef, ViewChild, inject, signal
+  AfterViewInit, Component, EffectRef, ElementRef, Injector, Signal, ViewChild, effect, inject, signal
 } from '@angular/core';
 import {
   ActivatedRoute, NavigationEnd, Router,
@@ -13,10 +13,13 @@ import {
   LucideDynamicIcon,
   LucideLayoutDashboard, LucideFolderKanban, LucideClipboardList, LucideCheckSquare2,
   LucideDownload, LucideShieldCheck, LucideUsers, LucideSettings2, LucideChevronLeft, LucideChevronRight,
+  LucideBookOpenText
 } from '@lucide/angular';
 import { AuthService } from '../core/services/auth.service';
 
 interface Crumb { label: string; path: string; }
+interface ProjectContext { projectId: string; name: string; storyCount: number; coveragePercent: number; }
+interface ProjectContextSource { projectContext: Signal<ProjectContext | null>; }
 
 @Component({
   selector: 'app-layout',
@@ -43,11 +46,18 @@ interface Crumb { label: string; path: string; }
                           [size]="14" [strokeWidth]="2" aria-hidden="true"></svg>
         </button>
 
-        <nav class="nav-groups" aria-label="Primary navigation">
+        @if (projectContext() && !collapsed()) {
+          <div class="project-context-panel">
+            <a routerLink="/projects">← Projects</a>
+            <strong>{{ projectContext()?.name }}</strong>
+            <span>{{ projectContext()?.storyCount }} stories · {{ projectContext()?.coveragePercent }}%</span>
+          </div>
+        }
 
+        <nav class="nav-groups" aria-label="Primary navigation">
           <div class="nav-group">
-            <span class="nav-group-label">WORKSPACE</span>
-            <a class="nav-item" routerLink="/" routerLinkActive="active"
+            <span class="nav-group-label">HOME</span>
+            <a class="nav-item" routerLink="/dashboard" routerLinkActive="active"
                [routerLinkActiveOptions]="{ exact: true }"
                [attr.data-tooltip]="collapsed() ? 'Dashboard' : null"
                (mouseenter)="onNavItemEnter($event)">
@@ -56,12 +66,25 @@ interface Crumb { label: string; path: string; }
                 <span class="nav-label">Dashboard</span>
               </span>
             </a>
+          </div>
+
+          <div class="nav-group">
+            <span class="nav-group-label">WORKSPACE</span>
             <a class="nav-item" routerLink="/projects" routerLinkActive="active"
                [attr.data-tooltip]="collapsed() ? 'Projects' : null"
                (mouseenter)="onNavItemEnter($event)">
               <span class="nav-inner">
                 <span class="nav-icon-wrap"><svg [lucideIcon]="LucideFolderKanban" [size]="20" [strokeWidth]="1.5" aria-hidden="true"></svg></span>
                 <span class="nav-label">Projects</span>
+              </span>
+            </a>
+            <a class="nav-item" routerLink="/stories" routerLinkActive="active"
+               [routerLinkActiveOptions]="{ exact: true }"
+               [attr.data-tooltip]="collapsed() ? 'Stories' : null"
+               (mouseenter)="onNavItemEnter($event)">
+              <span class="nav-inner">
+                <span class="nav-icon-wrap"><svg [lucideIcon]="LucideBookOpenText" [size]="20" [strokeWidth]="1.5" aria-hidden="true"></svg></span>
+                <span class="nav-label">Stories</span>
               </span>
             </a>
             <a class="nav-item" routerLink="/test-suites" routerLinkActive="active"
@@ -88,27 +111,18 @@ interface Crumb { label: string; path: string; }
               }
             </a>
             <a class="nav-item" routerLink="/export" routerLinkActive="active"
-               [attr.data-tooltip]="collapsed() ? 'Export' : null"
+               [attr.data-tooltip]="collapsed() ? 'Export Hub' : null"
                (mouseenter)="onNavItemEnter($event)">
               <span class="nav-inner">
                 <span class="nav-icon-wrap"><svg [lucideIcon]="LucideDownload" [size]="20" [strokeWidth]="1.5" aria-hidden="true"></svg></span>
-                <span class="nav-label">Export</span>
+                <span class="nav-label">Export Hub</span>
               </span>
             </a>
           </div>
 
-          @if (authService.hasRole(['ADMIN', 'QA_ENGINEER'])) {
+          @if (authService.hasRole('ADMIN')) {
             <div class="nav-group">
               <span class="nav-group-label">ADMIN</span>
-              @if (authService.hasRole('ADMIN')) {
-                <a class="nav-item" routerLink="/admin/audit" routerLinkActive="active"
-                   [attr.data-tooltip]="collapsed() ? 'Audit Trail' : null"
-                   (mouseenter)="onNavItemEnter($event)">
-                  <span class="nav-inner">
-                    <span class="nav-icon-wrap"><svg [lucideIcon]="LucideShieldCheck" [size]="20" [strokeWidth]="1.5" aria-hidden="true"></svg></span>
-                    <span class="nav-label">Audit Trail</span>
-                  </span>
-                </a>
                 <a class="nav-item" routerLink="/admin/users" routerLinkActive="active"
                    [attr.data-tooltip]="collapsed() ? 'Users' : null"
                    (mouseenter)="onNavItemEnter($event)">
@@ -117,26 +131,37 @@ interface Crumb { label: string; path: string; }
                     <span class="nav-label">Users</span>
                   </span>
                 </a>
-              }
-              <a class="nav-item" routerLink="/settings" routerLinkActive="active"
-                 [attr.data-tooltip]="collapsed() ? 'Settings' : null"
-                 (mouseenter)="onNavItemEnter($event)">
-                <span class="nav-inner">
-                  <span class="nav-icon-wrap"><svg [lucideIcon]="LucideSettings2" [size]="20" [strokeWidth]="1.5" aria-hidden="true"></svg></span>
-                  <span class="nav-label">Settings</span>
-                </span>
-              </a>
+                <a class="nav-item" routerLink="/admin/audit" routerLinkActive="active"
+                   [attr.data-tooltip]="collapsed() ? 'Audit Trail' : null"
+                   (mouseenter)="onNavItemEnter($event)">
+                  <span class="nav-inner">
+                    <span class="nav-icon-wrap"><svg [lucideIcon]="LucideShieldCheck" [size]="20" [strokeWidth]="1.5" aria-hidden="true"></svg></span>
+                    <span class="nav-label">Audit Trail</span>
+                  </span>
+                </a>
             </div>
           }
 
         </nav>
 
         <div class="sidebar-footer">
+          @if (authService.hasRole(['ADMIN', 'QA_ENGINEER'])) {
+            <a class="nav-item footer-settings" routerLink="/settings" routerLinkActive="active"
+               [attr.data-tooltip]="collapsed() ? 'Settings' : null"
+               (mouseenter)="onNavItemEnter($event)">
+              <span class="nav-inner">
+                <span class="nav-icon-wrap"><svg [lucideIcon]="LucideSettings2" [size]="20" [strokeWidth]="1.5" aria-hidden="true"></svg></span>
+                <span class="nav-label">Settings</span>
+              </span>
+            </a>
+          }
           @if (authService.currentUser(); as user) {
-            <div class="footer-avatar" [class]="avatarClass(user.role)">{{ initials(user.displayName) }}</div>
-            <div class="footer-info">
-              <span class="footer-name">{{ user.displayName }}</span>
-              <span [class]="roleChipClass(user.role)">{{ roleLabel(user.role) }}</span>
+            <div class="footer-user">
+              <div class="footer-avatar" [class]="avatarClass(user.role)">{{ initials(user.displayName) }}</div>
+              <div class="footer-info">
+                <span class="footer-name">{{ user.displayName }}</span>
+                <span [class]="roleChipClass(user.role)">{{ roleLabel(user.role) }}</span>
+              </div>
             </div>
           } @else {
             <div class="footer-avatar viewer-avatar">?</div>
@@ -183,7 +208,7 @@ interface Crumb { label: string; path: string; }
           </div>
         }
 
-        <router-outlet />
+        <router-outlet (activate)="onRouteActivate($event)" />
       </section>
 
     </div>
@@ -193,12 +218,14 @@ export class AppLayoutComponent implements AfterViewInit {
   readonly authService = inject(AuthService);
   private readonly router = inject(Router);
   private readonly http = inject(HttpClient);
+  private readonly injector = inject(Injector);
 
   readonly LucideLayoutDashboard = LucideLayoutDashboard;   readonly LucideFolderKanban = LucideFolderKanban;
   readonly LucideClipboardList = LucideClipboardList;        readonly LucideCheckSquare2 = LucideCheckSquare2;
   readonly LucideDownload = LucideDownload;                  readonly LucideShieldCheck = LucideShieldCheck;
   readonly LucideUsers = LucideUsers;                        readonly LucideSettings2 = LucideSettings2;
   readonly LucideChevronLeft = LucideChevronLeft;            readonly LucideChevronRight = LucideChevronRight;
+  readonly LucideBookOpenText = LucideBookOpenText;
 
   @ViewChild('sidebarEl') private sidebarEl!: ElementRef<HTMLElement>;
 
@@ -206,13 +233,20 @@ export class AppLayoutComponent implements AfterViewInit {
   readonly pendingReviewCount = signal(0);
   readonly accessRestricted = signal(false);
   readonly breadcrumbs = signal<Crumb[]>([]);
+  readonly projectContext = signal<ProjectContext | null>(null);
+  private projectContextEffect: EffectRef | null = null;
 
   constructor() {
     inject(ActivatedRoute).queryParamMap.subscribe(params => {
       this.accessRestricted.set(params.get('access') === 'restricted');
     });
     this.router.events.pipe(filter(e => e instanceof NavigationEnd))
-      .subscribe(() => this.breadcrumbs.set(this.buildBreadcrumbs()));
+      .subscribe(() => {
+        this.breadcrumbs.set(this.buildBreadcrumbs());
+        if (!this.isProjectScopedUrl()) {
+          this.projectContext.set(null);
+        }
+      });
     this.breadcrumbs.set(this.buildBreadcrumbs());
     this.http.get<{ pendingReviewTestCases: number }>('/api/dashboard/metrics').pipe(
       catchError(() => of({ pendingReviewTestCases: 0 }))
@@ -250,6 +284,19 @@ export class AppLayoutComponent implements AfterViewInit {
     el.style.setProperty('--tooltip-y', `${rect.top + rect.height / 2}px`);
   }
 
+  onRouteActivate(component: unknown): void {
+    this.projectContextEffect?.destroy();
+    this.projectContextEffect = null;
+    if (this.hasProjectContext(component)) {
+      this.projectContextEffect = effect(
+        () => this.projectContext.set(component.projectContext()),
+        { injector: this.injector }
+      );
+      return;
+    }
+    this.projectContext.set(this.contextFromNavigationState());
+  }
+
   initials(displayName: string): string {
     return displayName.split(/\s+/).filter(Boolean).slice(0, 2)
       .map(p => p[0]?.toUpperCase()).join('') || 'U';
@@ -283,8 +330,9 @@ export class AppLayoutComponent implements AfterViewInit {
   private buildBreadcrumbs(): Crumb[] {
     const url = this.router.url.split('?')[0];
     if (!url || url === '/') return [{ label: 'Dashboard', path: '/' }];
+    if (url === '/dashboard') return [{ label: 'Dashboard', path: '/dashboard' }];
     const labelMap: Record<string, string> = {
-      projects: 'Projects', stories: 'Story', 'test-suites': 'Test Suites',
+      dashboard: 'Dashboard', projects: 'Projects', stories: 'Stories', 'test-suites': 'Test Suites',
       admin: 'Admin', users: 'Users', audit: 'Audit Trail',
       settings: 'Settings', 'review-board': 'Review Board', export: 'Export',
     };
@@ -296,5 +344,23 @@ export class AppLayoutComponent implements AfterViewInit {
       if (!isId(seg)) crumbs.push({ label: labelMap[seg] ?? seg, path });
     }
     return crumbs;
+  }
+
+  private hasProjectContext(component: unknown): component is ProjectContextSource {
+    return typeof component === 'object'
+      && component !== null
+      && 'projectContext' in component
+      && typeof (component as ProjectContextSource).projectContext === 'function';
+  }
+
+  private contextFromNavigationState(): ProjectContext | null {
+    const context = window.history.state?.projectContext as ProjectContext | undefined;
+    if (!context || !this.isProjectScopedUrl()) return null;
+    return context;
+  }
+
+  private isProjectScopedUrl(): boolean {
+    const url = this.router.url.split('?')[0];
+    return /^\/projects\/[^/]+$/.test(url) || /^\/stories\/[^/]+$/.test(url);
   }
 }
