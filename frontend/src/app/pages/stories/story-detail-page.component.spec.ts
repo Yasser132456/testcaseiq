@@ -235,8 +235,56 @@ describe('StoryDetailPageComponent export actions', () => {
     expect(exportPanelText).toContain('Only APPROVED test cases are exported.');
   });
 
+  it('shows the workflow progress indicator at the current analysis step when analysis is missing', () => {
+    const steps = workflowSteps();
+
+    expect(steps.length).toBe(3);
+    expect(steps[0].textContent).toContain('Analysis');
+    expect(steps[0].classList).toContain('is-current');
+    expect(steps[1].classList).toContain('is-pending');
+    expect(steps[2].classList).toContain('is-pending');
+  });
+
+  it('moves the workflow progress indicator to review when analysis and suites exist', () => {
+    component.analysis.set({
+      storyId: 'story-1',
+      actor: 'Shopper',
+      goal: 'Checkout',
+      businessValue: 'Complete purchase',
+      confidenceScore: 0.9,
+      requirements: {
+        requirements: [],
+        acceptanceCriteria: []
+      },
+      ambiguities: {
+        ambiguities: []
+      },
+      coveragePlan: {
+        coverageItems: []
+      },
+      qaValidation: {
+        requirementQualityScore: 0.9,
+        testabilityScore: 0.9,
+        warnings: []
+      },
+      provider: 'mock-ai-provider',
+      generatedAt: '2026-06-14T00:00:00Z'
+    });
+    fixture.detectChanges();
+
+    const steps = workflowSteps();
+
+    expect(steps[0].classList).toContain('is-complete');
+    expect(steps[1].classList).toContain('is-complete');
+    expect(steps[2].classList).toContain('is-current');
+  });
+
   function exportActionButtons(): HTMLButtonElement[] {
     return Array.from(fixture.nativeElement.querySelectorAll('.export-card')) as HTMLButtonElement[];
+  }
+
+  function workflowSteps(): HTMLElement[] {
+    return Array.from(fixture.nativeElement.querySelectorAll('.workflow-step')) as HTMLElement[];
   }
 
   function exportButtonByText(text: string): HTMLButtonElement {

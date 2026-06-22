@@ -274,6 +274,12 @@ export class DashboardPageComponent implements OnInit, OnDestroy {
     return base + 'dot--outcome-other';
   }
 
+  outcomeClass(outcome: string): string {
+    if (outcome === 'SUCCESS') return 'outcome-ok';
+    if (outcome === 'FAILURE') return 'outcome-fail';
+    return 'outcome-other';
+  }
+
   relativeTime(ts: string): string {
     const mins = Math.floor((Date.now() - new Date(ts).getTime()) / 60000);
     if (mins < 60) return `${Math.max(0, mins)}m ago`;

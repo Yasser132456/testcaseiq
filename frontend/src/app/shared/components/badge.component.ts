@@ -1,11 +1,12 @@
 import { Component, computed, input } from '@angular/core';
 import { LucideAngularModule, Check, Clock, X, Pencil, Download } from 'lucide-angular';
 
-export type BadgeStatus = 'APPROVED' | 'NEEDS_REVIEW' | 'REJECTED' | 'DRAFT' | 'EXPORTED';
+export type BadgeStatus = 'APPROVED' | 'NEEDS_REVIEW' | 'NEEDS_CLARIFICATION' | 'REJECTED' | 'DRAFT' | 'EXPORTED';
 
 const ICON_MAP = {
   APPROVED:     Check,
   NEEDS_REVIEW: Clock,
+  NEEDS_CLARIFICATION: Clock,
   REJECTED:     X,
   DRAFT:        Pencil,
   EXPORTED:     Download,
@@ -14,6 +15,7 @@ const ICON_MAP = {
 const LABEL_MAP: Record<BadgeStatus, string> = {
   APPROVED:     'Approved',
   NEEDS_REVIEW: 'Needs Review',
+  NEEDS_CLARIFICATION: 'Needs Clarification',
   REJECTED:     'Rejected',
   DRAFT:        'Draft',
   EXPORTED:     'Exported',
@@ -58,6 +60,12 @@ const LABEL_MAP: Record<BadgeStatus, string> = {
       color: var(--color-amber);
     }
 
+    .badge--needs-clarification {
+      background: var(--color-amber-bg);
+      border-color: var(--color-amber-border);
+      color: var(--color-amber);
+    }
+
     .badge--rejected {
       background: var(--color-red-bg);
       border-color: var(--color-red-border);
@@ -82,5 +90,5 @@ export class BadgeComponent {
 
   readonly icon = computed(() => ICON_MAP[this.status()]);
   readonly label = computed(() => LABEL_MAP[this.status()]);
-  readonly cls = computed(() => `badge--${this.status().toLowerCase().replace('_', '-')}`);
+  readonly cls = computed(() => `badge--${this.status().toLowerCase().replaceAll('_', '-')}`);
 }
