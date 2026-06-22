@@ -14,7 +14,16 @@ export interface DashboardMetrics {
   rejectionRate: number;
   pendingReviewRate: number;
   exportReadinessRate: number;
+  recentProjects: RecentProjectItem[];
   recentActivity: RecentActivityItem[];
+}
+
+export interface RecentProjectItem {
+  id: string;
+  name: string;
+  key: string;
+  description: string | null;
+  updatedAt: string;
 }
 
 export interface RecentActivityItem {

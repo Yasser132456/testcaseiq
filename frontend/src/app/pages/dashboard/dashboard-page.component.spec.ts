@@ -22,6 +22,22 @@ const MOCK_METRICS: DashboardMetrics = {
   rejectionRate: 11.1,
   pendingReviewRate: 19.4,
   exportReadinessRate: 62.5,
+  recentProjects: [
+    {
+      id: 'project-1',
+      name: 'Claims Portal',
+      key: 'CLAIMS',
+      description: 'Claims regression coverage',
+      updatedAt: '2026-06-21T00:00:00Z'
+    },
+    {
+      id: 'project-2',
+      name: 'Billing',
+      key: 'BILL',
+      description: null,
+      updatedAt: '2026-06-20T00:00:00Z'
+    }
+  ],
   recentActivity: [
     {
       timestamp: '2026-06-21T00:00:00Z',
@@ -36,22 +52,34 @@ const MOCK_METRICS: DashboardMetrics = {
 };
 
 const ZERO_METRICS: DashboardMetrics = {
-  totalProjects: 0, totalStories: 0, storiesWithGeneratedTests: 0,
-  storiesWithoutGeneratedTests: 0, totalTestSuites: 0, totalTestCases: 0,
-  approvedTestCases: 0, rejectedTestCases: 0, pendingReviewTestCases: 0,
-  draftTestCases: 0, totalExports: 0,
-  approvalRate: 0, rejectionRate: 0, pendingReviewRate: 0, exportReadinessRate: 0,
+  totalProjects: 0,
+  totalStories: 0,
+  storiesWithGeneratedTests: 0,
+  storiesWithoutGeneratedTests: 0,
+  totalTestSuites: 0,
+  totalTestCases: 0,
+  approvedTestCases: 0,
+  rejectedTestCases: 0,
+  pendingReviewTestCases: 0,
+  draftTestCases: 0,
+  totalExports: 0,
+  approvalRate: 0,
+  rejectionRate: 0,
+  pendingReviewRate: 0,
+  exportReadinessRate: 0,
+  recentProjects: [],
   recentActivity: []
 };
 
 function createComponent(role: string, metrics: DashboardMetrics | null = MOCK_METRICS, error = false) {
+  TestBed.resetTestingModule();
   const dashboardSvc = jasmine.createSpyObj<DashboardService>('DashboardService', ['getMetrics']);
   dashboardSvc.getMetrics.and.returnValue(
     error ? throwError(() => new Error('fail')) : of(metrics!)
   );
 
   const authSvc = jasmine.createSpyObj<AuthService>('AuthService', ['hasRole']);
-  authSvc.hasRole.and.callFake((r: any) => {
+  authSvc.hasRole.and.callFake((r: string | string[]) => {
     if (Array.isArray(r)) return r.includes(role);
     return r === role;
   });
@@ -84,13 +112,93 @@ describe('DashboardPageComponent', () => {
     } as MediaQueryList);
   });
 
-  it('renders KPI cards with data', () => {
+  it('renders the next action hero for pending review work', () => {
     const { element } = createComponent('ADMIN');
-    const cards = element.querySelectorAll('.metric-card');
-    expect(cards.length).toBe(8);
-    expect(element.textContent).toContain('3');  // totalProjects
-    expect(element.textContent).toContain('72'); // totalTestCases
-    expect(element.textContent).toContain('45'); // approvedTestCases
+    expect(element.textContent).toContain('NEXT ACTION');
+    expect(element.textContent).toContain('14 test cases are waiting for review');
+    expect(element.textContent).toContain('Review Board');
+    expect(element.textContent).toContain('View coverage');
+  });
+
+  it('prioritizes project creation when there are no projects', () => {
+    const { element } = createComponent('ADMIN', ZERO_METRICS);
+    expect(element.textContent).toContain('Create your first project to begin');
+    expect(element.textContent).toContain('Get started');
+  });
+
+  it('shows export action when approved cases are ready and review is clear', () => {
+    const metrics: DashboardMetrics = {
+      ...MOCK_METRICS,
+      pendingReviewTestCases: 0,
+      approvedTestCases: 7
+    };
+    const { element } = createComponent('QA_ENGINEER', metrics);
+    expect(element.textContent).toContain('7 cases approved and ready to export');
+    expect(element.textContent).toContain('Export');
+  });
+
+  it('shows all-clear state without hero buttons', () => {
+    const metrics: DashboardMetrics = {
+      ...MOCK_METRICS,
+      pendingReviewTestCases: 0,
+      approvedTestCases: 0
+    };
+    const { element } = createComponent('VIEWER', metrics);
+    expect(element.textContent).toContain("You're all caught up. Great work.");
+    expect(element.querySelector('.hero-actions')).toBeNull();
+  });
+
+  it('renders four KPI chips with dashboard totals', () => {
+    const { element } = createComponent('ADMIN');
+    const chips = element.querySelectorAll('.kpi-chip');
+    expect(chips.length).toBe(4);
+    expect(element.textContent).toContain('Projects');
+    expect(element.textContent).toContain('Stories');
+    expect(element.textContent).toContain('Test Suites');
+    expect(element.textContent).toContain('Test Cases');
+    expect(element.textContent).toContain('72');
+  });
+
+  it('removes quick actions and the old attention chip strip', () => {
+    const { element } = createComponent('ADMIN');
+    expect(element.querySelector('.chip-strip')).toBeNull();
+    expect(element.textContent).not.toContain('Quick actions');
+    expect(element.textContent).not.toContain('User administration');
+  });
+
+  it('renders quality pipeline and story coverage panels', () => {
+    const { element } = createComponent('ADMIN');
+    expect(element.textContent).toContain('QUALITY PIPELINE');
+    expect(element.textContent).toContain('Approval');
+    expect(element.textContent).toContain('STORY COVERAGE');
+    expect(element.textContent).toContain('75% stories have tests');
+  });
+
+  it('shows recent activity items', () => {
+    const { element } = createComponent('QA_ENGINEER');
+    expect(element.textContent).toContain('RECENT ACTIVITY');
+    expect(element.textContent).toContain('Test Generation Requested');
+    expect(element.textContent).toContain('qa@example.com');
+  });
+
+  it('shows audit link for ADMIN only', () => {
+    const admin = createComponent('ADMIN').element;
+    const viewer = createComponent('VIEWER').element;
+    expect(admin.textContent).toContain('View audit');
+    expect(viewer.textContent).not.toContain('View audit');
+  });
+
+  it('renders recent project cards and new project action for mutating roles', () => {
+    const { element } = createComponent('QA_ENGINEER');
+    expect(element.textContent).toContain('RECENT PROJECTS');
+    expect(element.textContent).toContain('Claims Portal');
+    expect(element.textContent).toContain('Billing');
+    expect(element.textContent).toContain('+ New project');
+  });
+
+  it('hides new project action for VIEWER', () => {
+    const { element } = createComponent('VIEWER');
+    expect(element.textContent).not.toContain('+ New project');
   });
 
   it('shows error state when API fails', () => {
@@ -98,71 +206,18 @@ describe('DashboardPageComponent', () => {
     expect(element.textContent).toContain('Dashboard unavailable');
   });
 
-  it('shows zero-data state gracefully', () => {
-    const { element } = createComponent('ADMIN', ZERO_METRICS);
-    expect(element.textContent).toContain('0');
-    expect(element.textContent).not.toContain('Dashboard unavailable');
-  });
-
-  it('shows recent activity items', () => {
-    const { element } = createComponent('QA_ENGINEER');
-    expect(element.textContent).toContain('Test Generation Requested');
-    expect(element.textContent).toContain('qa@example.com');
-  });
-
-  it('shows audit log link for ADMIN only', () => {
-    const { element } = createComponent('ADMIN');
-    const links = Array.from(element.querySelectorAll('a[href]'));
-    const auditLinks = links.filter(l => l.getAttribute('href')?.includes('audit'));
-    expect(auditLinks.length).toBeGreaterThan(0);
-  });
-
-  it('hides audit log link for VIEWER', () => {
-    const { element } = createComponent('VIEWER');
-    const links = Array.from(element.querySelectorAll('a'));
-    const auditLinks = links.filter(l => l.textContent?.includes('Activity log'));
-    expect(auditLinks.length).toBe(0);
-  });
-
-  it('shows admin-only quick actions for ADMIN', () => {
-    const { element } = createComponent('ADMIN');
-    expect(element.textContent).toContain('User administration');
-  });
-
-  it('hides admin quick actions for QA_ENGINEER', () => {
-    const { element } = createComponent('QA_ENGINEER');
-    expect(element.textContent).not.toContain('User administration');
-  });
-
-  it('shows new project action for QA_ENGINEER', () => {
-    const { element } = createComponent('QA_ENGINEER');
-    expect(element.textContent).toContain('New project');
-  });
-
-  it('hides new project action for VIEWER', () => {
-    const { element } = createComponent('VIEWER');
-    expect(element.textContent).not.toContain('New project');
-  });
-
   it('computes avgCasesPerSuite correctly', () => {
     const { fixture } = createComponent('ADMIN');
     expect(fixture.componentInstance.avgCasesPerSuite()).toBe('4.0');
   });
 
-  it('returns em-dash for avgCasesPerSuite when no suites', () => {
+  it('returns a dash for avgCasesPerSuite when no suites', () => {
     const { fixture } = createComponent('ADMIN', ZERO_METRICS);
-    expect(fixture.componentInstance.avgCasesPerSuite()).toBe('—');
+    expect(fixture.componentInstance.avgCasesPerSuite()).toBe('-');
   });
 
   it('formats action strings correctly', () => {
     const { fixture } = createComponent('ADMIN');
     expect(fixture.componentInstance.formatAction('TEST_GENERATION_REQUESTED')).toBe('Test Generation Requested');
-  });
-
-  it('assigns correct outcome class', () => {
-    const { fixture } = createComponent('ADMIN');
-    expect(fixture.componentInstance.outcomeClass('SUCCESS')).toBe('outcome-ok');
-    expect(fixture.componentInstance.outcomeClass('FAILURE')).toBe('outcome-fail');
-    expect(fixture.componentInstance.outcomeClass('PENDING')).toBe('outcome-other');
   });
 });
