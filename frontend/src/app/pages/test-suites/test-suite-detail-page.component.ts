@@ -5,6 +5,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TestCaseSummary, TestSuiteDetail } from '../../core/models/test-suite.model';
 import { AuthService } from '../../core/services/auth.service';
 import { TestSuiteService } from '../../core/services/test-suite.service';
+import { ToastService } from '../../core/services/toast.service';
 import { StateMessageComponent } from '../../shared/components/state-message.component';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
 
@@ -83,9 +84,6 @@ import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
                 <button class="button primary small" type="submit" [disabled]="saving()">
                   {{ saving() ? 'Saving…' : 'Save' }}
                 </button>
-                @if (saveError()) {
-                  <span class="save-error">{{ saveError() }}</span>
-                }
               </div>
             </form>
           } @else if (suite()!.description) {
@@ -169,13 +167,13 @@ import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
     .status-rejected { color: var(--red); font-weight: 600; }
     .button.small { padding: 0.25rem 0.6rem; font-size: 0.8rem; }
     .button[disabled] { opacity: 0.4; cursor: not-allowed; }
-    .button.danger { background: var(--red); color: #fff; border: none; }
   `]
 })
 export class TestSuiteDetailPageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly testSuiteService = inject(TestSuiteService);
+  private readonly toastService = inject(ToastService);
   readonly authService = inject(AuthService);
 
   readonly suite = signal<TestSuiteDetail | null>(null);
@@ -221,6 +219,7 @@ export class TestSuiteDetailPageComponent implements OnInit {
       },
       error: () => {
         this.saveError.set('Failed to save. Please try again.');
+        this.toastService.show('Failed to save. Please try again.', 'error');
         this.saving.set(false);
       }
     });
@@ -232,7 +231,7 @@ export class TestSuiteDetailPageComponent implements OnInit {
     if (!confirm(`Delete suite "${s.name}"? This will also delete all ${s.totalCases} test case(s). This cannot be undone.`)) return;
     this.testSuiteService.deleteSuite(s.id).subscribe({
       next: () => void this.router.navigate(['/stories', s.storyId]),
-      error: () => alert('Failed to delete suite. Please try again.')
+      error: () => this.toastService.show('Failed to delete suite. Please try again.', 'error')
     });
   }
 

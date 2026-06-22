@@ -6,7 +6,9 @@ import { FolderKanban, LucideAngularModule } from 'lucide-angular';
 import { Project } from '../../core/models/project.model';
 import { AuthService } from '../../core/services/auth.service';
 import { ProjectService } from '../../core/services/project.service';
+import { ToastService } from '../../core/services/toast.service';
 import { StateMessageComponent } from '../../shared/components/state-message.component';
+import { DrawerComponent } from '../../shared/components/drawer.component';
 import { EmptyStateComponent } from '../../shared/empty-state/empty-state.component';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
 import { TableStaggerDirective } from '../../shared/directives/table-stagger.directive';
@@ -14,17 +16,20 @@ import { TableStaggerDirective } from '../../shared/directives/table-stagger.dir
 @Component({
   selector: 'app-project-list-page',
   standalone: true,
-  imports: [DatePipe, ReactiveFormsModule, RouterLink, LucideAngularModule, StateMessageComponent, SkeletonComponent, EmptyStateComponent, TableStaggerDirective],
+  imports: [DatePipe, ReactiveFormsModule, RouterLink, LucideAngularModule, DrawerComponent, StateMessageComponent, SkeletonComponent, EmptyStateComponent, TableStaggerDirective],
   styles: [`.td-muted { color: var(--color-text-2); white-space: nowrap; }`],
   template: `
     <section class="page-stack">
       <div class="section-header">
         <h2>Projects</h2>
+        @if (canEdit()) {
+          <button class="button" type="button" (click)="projectDrawerOpen.set(true)">New project</button>
+        }
       </div>
 
-      <div class="content-grid">
-        @if (canEdit()) {
-          <form class="panel form-panel" [formGroup]="form" (ngSubmit)="createProject()">
+      <app-drawer [open]="projectDrawerOpen()" title="New project" (closed)="projectDrawerOpen.set(false)">
+        @defer (when projectDrawerOpen()) {
+          <form class="form-panel" [formGroup]="form" (ngSubmit)="createProject()">
             <h3>New project</h3>
             <label>
               <span>Name</span>
@@ -37,15 +42,14 @@ import { TableStaggerDirective } from '../../shared/directives/table-stagger.dir
               <span>Description</span>
               <textarea formControlName="description" rows="4" placeholder="Scope, system context, or product area"></textarea>
             </label>
-            @if (createError()) {
-              <app-state-message title="Could not create project" [message]="createError()" tone="error" />
-            }
             <button class="button" type="submit" [disabled]="form.invalid || creating()">
               {{ creating() ? 'Creating...' : 'Create project' }}
             </button>
           </form>
         }
+      </app-drawer>
 
+      <div class="content-grid">
         <section class="panel">
           <div class="section-header">
             <h3>All projects</h3>
@@ -103,6 +107,7 @@ export class ProjectListPageComponent implements OnInit {
   private readonly projectService = inject(ProjectService);
   private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
+  private readonly toastService = inject(ToastService);
 
   readonly canEdit = computed(() => {
     if (!this.authService.isAuthenticated()) return true;
@@ -118,7 +123,7 @@ export class ProjectListPageComponent implements OnInit {
   readonly loading = signal(true);
   readonly creating = signal(false);
   readonly loadError = signal('');
-  readonly createError = signal('');
+  readonly projectDrawerOpen = signal(false);
 
   readonly form = this.fb.nonNullable.group({
     name: ['', Validators.required],
@@ -135,14 +140,13 @@ export class ProjectListPageComponent implements OnInit {
       return;
     }
     this.creating.set(true);
-    this.createError.set('');
     this.projectService.create({
       name: this.form.controls.name.value,
       description: this.form.controls.description.value || null
     }).subscribe({
       next: (project) => this.router.navigate(['/projects', project.id]),
       error: () => {
-        this.createError.set('The project could not be created. Check the backend and try again.');
+        this.toastService.show('The project could not be created. Check the backend and try again.', 'error');
         this.creating.set(false);
       }
     });

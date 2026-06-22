@@ -4,6 +4,7 @@ import { AdminUser } from '../../core/models/admin-user.model';
 import { UserRole } from '../../core/models/auth.model';
 import { AdminUserService } from '../../core/services/admin-user.service';
 import { AuthService } from '../../core/services/auth.service';
+import { ToastService } from '../../core/services/toast.service';
 import { StateMessageComponent } from '../../shared/components/state-message.component';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
 
@@ -31,10 +32,6 @@ const ROLE_LABELS: Record<UserRole, string> = {
       } @else if (users().length === 0) {
         <app-state-message title="No users found" message="No user accounts exist yet." />
       } @else {
-        @if (actionMessage()) {
-          <app-state-message [title]="actionMessage().title" [message]="actionMessage().text" [tone]="actionMessage().tone" />
-        }
-
         <div class="panel">
           <table class="data-table">
             <thead>
@@ -115,12 +112,12 @@ const ROLE_LABELS: Record<UserRole, string> = {
 export class AdminUsersPageComponent implements OnInit {
   private readonly adminUserService = inject(AdminUserService);
   private readonly authService = inject(AuthService);
+  private readonly toastService = inject(ToastService);
 
   readonly users = signal<AdminUser[]>([]);
   readonly loading = signal(true);
   readonly busy = signal(false);
   readonly loadError = signal('');
-  readonly actionMessage = signal<{ title: string; text: string; tone: 'success' | 'error' | 'neutral' }>({ title: '', text: '', tone: 'neutral' });
   readonly currentUserId = signal<string | null>(null);
 
   ngOnInit(): void {
@@ -141,16 +138,15 @@ export class AdminUsersPageComponent implements OnInit {
     }
 
     this.busy.set(true);
-    this.clearActionMessage();
     this.adminUserService.updateRole(user.id, { role: newRole }).subscribe({
       next: (updated) => {
         this.users.update(list => list.map(u => u.id === updated.id ? updated : u));
-        this.setActionMessage('Role updated', `${updated.displayName} is now ${ROLE_LABELS[updated.role]}.`, 'success');
+        this.toastService.show(`${updated.displayName} is now ${ROLE_LABELS[updated.role]}.`, 'success');
         this.busy.set(false);
       },
       error: (err) => {
         const msg = err?.error?.message ?? 'The role could not be updated. Please try again.';
-        this.setActionMessage('Role update failed', msg, 'error');
+        this.toastService.show(msg, 'error');
         this.users.update(list => [...list]);
         this.busy.set(false);
       }
@@ -163,17 +159,16 @@ export class AdminUsersPageComponent implements OnInit {
     if (!confirm) return;
 
     this.busy.set(true);
-    this.clearActionMessage();
     this.adminUserService.updateStatus(user.id, { enabled: !user.enabled }).subscribe({
       next: (updated) => {
         this.users.update(list => list.map(u => u.id === updated.id ? updated : u));
         const label = updated.enabled ? 'enabled' : 'disabled';
-        this.setActionMessage('Account updated', `${updated.displayName}'s account has been ${label}.`, 'success');
+        this.toastService.show(`${updated.displayName}'s account has been ${label}.`, 'success');
         this.busy.set(false);
       },
       error: (err) => {
         const msg = err?.error?.message ?? 'The account status could not be updated. Please try again.';
-        this.setActionMessage('Update failed', msg, 'error');
+        this.toastService.show(msg, 'error');
         this.busy.set(false);
       }
     });
@@ -203,11 +198,4 @@ export class AdminUsersPageComponent implements OnInit {
     });
   }
 
-  private setActionMessage(title: string, text: string, tone: 'success' | 'error' | 'neutral'): void {
-    this.actionMessage.set({ title, text, tone });
-  }
-
-  private clearActionMessage(): void {
-    this.actionMessage.set({ title: '', text: '', tone: 'neutral' });
-  }
 }

@@ -7,6 +7,7 @@ import { STORY_TYPES, Story, StoryType } from '../../core/models/story.model';
 import { AuthService } from '../../core/services/auth.service';
 import { ProjectService } from '../../core/services/project.service';
 import { StoryService } from '../../core/services/story.service';
+import { ToastService } from '../../core/services/toast.service';
 import { StateMessageComponent } from '../../shared/components/state-message.component';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
 
@@ -57,9 +58,6 @@ import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
                   }
                 </select>
               </label>
-              @if (createError()) {
-                <app-state-message title="Could not create story" [message]="createError()" tone="error" />
-              }
               <button class="button" type="submit" [disabled]="storyForm.invalid || creatingStory()">
                 {{ creatingStory() ? 'Creating...' : 'Create story' }}
               </button>
@@ -103,6 +101,7 @@ export class ProjectDetailPageComponent implements OnInit {
   private readonly projectService = inject(ProjectService);
   private readonly storyService = inject(StoryService);
   private readonly authService = inject(AuthService);
+  private readonly toastService = inject(ToastService);
 
   readonly canEdit = computed(() => {
     if (!this.authService.isAuthenticated()) return true;
@@ -149,7 +148,9 @@ export class ProjectDetailPageComponent implements OnInit {
     this.storyService.create(this.projectId, this.storyForm.getRawValue()).subscribe({
       next: (story) => this.router.navigate(['/stories', story.id]),
       error: () => {
-        this.createError.set('The story could not be created. Check the backend and try again.');
+        const message = 'The story could not be created. Check the backend and try again.';
+        this.createError.set(message);
+        this.toastService.show(message, 'error');
         this.creatingStory.set(false);
       }
     });
@@ -162,7 +163,7 @@ export class ProjectDetailPageComponent implements OnInit {
     }
     this.projectService.delete(project.id).subscribe({
       next: () => this.router.navigate(['/projects']),
-      error: () => this.error.set('The project could not be deleted.')
+      error: () => this.toastService.show('The project could not be deleted.', 'error')
     });
   }
 
@@ -172,7 +173,7 @@ export class ProjectDetailPageComponent implements OnInit {
     }
     this.storyService.delete(story.id).subscribe({
       next: () => this.stories.set(this.stories().filter((item) => item.id !== story.id)),
-      error: () => this.error.set('The story could not be deleted.')
+      error: () => this.toastService.show('The story could not be deleted.', 'error')
     });
   }
 

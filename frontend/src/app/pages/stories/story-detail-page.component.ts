@@ -29,6 +29,7 @@ import { ExportFormat, ExportService } from '../../core/services/export.service'
 import { ReviewService } from '../../core/services/review.service';
 import { StoryService } from '../../core/services/story.service';
 import { TestGenerationService } from '../../core/services/test-generation.service';
+import { ToastService } from '../../core/services/toast.service';
 import { StateMessageComponent } from '../../shared/components/state-message.component';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
 
@@ -151,12 +152,6 @@ interface ReviewDraft {
                 </select>
               </label>
             </div>
-            @if (saveMessage()) {
-              <app-state-message title="Story saved" [message]="saveMessage()" tone="success" />
-            }
-            @if (saveError()) {
-              <app-state-message title="Could not save story" [message]="saveError()" tone="error" />
-            }
             <button class="button" type="submit" [disabled]="form.invalid || saving()">
               {{ saving() ? 'Saving...' : 'Save changes' }}
             </button>
@@ -375,19 +370,6 @@ interface ReviewDraft {
               <span class="badge status-badge">{{ totalTestCases() }} cases</span>
             </div>
           </div>
-          @if (reviewMessage()) {
-            <app-state-message title="Review updated" [message]="reviewMessage()" tone="success" />
-          }
-          @if (reviewError()) {
-            <app-state-message title="Review update failed" [message]="reviewError()" tone="error" />
-          }
-          @if (exportMessage()) {
-            <app-state-message title="Export ready" [message]="exportMessage()" tone="success" />
-          }
-          @if (exportError()) {
-            <app-state-message title="Export failed" [message]="exportError()" tone="error" />
-          }
-
           <section class="export-panel">
             <div class="export-copy">
               <h4>Download reviewed manual tests</h4>
@@ -721,6 +703,7 @@ export class StoryDetailPageComponent implements OnInit, AfterViewInit, OnDestro
   private readonly testGenerationService = inject(TestGenerationService);
   private readonly reviewService = inject(ReviewService);
   private readonly exportService = inject(ExportService);
+  private readonly toastService = inject(ToastService);
   private readonly authService = inject(AuthService);
   private storySectionsTween: gsap.core.Tween | null = null;
 
@@ -908,10 +891,12 @@ export class StoryDetailPageComponent implements OnInit, AfterViewInit, OnDestro
       next: (story) => {
         this.story.set(story);
         this.saveMessage.set('The story details were updated.');
+        this.toastService.show('The story details were updated.', 'success');
         this.saving.set(false);
       },
       error: () => {
         this.saveError.set('The story could not be saved.');
+        this.toastService.show('The story could not be saved.', 'error');
         this.saving.set(false);
       }
     });
@@ -974,6 +959,7 @@ export class StoryDetailPageComponent implements OnInit, AfterViewInit, OnDestro
         const blob = response.body;
         if (!blob) {
           this.exportError.set('The export completed without a downloadable file.');
+          this.toastService.show('The export completed without a downloadable file.', 'warning');
           this.exportingFormat.set(null);
           return;
         }
@@ -981,10 +967,13 @@ export class StoryDetailPageComponent implements OnInit, AfterViewInit, OnDestro
         const filename = this.exportFilename(response.headers.get('Content-Disposition'), fallbackName);
         this.downloadBlob(blob, filename);
         this.exportMessage.set(`${this.exportLabel(format)} export download started.`);
+        this.toastService.show(`${this.exportLabel(format)} export download started.`, 'success');
         this.exportingFormat.set(null);
       },
       error: () => {
-        this.exportError.set(`The ${this.exportLabel(format)} export could not be downloaded. Confirm the backend is running and try again.`);
+        const message = `The ${this.exportLabel(format)} export could not be downloaded. Confirm the backend is running and try again.`;
+        this.exportError.set(message);
+        this.toastService.show(message, 'error');
         this.exportingFormat.set(null);
       }
     });
@@ -1192,6 +1181,7 @@ export class StoryDetailPageComponent implements OnInit, AfterViewInit, OnDestro
     const title = (draft?.title ?? testCase.title).trim();
     if (!title) {
       this.reviewError.set('Test case title is required.');
+      this.toastService.show('Test case title is required.', 'error');
       return;
     }
 
@@ -1368,6 +1358,7 @@ export class StoryDetailPageComponent implements OnInit, AfterViewInit, OnDestro
   private persistedTestCaseId(testCase: GeneratedTestCase): string | null {
     if (!testCase.id) {
       this.reviewError.set('This generated test case does not have a persisted backend ID yet.');
+      this.toastService.show('This generated test case does not have a persisted backend ID yet.', 'warning');
       return null;
     }
     return testCase.id;
@@ -1386,6 +1377,7 @@ export class StoryDetailPageComponent implements OnInit, AfterViewInit, OnDestro
   ): void {
     this.replaceGeneratedTestCase(updatedTestCase, originalTestCase);
     this.reviewMessage.set(message);
+    this.toastService.show(message, 'success');
     this.reviewBusyByTestCaseId.update((busy) => {
       const nextBusy = { ...busy };
       delete nextBusy[updatedTestCase.id];
@@ -1408,6 +1400,7 @@ export class StoryDetailPageComponent implements OnInit, AfterViewInit, OnDestro
 
   private failReviewUpdate(testCaseId: string, message: string): void {
     this.reviewError.set(message);
+    this.toastService.show(message, 'error');
     this.reviewBusyByTestCaseId.update((busy) => {
       const nextBusy = { ...busy };
       delete nextBusy[testCaseId];

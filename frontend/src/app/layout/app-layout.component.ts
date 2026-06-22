@@ -228,6 +228,11 @@ export class AppLayoutComponent implements AfterViewInit {
     this.collapsed.update(v => !v);
     const sidebar = this.sidebarEl.nativeElement;
     const labels = sidebar.querySelectorAll<HTMLElement>('.nav-label, .nav-group-label, .brand-text, .footer-info');
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      labels.forEach(label => label.style.opacity = this.collapsed() ? '0' : '1');
+      sidebar.style.width = this.collapsed() ? '60px' : '220px';
+      return;
+    }
     if (this.collapsed()) {
       gsap.to(labels, { opacity: 0, duration: 0.12 });
       gsap.to(sidebar, { width: 60, duration: 0.28, ease: 'power2.inOut' });

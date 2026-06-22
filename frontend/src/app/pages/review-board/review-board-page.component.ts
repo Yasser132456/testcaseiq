@@ -7,6 +7,7 @@ import { Subscription, forkJoin, fromEvent } from 'rxjs';
 import { TestCaseSummary, TestSuiteDetail, TestSuitePage } from '../../core/models/test-suite.model';
 import { ReviewService } from '../../core/services/review.service';
 import { TestSuiteService } from '../../core/services/test-suite.service';
+import { ToastService } from '../../core/services/toast.service';
 import { BadgeComponent, BadgeStatus } from '../../shared/components/badge.component';
 import { ButtonComponent, ButtonState } from '../../shared/components/button.component';
 import { StateMessageComponent } from '../../shared/components/state-message.component';
@@ -49,13 +50,6 @@ interface ReviewCaseItem {
           />
         </div>
       } @else {
-        @if (reviewMessage()) {
-          <app-state-message title="Review updated" [message]="reviewMessage()" tone="success" />
-        }
-        @if (reviewError()) {
-          <app-state-message title="Review update failed" [message]="reviewError()" tone="error" />
-        }
-
         <div class="review-master-detail">
           <aside class="review-case-list" aria-label="Test cases">
             @for (item of reviewCases(); track item.testCase.id) {
@@ -214,6 +208,7 @@ export class ReviewBoardPageComponent implements OnInit, OnDestroy {
   private readonly host = inject(ElementRef<HTMLElement>);
   private readonly testSuiteService = inject(TestSuiteService);
   private readonly reviewService = inject(ReviewService);
+  private readonly toastService = inject(ToastService);
   private keyboardSubscription: Subscription | null = null;
 
   readonly CheckSquare2 = CheckSquare2;
@@ -370,14 +365,18 @@ export class ReviewBoardPageComponent implements OnInit, OnDestroy {
               : testCase
           ))
         })));
-        this.reviewMessage.set(status === 'APPROVED' ? 'Test case approved.' : 'Test case rejected.');
+        const message = status === 'APPROVED' ? 'Test case approved.' : 'Test case rejected.';
+        this.reviewMessage.set(message);
+        this.toastService.show(message, 'success');
         this.approveState.set(status === 'APPROVED' ? 'success' : 'default');
         this.rejectState.set(status === 'REJECTED' ? 'success' : 'default');
         this.reviewBusy.set(false);
         this.pendingAction.set(null);
       },
       error: () => {
-        this.reviewError.set(status === 'APPROVED' ? 'The test case could not be approved.' : 'The test case could not be rejected.');
+        const message = status === 'APPROVED' ? 'The test case could not be approved.' : 'The test case could not be rejected.';
+        this.reviewError.set(message);
+        this.toastService.show(message, 'error');
         this.approveState.set(status === 'APPROVED' ? 'error' : 'default');
         this.rejectState.set(status === 'REJECTED' ? 'error' : 'default');
         this.reviewBusy.set(false);

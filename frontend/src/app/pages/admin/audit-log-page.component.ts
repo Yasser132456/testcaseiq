@@ -1,10 +1,12 @@
 import { DatePipe, SlicePipe } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, ElementRef, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { gsap } from 'gsap';
 import { ShieldCheck, LucideAngularModule } from 'lucide-angular';
 import { AuditEvent, AuditEventFilters, AuditEventPage } from '../../core/models/audit-event.model';
 import { AuditEventService } from '../../core/services/audit-event.service';
+import { DrawerComponent } from '../../shared/components/drawer.component';
 import { StateMessageComponent } from '../../shared/components/state-message.component';
 import { EmptyStateComponent } from '../../shared/empty-state/empty-state.component';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
@@ -30,7 +32,7 @@ const TRACEABILITY_ROUTES: Record<string, string> = {
 @Component({
   selector: 'app-audit-log-page',
   standalone: true,
-  imports: [DatePipe, SlicePipe, FormsModule, RouterLink, LucideAngularModule, StateMessageComponent, SkeletonComponent, EmptyStateComponent, TableStaggerDirective],
+  imports: [DatePipe, SlicePipe, FormsModule, RouterLink, LucideAngularModule, DrawerComponent, StateMessageComponent, SkeletonComponent, EmptyStateComponent, TableStaggerDirective],
   template: `
     <section class="page-stack">
       <div class="section-header">
@@ -38,37 +40,70 @@ const TRACEABILITY_ROUTES: Record<string, string> = {
         <p class="section-subtitle">Audit trail of all significant actions taken in the system.</p>
       </div>
 
-      <div class="filter-panel panel">
-        <div class="filter-row">
-          <select class="filter-select" [(ngModel)]="actionFilter" (ngModelChange)="onFilterChange()" aria-label="Filter by action">
-            <option value="">All actions</option>
-            @for (a of actions; track a) {
-              <option [value]="a">{{ a }}</option>
-            }
-          </select>
-          <select class="filter-select" [(ngModel)]="outcomeFilter" (ngModelChange)="onFilterChange()" aria-label="Filter by outcome">
-            <option value="">All outcomes</option>
-            <option value="SUCCESS">Success</option>
-            <option value="FAILURE">Failure</option>
-            <option value="BLOCKED">Blocked</option>
-          </select>
-          <select class="filter-select" [(ngModel)]="resourceTypeFilter" (ngModelChange)="onFilterChange()" aria-label="Filter by resource type">
-            <option value="">All resource types</option>
-            @for (rt of resourceTypes; track rt) {
-              <option [value]="rt">{{ rt }}</option>
-            }
-          </select>
-        </div>
-        <div class="filter-row">
-          <input class="filter-input" type="text" [(ngModel)]="actorFilter" (ngModelChange)="onFilterChange()"
-            placeholder="Filter by actor email" aria-label="Filter by actor email" />
-          <input class="filter-input" type="datetime-local" [(ngModel)]="fromFilter" (ngModelChange)="onFilterChange()"
-            aria-label="From date" title="From date" />
-          <input class="filter-input" type="datetime-local" [(ngModel)]="toFilter" (ngModelChange)="onFilterChange()"
-            aria-label="To date" title="To date" />
-          <button class="button secondary small" type="button" (click)="resetFilters()">Reset filters</button>
+      <div class="audit-filter-strip">
+        <button class="button secondary open-filter-drawer" type="button" (click)="openFilters()">Filters</button>
+        <div class="filter-chip-row" aria-label="Active filters">
+          @if (activeFilters().length === 0) {
+            <span class="filter-chip is-empty">All events</span>
+          }
+          @for (filter of activeFilters(); track filter.key) {
+            <span class="filter-chip">
+              {{ filter.label }}
+              <button type="button" (click)="dismissFilter(filter.key)" [attr.aria-label]="'Remove filter ' + filter.label">×</button>
+            </span>
+          }
         </div>
       </div>
+
+      <app-drawer [open]="filterDrawerOpen()" title="Audit filters" (closed)="filterDrawerOpen.set(false)">
+        @defer (when filterDrawerOpen()) {
+          <form class="filter-form">
+            <label>
+              <span>Action</span>
+              <select class="filter-select" [(ngModel)]="actionFilter" (ngModelChange)="onFilterChange()" name="actionFilter" aria-label="Filter by action">
+                <option value="">All actions</option>
+                @for (a of actions; track a) {
+                  <option [value]="a">{{ a }}</option>
+                }
+              </select>
+            </label>
+            <label>
+              <span>Outcome</span>
+              <select class="filter-select" [(ngModel)]="outcomeFilter" (ngModelChange)="onFilterChange()" name="outcomeFilter" aria-label="Filter by outcome">
+                <option value="">All outcomes</option>
+                <option value="SUCCESS">Success</option>
+                <option value="FAILURE">Failure</option>
+                <option value="BLOCKED">Blocked</option>
+              </select>
+            </label>
+            <label>
+              <span>Resource type</span>
+              <select class="filter-select" [(ngModel)]="resourceTypeFilter" (ngModelChange)="onFilterChange()" name="resourceTypeFilter" aria-label="Filter by resource type">
+                <option value="">All resource types</option>
+                @for (rt of resourceTypes; track rt) {
+                  <option [value]="rt">{{ rt }}</option>
+                }
+              </select>
+            </label>
+            <label>
+              <span>Actor email</span>
+              <input class="filter-input" type="text" [(ngModel)]="actorFilter" (ngModelChange)="onFilterChange()"
+                name="actorFilter" placeholder="qa@example.com" aria-label="Filter by actor email" />
+            </label>
+            <label>
+              <span>From</span>
+              <input class="filter-input" type="datetime-local" [(ngModel)]="fromFilter" (ngModelChange)="onFilterChange()"
+                name="fromFilter" aria-label="From date" title="From date" />
+            </label>
+            <label>
+              <span>To</span>
+              <input class="filter-input" type="datetime-local" [(ngModel)]="toFilter" (ngModelChange)="onFilterChange()"
+                name="toFilter" aria-label="To date" title="To date" />
+            </label>
+            <button class="button secondary" type="button" (click)="resetFilters()">Reset filters</button>
+          </form>
+        }
+      </app-drawer>
 
       @if (loading()) {
         <app-skeleton [rows]="5" [cols]="6" />
@@ -185,10 +220,21 @@ const TRACEABILITY_ROUTES: Record<string, string> = {
   `,
   styles: [`
     .section-subtitle { color: var(--color-text-2); margin-top: 0.25rem; font-size: 0.875rem; }
-    .filter-panel { padding: 0.75rem 1rem; margin-bottom: 0; border-radius: 6px 6px 0 0; }
-    .filter-row { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; }
-    .filter-row + .filter-row { margin-top: 0.5rem; }
-    .filter-select, .filter-input { background: var(--color-surface-2); color: var(--color-text); border: 1px solid var(--color-border); border-radius: 4px; padding: 0.3rem 0.5rem; font-size: 0.85rem; min-width: 160px; }
+    .audit-filter-strip { display: flex; align-items: center; gap: var(--space-sm); flex-wrap: wrap; }
+    .filter-chip-row { display: flex; align-items: center; gap: var(--space-xs); flex-wrap: wrap; }
+    .filter-chip { display: inline-flex; align-items: center; gap: var(--space-xs); background: var(--color-surface-2); border: 1px solid var(--color-border); border-radius: 9999px; padding: var(--space-xs) var(--space-sm); color: var(--color-text); font-family: var(--font-mono); font-size: 0.75rem; }
+    .filter-chip.is-empty { color: var(--color-text-3); }
+    .filter-chip button { border: 0; background: transparent; color: var(--color-text-3); cursor: pointer; padding: 0; font: inherit; }
+    .filter-chip button:hover { color: var(--color-text); }
+    .filter-chip button:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; border-radius: 9999px; }
+    .filter-chip button:active:not(:disabled) { transform: scale(0.97); }
+    .filter-chip button:disabled { opacity: 0.45; cursor: not-allowed; }
+    .filter-chip button[aria-busy="true"], .filter-chip button.loading { opacity: 0.7; cursor: progress; }
+    .filter-chip button.error { color: var(--color-red); }
+    .filter-chip button.success { color: var(--color-green); }
+    .filter-form { display: grid; gap: var(--space-md); }
+    .filter-form label { display: grid; gap: 0.35rem; }
+    .filter-select, .filter-input { background: var(--color-surface-2); color: var(--color-text); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 0.45rem 0.55rem; font-size: 0.85rem; min-width: 160px; }
     .filter-input[type="datetime-local"] { min-width: 200px; color-scheme: dark; }
     .td-muted { color: var(--color-text-2); white-space: nowrap; }
     .action-name, .resource-id, .meta-key, .meta-val { font-family: var(--font-mono); }
@@ -211,12 +257,14 @@ const TRACEABILITY_ROUTES: Record<string, string> = {
 export class AuditLogPageComponent implements OnInit {
   readonly ShieldCheck = ShieldCheck;
 
+  private readonly host = inject(ElementRef<HTMLElement>);
   private readonly auditEventService = inject(AuditEventService);
 
   readonly page = signal<AuditEventPage | null>(null);
   readonly loading = signal(true);
   readonly loadError = signal('');
   readonly currentPage = signal(0);
+  readonly filterDrawerOpen = signal(false);
 
   actionFilter = '';
   outcomeFilter = '';
@@ -235,6 +283,7 @@ export class AuditLogPageComponent implements OnInit {
   onFilterChange(): void {
     this.currentPage.set(0);
     this.load();
+    this.animateFilterChips();
   }
 
   resetFilters(): void {
@@ -246,6 +295,32 @@ export class AuditLogPageComponent implements OnInit {
     this.toFilter = '';
     this.currentPage.set(0);
     this.load();
+    this.animateFilterChips();
+  }
+
+  openFilters(): void {
+    this.filterDrawerOpen.set(true);
+  }
+
+  dismissFilter(key: string): void {
+    if (key === 'action') this.actionFilter = '';
+    if (key === 'outcome') this.outcomeFilter = '';
+    if (key === 'resourceType') this.resourceTypeFilter = '';
+    if (key === 'actor') this.actorFilter = '';
+    if (key === 'from') this.fromFilter = '';
+    if (key === 'to') this.toFilter = '';
+    this.onFilterChange();
+  }
+
+  activeFilters(): { key: string; label: string }[] {
+    const filters: { key: string; label: string }[] = [];
+    if (this.actionFilter) filters.push({ key: 'action', label: this.actionFilter });
+    if (this.outcomeFilter) filters.push({ key: 'outcome', label: this.outcomeFilter });
+    if (this.resourceTypeFilter) filters.push({ key: 'resourceType', label: this.resourceTypeFilter });
+    if (this.actorFilter) filters.push({ key: 'actor', label: this.actorFilter });
+    if (this.fromFilter) filters.push({ key: 'from', label: `From ${this.fromFilter}` });
+    if (this.toFilter) filters.push({ key: 'to', label: `To ${this.toFilter}` });
+    return filters;
   }
 
   goToPage(pageNum: number): void {
@@ -300,5 +375,21 @@ export class AuditLogPageComponent implements OnInit {
         this.loading.set(false);
       }
     });
+  }
+
+  private animateFilterChips(): void {
+    if (this.prefersReducedMotion()) {
+      return;
+    }
+    queueMicrotask(() => {
+      const chips = this.host.nativeElement.querySelectorAll('.filter-chip:not(.is-empty)');
+      if (chips.length > 0) {
+        gsap.from(chips, { scale: 0.9, opacity: 0, duration: 0.18, ease: 'power2.out' });
+      }
+    });
+  }
+
+  private prefersReducedMotion(): boolean {
+    return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
   }
 }
