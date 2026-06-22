@@ -280,18 +280,18 @@ type SettingsTab = 'ai' | 'security' | 'system';
     .provider-card span { color: var(--color-text-2); font-size: 0.82rem; line-height: 1.5; }
     .openai-key-field { display: grid; gap: 0.4rem; margin-top: 1rem; overflow: hidden; }
     .settings-grid { display: flex; flex-direction: column; gap: 1.25rem; margin-top: 1.25rem; }
-    .setting-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 1.5rem; padding: 0.875rem 0; border-bottom: 1px solid var(--border-subtle); }
+    .setting-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 1.5rem; padding: 0.875rem 0; border-bottom: 1px solid var(--color-border); }
     .setting-row:last-child { border-bottom: none; }
     .setting-label { flex: 1; }
     .setting-label strong { display: block; font-size: 0.9rem; margin-bottom: 0.2rem; }
-    .setting-label small { color: var(--text-muted); font-size: 0.8rem; }
+    .setting-label small { color: var(--color-text-2); font-size: 0.8rem; }
     .toggle-label { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; white-space: nowrap; }
     .toggle-label input[disabled] { cursor: not-allowed; }
     .number-input { width: 80px; text-align: right; }
-    select { background: var(--input-bg); color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 0.35rem 0.5rem; font-size: 0.875rem; }
+    select { background: var(--color-surface-2); color: var(--color-text); border: 1px solid var(--color-border); border-radius: 4px; padding: 0.35rem 0.5rem; font-size: 0.875rem; }
     select[disabled] { opacity: 0.6; cursor: not-allowed; }
     .save-row { display: flex; align-items: center; gap: 1rem; margin-top: 1.25rem; }
-    .field-error { color: var(--red); font-size: 0.8rem; }
+    .field-error { color: var(--color-red); font-size: 0.8rem; }
     @media (max-width: 900px) {
       .provider-card-grid { grid-template-columns: 1fr; }
       .setting-row { flex-direction: column; }
