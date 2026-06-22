@@ -2,7 +2,7 @@ import { DatePipe } from '@angular/common';
 import { Component, ElementRef, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { gsap } from 'gsap';
-import { CheckSquare2 } from 'lucide-angular';
+import { LucideCheckSquare2 } from '@lucide/angular';
 import { Subscription, forkJoin, fromEvent } from 'rxjs';
 import { TestCaseSummary, TestSuiteDetail, TestSuitePage } from '../../core/models/test-suite.model';
 import { ReviewService } from '../../core/services/review.service';
@@ -44,7 +44,7 @@ interface ReviewCaseItem {
       } @else if (reviewCases().length === 0) {
         <div class="panel">
           <app-empty-state
-            [icon]="CheckSquare2"
+            [icon]="LucideCheckSquare2"
             title="Queue cleared"
             message="No test cases are waiting in the review queue. Generate new suites from stories to continue coverage."
           />
@@ -211,7 +211,7 @@ export class ReviewBoardPageComponent implements OnInit, OnDestroy {
   private readonly toastService = inject(ToastService);
   private keyboardSubscription: Subscription | null = null;
 
-  readonly CheckSquare2 = CheckSquare2;
+  readonly LucideCheckSquare2 = LucideCheckSquare2;
   readonly qualityCircumference = 2 * Math.PI * 32;
   readonly page = signal<TestSuitePage | null>(null);
   readonly suites = signal<TestSuiteDetail[]>([]);

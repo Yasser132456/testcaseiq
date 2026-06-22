@@ -10,10 +10,10 @@ import { catchError, filter } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { gsap } from 'gsap';
 import {
-  LucideAngularModule,
-  LayoutDashboard, FolderKanban, ClipboardList, CheckSquare2,
-  Download, ShieldCheck, Users, Settings2, ChevronLeft, ChevronRight,
-} from 'lucide-angular';
+  LucideDynamicIcon,
+  LucideLayoutDashboard, LucideFolderKanban, LucideClipboardList, LucideCheckSquare2,
+  LucideDownload, LucideShieldCheck, LucideUsers, LucideSettings2, LucideChevronLeft, LucideChevronRight,
+} from '@lucide/angular';
 import { AuthService } from '../core/services/auth.service';
 
 interface Crumb { label: string; path: string; }
@@ -21,7 +21,7 @@ interface Crumb { label: string; path: string; }
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, RouterOutlet, LucideAngularModule],
+  imports: [RouterLink, RouterLinkActive, RouterOutlet, LucideDynamicIcon],
   styleUrl: './app-layout.component.css',
   template: `
     <div class="grain" aria-hidden="true"></div>
@@ -39,8 +39,8 @@ interface Crumb { label: string; path: string; }
         <button class="collapse-btn" type="button"
                 (click)="toggleCollapse()"
                 [attr.aria-label]="collapsed() ? 'Expand sidebar' : 'Collapse sidebar'">
-          <lucide-angular [img]="collapsed() ? ChevronRight : ChevronLeft"
-                          [size]="14" [strokeWidth]="2" aria-hidden="true" />
+          <svg [lucideIcon]="collapsed() ? LucideChevronRight : LucideChevronLeft"
+                          [size]="14" [strokeWidth]="2" aria-hidden="true"></svg>
         </button>
 
         <nav class="nav-groups" aria-label="Primary navigation">
@@ -52,7 +52,7 @@ interface Crumb { label: string; path: string; }
                [attr.data-tooltip]="collapsed() ? 'Dashboard' : null"
                (mouseenter)="onNavItemEnter($event)">
               <span class="nav-inner">
-                <span class="nav-icon-wrap"><lucide-angular [img]="LayoutDashboard" [size]="20" [strokeWidth]="1.5" aria-hidden="true" /></span>
+                <span class="nav-icon-wrap"><svg [lucideIcon]="LucideLayoutDashboard" [size]="20" [strokeWidth]="1.5" aria-hidden="true"></svg></span>
                 <span class="nav-label">Dashboard</span>
               </span>
             </a>
@@ -60,7 +60,7 @@ interface Crumb { label: string; path: string; }
                [attr.data-tooltip]="collapsed() ? 'Projects' : null"
                (mouseenter)="onNavItemEnter($event)">
               <span class="nav-inner">
-                <span class="nav-icon-wrap"><lucide-angular [img]="FolderKanban" [size]="20" [strokeWidth]="1.5" aria-hidden="true" /></span>
+                <span class="nav-icon-wrap"><svg [lucideIcon]="LucideFolderKanban" [size]="20" [strokeWidth]="1.5" aria-hidden="true"></svg></span>
                 <span class="nav-label">Projects</span>
               </span>
             </a>
@@ -68,7 +68,7 @@ interface Crumb { label: string; path: string; }
                [attr.data-tooltip]="collapsed() ? 'Test Suites' : null"
                (mouseenter)="onNavItemEnter($event)">
               <span class="nav-inner">
-                <span class="nav-icon-wrap"><lucide-angular [img]="ClipboardList" [size]="20" [strokeWidth]="1.5" aria-hidden="true" /></span>
+                <span class="nav-icon-wrap"><svg [lucideIcon]="LucideClipboardList" [size]="20" [strokeWidth]="1.5" aria-hidden="true"></svg></span>
                 <span class="nav-label">Test Suites</span>
               </span>
             </a>
@@ -80,7 +80,7 @@ interface Crumb { label: string; path: string; }
                [attr.data-tooltip]="collapsed() ? 'Review Board' : null"
                (mouseenter)="onNavItemEnter($event)">
               <span class="nav-inner">
-                <span class="nav-icon-wrap"><lucide-angular [img]="CheckSquare2" [size]="20" [strokeWidth]="1.5" aria-hidden="true" /></span>
+                <span class="nav-icon-wrap"><svg [lucideIcon]="LucideCheckSquare2" [size]="20" [strokeWidth]="1.5" aria-hidden="true"></svg></span>
                 <span class="nav-label">Review Board</span>
               </span>
               @if (pendingReviewCount() > 0) {
@@ -91,7 +91,7 @@ interface Crumb { label: string; path: string; }
                [attr.data-tooltip]="collapsed() ? 'Export' : null"
                (mouseenter)="onNavItemEnter($event)">
               <span class="nav-inner">
-                <span class="nav-icon-wrap"><lucide-angular [img]="Download" [size]="20" [strokeWidth]="1.5" aria-hidden="true" /></span>
+                <span class="nav-icon-wrap"><svg [lucideIcon]="LucideDownload" [size]="20" [strokeWidth]="1.5" aria-hidden="true"></svg></span>
                 <span class="nav-label">Export</span>
               </span>
             </a>
@@ -105,7 +105,7 @@ interface Crumb { label: string; path: string; }
                    [attr.data-tooltip]="collapsed() ? 'Audit Trail' : null"
                    (mouseenter)="onNavItemEnter($event)">
                   <span class="nav-inner">
-                    <span class="nav-icon-wrap"><lucide-angular [img]="ShieldCheck" [size]="20" [strokeWidth]="1.5" aria-hidden="true" /></span>
+                    <span class="nav-icon-wrap"><svg [lucideIcon]="LucideShieldCheck" [size]="20" [strokeWidth]="1.5" aria-hidden="true"></svg></span>
                     <span class="nav-label">Audit Trail</span>
                   </span>
                 </a>
@@ -113,7 +113,7 @@ interface Crumb { label: string; path: string; }
                    [attr.data-tooltip]="collapsed() ? 'Users' : null"
                    (mouseenter)="onNavItemEnter($event)">
                   <span class="nav-inner">
-                    <span class="nav-icon-wrap"><lucide-angular [img]="Users" [size]="20" [strokeWidth]="1.5" aria-hidden="true" /></span>
+                    <span class="nav-icon-wrap"><svg [lucideIcon]="LucideUsers" [size]="20" [strokeWidth]="1.5" aria-hidden="true"></svg></span>
                     <span class="nav-label">Users</span>
                   </span>
                 </a>
@@ -122,7 +122,7 @@ interface Crumb { label: string; path: string; }
                  [attr.data-tooltip]="collapsed() ? 'Settings' : null"
                  (mouseenter)="onNavItemEnter($event)">
                 <span class="nav-inner">
-                  <span class="nav-icon-wrap"><lucide-angular [img]="Settings2" [size]="20" [strokeWidth]="1.5" aria-hidden="true" /></span>
+                  <span class="nav-icon-wrap"><svg [lucideIcon]="LucideSettings2" [size]="20" [strokeWidth]="1.5" aria-hidden="true"></svg></span>
                   <span class="nav-label">Settings</span>
                 </span>
               </a>
@@ -194,11 +194,11 @@ export class AppLayoutComponent implements AfterViewInit {
   private readonly router = inject(Router);
   private readonly http = inject(HttpClient);
 
-  readonly LayoutDashboard = LayoutDashboard;   readonly FolderKanban = FolderKanban;
-  readonly ClipboardList = ClipboardList;        readonly CheckSquare2 = CheckSquare2;
-  readonly Download = Download;                  readonly ShieldCheck = ShieldCheck;
-  readonly Users = Users;                        readonly Settings2 = Settings2;
-  readonly ChevronLeft = ChevronLeft;            readonly ChevronRight = ChevronRight;
+  readonly LucideLayoutDashboard = LucideLayoutDashboard;   readonly LucideFolderKanban = LucideFolderKanban;
+  readonly LucideClipboardList = LucideClipboardList;        readonly LucideCheckSquare2 = LucideCheckSquare2;
+  readonly LucideDownload = LucideDownload;                  readonly LucideShieldCheck = LucideShieldCheck;
+  readonly LucideUsers = LucideUsers;                        readonly LucideSettings2 = LucideSettings2;
+  readonly LucideChevronLeft = LucideChevronLeft;            readonly LucideChevronRight = LucideChevronRight;
 
   @ViewChild('sidebarEl') private sidebarEl!: ElementRef<HTMLElement>;
 

@@ -2,7 +2,7 @@ import { DatePipe } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { ClipboardList, LucideAngularModule } from 'lucide-angular';
+import { LucideClipboardList } from '@lucide/angular';
 import { TestSuiteFilters, TestSuitePage, TestSuiteSummary } from '../../core/models/test-suite.model';
 import { TestSuiteService } from '../../core/services/test-suite.service';
 import { StateMessageComponent } from '../../shared/components/state-message.component';
@@ -13,7 +13,7 @@ import { TableStaggerDirective } from '../../shared/directives/table-stagger.dir
 @Component({
   selector: 'app-test-suites-list-page',
   standalone: true,
-  imports: [DatePipe, FormsModule, RouterLink, LucideAngularModule, StateMessageComponent, SkeletonComponent, EmptyStateComponent, TableStaggerDirective],
+  imports: [DatePipe, FormsModule, RouterLink, StateMessageComponent, SkeletonComponent, EmptyStateComponent, TableStaggerDirective],
   template: `
     <section class="page-stack">
       <div class="section-header">
@@ -42,7 +42,7 @@ import { TableStaggerDirective } from '../../shared/directives/table-stagger.dir
       } @else if (page()?.content?.length === 0) {
         <div class="panel">
           <app-empty-state
-            [icon]="ClipboardList"
+            [icon]="LucideClipboardList"
             title="No test suites found"
             message="No suites match the current filters — try resetting filters, or generate a test suite from a story to build coverage."
           />
@@ -137,7 +137,7 @@ import { TableStaggerDirective } from '../../shared/directives/table-stagger.dir
   `]
 })
 export class TestSuitesListPageComponent implements OnInit {
-  readonly ClipboardList = ClipboardList;
+  readonly LucideClipboardList = LucideClipboardList;
 
   private readonly testSuiteService = inject(TestSuiteService);
 

@@ -1,11 +1,11 @@
 import { Component, ElementRef, HostListener, OnChanges, output, input, inject } from '@angular/core';
 import { gsap } from 'gsap';
-import { X, LucideAngularModule } from 'lucide-angular';
+import { LucideX, LucideDynamicIcon } from '@lucide/angular';
 
 @Component({
   selector: 'app-drawer',
   standalone: true,
-  imports: [LucideAngularModule],
+  imports: [LucideDynamicIcon],
   template: `
     @if (open()) {
       <div class="drawer-backdrop" aria-hidden="true" (click)="closed.emit()"></div>
@@ -13,7 +13,7 @@ import { X, LucideAngularModule } from 'lucide-angular';
         <header class="drawer-header">
           <h3>{{ title() }}</h3>
           <button class="drawer-close" type="button" (click)="closed.emit()" aria-label="Close drawer">
-            <lucide-angular [img]="X" [size]="16" [strokeWidth]="2" aria-hidden="true" />
+            <svg [lucideIcon]="LucideX" [size]="16" [strokeWidth]="2" aria-hidden="true"></svg>
           </button>
         </header>
         <div class="drawer-body">
@@ -114,7 +114,7 @@ import { X, LucideAngularModule } from 'lucide-angular';
   `]
 })
 export class DrawerComponent implements OnChanges {
-  readonly X = X;
+  readonly LucideX = LucideX;
   readonly open = input(false);
   readonly title = input('');
   readonly closed = output<void>();

@@ -1,14 +1,14 @@
 import { Component, EventEmitter, Output, input } from '@angular/core';
-import { LucideAngularModule } from 'lucide-angular';
+import { LucideDynamicIcon } from '@lucide/angular';
 
 @Component({
   selector: 'app-empty-state',
   standalone: true,
-  imports: [LucideAngularModule],
+  imports: [LucideDynamicIcon],
   template: `
     <div class="empty-state">
       <span class="empty-icon" aria-hidden="true">
-        <lucide-angular [img]="$any(icon())" [size]="36" [strokeWidth]="1.5" />
+        <svg [lucideIcon]="$any(icon())" [size]="36" [strokeWidth]="1.5"></svg>
       </span>
       <h3 class="empty-title">{{ title() }}</h3>
       <p class="empty-message">{{ message() }}</p>

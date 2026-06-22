@@ -2,7 +2,7 @@ import { DatePipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { FolderKanban, LucideAngularModule } from 'lucide-angular';
+import { LucideFolderKanban } from '@lucide/angular';
 import { Project } from '../../core/models/project.model';
 import { AuthService } from '../../core/services/auth.service';
 import { ProjectService } from '../../core/services/project.service';
@@ -16,7 +16,7 @@ import { TableStaggerDirective } from '../../shared/directives/table-stagger.dir
 @Component({
   selector: 'app-project-list-page',
   standalone: true,
-  imports: [DatePipe, ReactiveFormsModule, RouterLink, LucideAngularModule, DrawerComponent, StateMessageComponent, SkeletonComponent, EmptyStateComponent, TableStaggerDirective],
+  imports: [DatePipe, ReactiveFormsModule, RouterLink, DrawerComponent, StateMessageComponent, SkeletonComponent, EmptyStateComponent, TableStaggerDirective],
   styles: [`.td-muted { color: var(--color-text-2); white-space: nowrap; }`],
   template: `
     <section class="page-stack">
@@ -67,7 +67,7 @@ import { TableStaggerDirective } from '../../shared/directives/table-stagger.dir
             <app-state-message title="Projects unavailable" [message]="loadError()" tone="error" />
           } @else if (projects().length === 0) {
             <app-empty-state
-              [icon]="FolderKanban"
+              [icon]="LucideFolderKanban"
               title="No projects yet"
               message="Create a project to start mapping your product to stories and generate your first test suite."
             />
@@ -101,7 +101,7 @@ import { TableStaggerDirective } from '../../shared/directives/table-stagger.dir
   `
 })
 export class ProjectListPageComponent implements OnInit {
-  readonly FolderKanban = FolderKanban;
+  readonly LucideFolderKanban = LucideFolderKanban;
 
   private readonly fb = inject(FormBuilder);
   private readonly projectService = inject(ProjectService);

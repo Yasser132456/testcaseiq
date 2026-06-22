@@ -1,12 +1,12 @@
 import { Component, effect, inject } from '@angular/core';
 import { gsap } from 'gsap';
-import { AlertCircle, CheckCircle2, Info, LucideAngularModule, TriangleAlert } from 'lucide-angular';
+import { LucideAlertCircle, LucideCheckCircle2, LucideInfo, LucideDynamicIcon, LucideTriangleAlert } from '@lucide/angular';
 import { ToastItem, ToastService, ToastType } from '../../core/services/toast.service';
 
 @Component({
   selector: 'app-toast-container',
   standalone: true,
-  imports: [LucideAngularModule],
+  imports: [LucideDynamicIcon],
   template: `
     <section class="toast-container" aria-live="polite" aria-label="Notifications">
       @for (toast of toastService.toasts(); track toast.id) {
@@ -18,7 +18,7 @@ import { ToastItem, ToastService, ToastType } from '../../core/services/toast.se
           [class.toast--info]="toast.type === 'info'"
           [attr.data-toast-id]="toast.id"
         >
-          <lucide-angular [img]="icon(toast.type)" [size]="16" [strokeWidth]="2" aria-hidden="true" />
+          <svg [lucideIcon]="icon(toast.type)" [size]="16" [strokeWidth]="2" aria-hidden="true"></svg>
           <span>{{ toast.message }}</span>
         </article>
       }
@@ -56,10 +56,10 @@ import { ToastItem, ToastService, ToastType } from '../../core/services/toast.se
     .toast--error { border-top-color: var(--color-red); }
     .toast--warning { border-top-color: var(--color-amber); }
     .toast--info { border-top-color: var(--color-accent); }
-    .toast--success lucide-angular { color: var(--color-green); }
-    .toast--error lucide-angular { color: var(--color-red); }
-    .toast--warning lucide-angular { color: var(--color-amber); }
-    .toast--info lucide-angular { color: var(--color-accent); }
+    .toast--success svg { color: var(--color-green); }
+    .toast--error svg { color: var(--color-red); }
+    .toast--warning svg { color: var(--color-amber); }
+    .toast--info svg { color: var(--color-accent); }
   `]
 })
 export class ToastContainerComponent {
@@ -80,10 +80,10 @@ export class ToastContainerComponent {
   }
 
   icon(type: ToastType) {
-    if (type === 'success') return CheckCircle2;
-    if (type === 'error') return AlertCircle;
-    if (type === 'warning') return TriangleAlert;
-    return Info;
+    if (type === 'success') return LucideCheckCircle2;
+    if (type === 'error') return LucideAlertCircle;
+    if (type === 'warning') return LucideTriangleAlert;
+    return LucideInfo;
   }
 
   private animateIn(toast: ToastItem): void {

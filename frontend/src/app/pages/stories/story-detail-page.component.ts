@@ -4,7 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Check, LucideAngularModule } from 'lucide-angular';
+import { LucideCheck, LucideDynamicIcon } from '@lucide/angular';
 import { AuthService } from '../../core/services/auth.service';
 import {
   AmbiguitySeverity,
@@ -43,7 +43,7 @@ interface ReviewDraft {
 @Component({
   selector: 'app-story-detail-page',
   standalone: true,
-  imports: [DatePipe, ReactiveFormsModule, RouterLink, LucideAngularModule, StateMessageComponent, SkeletonComponent],
+  imports: [DatePipe, ReactiveFormsModule, RouterLink, LucideDynamicIcon, StateMessageComponent, SkeletonComponent],
   template: `
     <section class="page-stack">
       @if (loading()) {
@@ -83,7 +83,7 @@ interface ReviewDraft {
             >
               <span class="workflow-circle">
                 @if (step.index < currentWorkflowStep()) {
-                  <lucide-angular [img]="Check" [size]="14" [strokeWidth]="2.4" aria-hidden="true" />
+                  <svg [lucideIcon]="LucideCheck" [size]="14" [strokeWidth]="2.4" aria-hidden="true"></svg>
                 } @else {
                   {{ step.index }}
                 }
@@ -707,7 +707,7 @@ export class StoryDetailPageComponent implements OnInit, AfterViewInit, OnDestro
   private readonly authService = inject(AuthService);
   private storySectionsTween: gsap.core.Tween | null = null;
 
-  readonly Check = Check;
+  readonly LucideCheck = LucideCheck;
   readonly canEdit = computed(() => {
     if (!this.authService.isAuthenticated()) return true;
     const role = this.authService.currentRole();

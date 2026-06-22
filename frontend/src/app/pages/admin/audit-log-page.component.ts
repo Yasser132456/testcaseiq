@@ -3,7 +3,7 @@ import { Component, ElementRef, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { gsap } from 'gsap';
-import { ShieldCheck, LucideAngularModule } from 'lucide-angular';
+import { LucideShieldCheck } from '@lucide/angular';
 import { AuditEvent, AuditEventFilters, AuditEventPage } from '../../core/models/audit-event.model';
 import { AuditEventService } from '../../core/services/audit-event.service';
 import { DrawerComponent } from '../../shared/components/drawer.component';
@@ -32,7 +32,7 @@ const TRACEABILITY_ROUTES: Record<string, string> = {
 @Component({
   selector: 'app-audit-log-page',
   standalone: true,
-  imports: [DatePipe, SlicePipe, FormsModule, RouterLink, LucideAngularModule, DrawerComponent, StateMessageComponent, SkeletonComponent, EmptyStateComponent, TableStaggerDirective],
+  imports: [DatePipe, SlicePipe, FormsModule, RouterLink, DrawerComponent, StateMessageComponent, SkeletonComponent, EmptyStateComponent, TableStaggerDirective],
   template: `
     <section class="page-stack">
       <div class="section-header">
@@ -112,7 +112,7 @@ const TRACEABILITY_ROUTES: Record<string, string> = {
       } @else if (page()?.content?.length === 0) {
         <div class="panel">
           <app-empty-state
-            [icon]="ShieldCheck"
+            [icon]="LucideShieldCheck"
             title="No events found"
             message="No audit events match the current filters — try resetting filters or check back after more platform activity."
           />
@@ -255,7 +255,7 @@ const TRACEABILITY_ROUTES: Record<string, string> = {
   `]
 })
 export class AuditLogPageComponent implements OnInit {
-  readonly ShieldCheck = ShieldCheck;
+  readonly LucideShieldCheck = LucideShieldCheck;
 
   private readonly host = inject(ElementRef<HTMLElement>);
   private readonly auditEventService = inject(AuditEventService);

@@ -1,15 +1,15 @@
 import { Component, computed, input } from '@angular/core';
-import { LucideAngularModule, Check, Clock, X, Pencil, Download } from 'lucide-angular';
+import { LucideDynamicIcon, LucideCheck, LucideClock, LucideX, LucidePencil, LucideDownload } from '@lucide/angular';
 
 export type BadgeStatus = 'APPROVED' | 'NEEDS_REVIEW' | 'NEEDS_CLARIFICATION' | 'REJECTED' | 'DRAFT' | 'EXPORTED';
 
 const ICON_MAP = {
-  APPROVED:     Check,
-  NEEDS_REVIEW: Clock,
-  NEEDS_CLARIFICATION: Clock,
-  REJECTED:     X,
-  DRAFT:        Pencil,
-  EXPORTED:     Download,
+  APPROVED:     LucideCheck,
+  NEEDS_REVIEW: LucideClock,
+  NEEDS_CLARIFICATION: LucideClock,
+  REJECTED:     LucideX,
+  DRAFT:        LucidePencil,
+  EXPORTED:     LucideDownload,
 } as const;
 
 const LABEL_MAP: Record<BadgeStatus, string> = {
@@ -24,10 +24,10 @@ const LABEL_MAP: Record<BadgeStatus, string> = {
 @Component({
   selector: 'app-badge',
   standalone: true,
-  imports: [LucideAngularModule],
+  imports: [LucideDynamicIcon],
   template: `
     <span [class]="cls()">
-      <lucide-angular [img]="icon()" [size]="12" [strokeWidth]="2" aria-hidden="true" />
+      <svg [lucideIcon]="icon()" [size]="12" [strokeWidth]="2" aria-hidden="true"></svg>
       {{ label() }}
     </span>
   `,
