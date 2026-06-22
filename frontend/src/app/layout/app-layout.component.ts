@@ -27,6 +27,10 @@ interface ProjectContextSource { projectContext: Signal<ProjectContext | null>; 
   imports: [RouterLink, RouterLinkActive, RouterOutlet, LucideDynamicIcon],
   styleUrl: './app-layout.component.css',
   template: `
+    <div #ambientBg class="ambient-bg" aria-hidden="true">
+      <div class="ambient-orb ambient-orb--phosphor"></div>
+      <div class="ambient-orb ambient-orb--cyan"></div>
+    </div>
     <div class="grain" aria-hidden="true"></div>
     <div class="layout-shell">
 
@@ -228,6 +232,7 @@ export class AppLayoutComponent implements AfterViewInit {
   readonly LucideBookOpenText = LucideBookOpenText;
 
   @ViewChild('sidebarEl') private sidebarEl!: ElementRef<HTMLElement>;
+  @ViewChild('ambientBg') private ambientBg?: ElementRef<HTMLElement>;
 
   readonly collapsed = signal(false);
   readonly pendingReviewCount = signal(0);
@@ -255,7 +260,16 @@ export class AppLayoutComponent implements AfterViewInit {
 
   ngAfterViewInit(): void {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    gsap.from('.nav-item', { x: -16, opacity: 0, duration: 0.35, stagger: 0.04, ease: 'power2.out' });
+    const navItems = this.sidebarEl.nativeElement.querySelectorAll('.nav-item');
+    gsap.from(navItems, { x: -16, opacity: 0, duration: 0.35, stagger: 0.04, ease: 'power2.out' });
+    const orb1 = this.ambientBg?.nativeElement.querySelector('.ambient-orb--phosphor');
+    const orb2 = this.ambientBg?.nativeElement.querySelector('.ambient-orb--cyan');
+    if (orb1) {
+      gsap.to(orb1, { scale: 1.15, opacity: 0.07, duration: 7, yoyo: true, repeat: -1, ease: 'sine.inOut' });
+    }
+    if (orb2) {
+      gsap.to(orb2, { scale: 1.12, opacity: 0.06, duration: 9, yoyo: true, repeat: -1, ease: 'sine.inOut' });
+    }
   }
 
   toggleCollapse(): void {

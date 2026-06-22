@@ -1,6 +1,7 @@
-import { Component, ElementRef, OnInit, computed, inject, signal } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { gsap } from 'gsap';
+import VanillaTilt, { HTMLVanillaTiltElement, TiltOptions } from 'vanilla-tilt';
 import { AuthService } from '../../core/services/auth.service';
 import { SettingsService } from '../../core/services/settings.service';
 import { AppSettings, AppSettingsUpdate, AiProvider, GenerationMode } from '../../core/models/settings.model';
@@ -9,6 +10,7 @@ import { StateMessageComponent } from '../../shared/components/state-message.com
 import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
 
 type SettingsTab = 'ai' | 'security' | 'system';
+const TILT_OPTIONS: TiltOptions = { max: 4, speed: 400, glare: true, 'max-glare': 0.05 };
 
 @Component({
   selector: 'app-settings-page',
@@ -298,7 +300,7 @@ type SettingsTab = 'ai' | 'security' | 'system';
     }
   `]
 })
-export class SettingsPageComponent implements OnInit {
+export class SettingsPageComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly host = inject(ElementRef<HTMLElement>);
   private readonly settingsService = inject(SettingsService);
   private readonly toastService = inject(ToastService);
@@ -312,6 +314,7 @@ export class SettingsPageComponent implements OnInit {
   readonly saveError = signal('');
   readonly activeTab = signal<SettingsTab>('ai');
   openAiApiKey = '';
+  private tiltElements: HTMLVanillaTiltElement[] = [];
 
   draft: AppSettingsUpdate & { maxTestCasesPerStory: number } = {
     activeProvider: 'MOCK',
@@ -347,10 +350,23 @@ export class SettingsPageComponent implements OnInit {
     this.load();
   }
 
+  ngAfterViewInit(): void {
+    this.initTilt();
+  }
+
+  ngOnDestroy(): void {
+    this.destroyTilt();
+  }
+
   setTab(tab: SettingsTab): void {
     this.activeTab.set(tab);
     this.saveSuccess.set(false);
     this.saveError.set('');
+    if (tab === 'ai') {
+      queueMicrotask(() => this.initTilt());
+    } else {
+      this.destroyTilt();
+    }
   }
 
   setProvider(provider: AiProvider): void {
@@ -397,6 +413,7 @@ export class SettingsPageComponent implements OnInit {
         this.settings.set(s);
         this.applyToDraft(s);
         this.loading.set(false);
+        queueMicrotask(() => this.initTilt());
       },
       error: () => {
         this.loadError.set('Settings could not be loaded. The backend may be unavailable.');
@@ -431,5 +448,19 @@ export class SettingsPageComponent implements OnInit {
 
   private prefersReducedMotion(): boolean {
     return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+  }
+
+  private initTilt(): void {
+    if (this.prefersReducedMotion()) return;
+    this.destroyTilt();
+    const cards = Array.from((this.host.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('.provider-card'));
+    if (cards.length === 0) return;
+    VanillaTilt.init(cards, TILT_OPTIONS);
+    this.tiltElements = cards as HTMLVanillaTiltElement[];
+  }
+
+  private destroyTilt(): void {
+    this.tiltElements.forEach((el) => el.vanillaTilt?.destroy());
+    this.tiltElements = [];
   }
 }

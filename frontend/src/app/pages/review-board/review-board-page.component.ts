@@ -75,7 +75,7 @@ interface ReviewCaseItem {
 
           @if (selectedCase(); as item) {
             <section class="review-detail-panel">
-              <div class="quality-readout" aria-label="Quality score">
+              <div class="quality-readout" aria-label="Quality score" (mousemove)="onQualityMouseMove($event)" (mouseleave)="onQualityMouseLeave()">
                 <svg class="quality-gauge" viewBox="0 0 80 80" role="img" [attr.aria-label]="'Quality score ' + qualityScore(item.testCase)">
                   <circle class="quality-gauge-track" cx="40" cy="40" r="32"></circle>
                   <circle
@@ -198,7 +198,7 @@ interface ReviewCaseItem {
     .review-detail-heading h3,.review-suite-name{margin:0}.review-suite-name{color:var(--color-cyan);font-family:var(--font-mono);font-size:.75rem}
     .review-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-base);margin:0}.review-detail-grid div{display:grid;gap:.25rem;padding:var(--space-md);border:var(--b);border-radius:var(--radius-md)}
     .review-detail-grid dt{color:var(--color-text-3);font-family:var(--font-mono);font-size:.7rem}.review-detail-grid dd{margin:0;overflow-wrap:anywhere}
-    .quality-readout{position:absolute;top:var(--space-lg);right:var(--space-lg);display:grid;justify-items:center;gap:var(--space-xs)}.quality-gauge{width:80px;height:80px;overflow:visible}
+    .quality-readout{position:absolute;top:var(--space-lg);right:var(--space-lg);display:grid;justify-items:center;gap:var(--space-xs);perspective:280px}.quality-gauge{width:80px;height:80px;overflow:visible;transform-style:preserve-3d}
     .quality-gauge-track,.quality-gauge-progress{fill:none;stroke-width:7}.quality-gauge-track{stroke:var(--color-border)}.quality-gauge-progress{stroke-linecap:round;transform:rotate(-90deg);transform-origin:40px 40px}
     .quality-gauge text{fill:var(--color-text);font-family:var(--font-mono);font-size:1rem;font-weight:700;text-anchor:middle}.confidence-badge{min-height:auto;padding:.2rem .45rem;font-size:.7rem}
     .review-sticky-actions{position:sticky;bottom:0;display:flex;align-items:center;justify-content:space-between;gap:var(--space-base);padding:var(--space-md) var(--space-lg);border-top:var(--b);background:var(--color-surface-1);z-index:var(--z-sticky)}
@@ -301,6 +301,25 @@ export class ReviewBoardPageComponent implements OnInit, OnDestroy {
 
   qualityDashOffset(testCase: TestCaseSummary): number {
     return this.qualityCircumference * (1 - this.qualityScore(testCase) / 100);
+  }
+
+  onQualityMouseMove(event: MouseEvent): void {
+    if (this.prefersReducedMotion()) return;
+    const panel = event.currentTarget as HTMLElement | null;
+    const gauge = panel?.querySelector('.quality-gauge');
+    if (!panel || !gauge) return;
+    const rect = panel.getBoundingClientRect();
+    const offsetX = ((event.clientX - rect.left) / rect.width - 0.5) * 2;
+    const offsetY = ((event.clientY - rect.top) / rect.height - 0.5) * 2;
+    gsap.to(gauge, { rotateX: offsetY * 4, rotateY: offsetX * -4, duration: 0.4, ease: 'power2.out' });
+  }
+
+  onQualityMouseLeave(): void {
+    if (this.prefersReducedMotion()) return;
+    const gauge = this.host.nativeElement.querySelector('.quality-gauge');
+    if (gauge) {
+      gsap.to(gauge, { rotateX: 0, rotateY: 0, duration: 0.6 });
+    }
   }
 
   private load(): void {

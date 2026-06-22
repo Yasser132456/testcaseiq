@@ -1,4 +1,4 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, OnChanges, OnDestroy, SimpleChanges, computed, input, signal } from '@angular/core';
 import { LucideDynamicIcon, LucideCheck, LucideClock, LucideX, LucidePencil, LucideDownload } from '@lucide/angular';
 
 export type BadgeStatus = 'APPROVED' | 'NEEDS_REVIEW' | 'NEEDS_CLARIFICATION' | 'REJECTED' | 'DRAFT' | 'EXPORTED';
@@ -26,13 +26,13 @@ const LABEL_MAP: Record<BadgeStatus, string> = {
   standalone: true,
   imports: [LucideDynamicIcon],
   template: `
-    <span [class]="cls()">
+    <span [class]="cls()" [class.is-flipping]="flipping()">
       <svg [lucideIcon]="icon()" [size]="12" [strokeWidth]="2" aria-hidden="true"></svg>
       {{ label() }}
     </span>
   `,
   styles: [`
-    :host { display: inline-flex; }
+    :host { display: inline-block; perspective: 200px; }
 
     span {
       display: inline-flex;
@@ -46,6 +46,19 @@ const LABEL_MAP: Record<BadgeStatus, string> = {
       font-size: 0.75rem;
       font-weight: 500;
       line-height: 1;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      @keyframes badge-flip {
+        0%   { transform: rotateY(0deg); }
+        45%  { transform: rotateY(90deg); }
+        55%  { transform: rotateY(90deg); }
+        100% { transform: rotateY(0deg); }
+      }
+
+      .is-flipping {
+        animation: badge-flip 0.35s ease;
+      }
     }
 
     .badge--approved {
@@ -85,10 +98,33 @@ const LABEL_MAP: Record<BadgeStatus, string> = {
     }
   `]
 })
-export class BadgeComponent {
+export class BadgeComponent implements OnChanges, OnDestroy {
   readonly status = input.required<BadgeStatus>();
+  readonly flipping = signal(false);
+  private flipTimer: ReturnType<typeof setTimeout> | null = null;
 
   readonly icon = computed(() => ICON_MAP[this.status()]);
   readonly label = computed(() => LABEL_MAP[this.status()]);
   readonly cls = computed(() => `badge--${this.status().toLowerCase().replaceAll('_', '-')}`);
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (!changes['status'] || changes['status'].firstChange || this.prefersReducedMotion()) {
+      return;
+    }
+    if (this.flipTimer) {
+      clearTimeout(this.flipTimer);
+    }
+    this.flipping.set(true);
+    this.flipTimer = setTimeout(() => this.flipping.set(false), 350);
+  }
+
+  ngOnDestroy(): void {
+    if (this.flipTimer) {
+      clearTimeout(this.flipTimer);
+    }
+  }
+
+  private prefersReducedMotion(): boolean {
+    return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+  }
 }
