@@ -1,0 +1,252 @@
+<section class="panel generated-tests-panel">
+  <div class="section-header">
+    <h3>Generated test cases</h3>
+    <div class="badge-row">
+      <span class="badge cyan-badge">{{ testSuites().length }} suites</span>
+      <span class="badge status-badge">{{ totalTestCases() }} cases</span>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <app-skeleton [rows]="3" [cols]="4" />
+  } @else if (error()) {
+    <app-state-message title="Test generation unavailable" [message]="error()" tone="error" />
+  } @else if (!hasTestSuites()) {
+    <div class="empty-analysis generated-empty">
+      <h3>No manual test cases exist yet.</h3>
+      <p>Generate mock manual tests from this story. The result will include test objectives, steps, data, BDD text, and requirement links.</p>
+      @if (canEdit()) {
+        <button class="button generate-button" type="button" (click)="generateRequested.emit()" [disabled]="generatingTests()">
+          {{ generatingTests() ? 'Generating...' : 'Generate Test Cases' }}
+        </button>
+      }
+    </div>
+  } @else {
+    <div class="suite-stack">
+      @for (suite of testSuites(); track suite.suiteName + suite.generatedAt) {
+        <article class="test-suite-card">
+          <div class="suite-summary">
+            <div>
+              <p class="eyebrow generated-eyebrow">Test suite</p>
+              <h4>{{ suite.suiteName }}</h4>
+              <p>{{ storyTitle() }} / {{ suite.provider }}</p>
+            </div>
+            <div class="suite-metrics">
+              <span class="badge status-badge">{{ suite.testCases.length }} test cases</span>
+              @if (suite.generatedAt) {
+                <span class="badge">Generated {{ suite.generatedAt | date:'medium' }}</span>
+              }
+            </div>
+          </div>
+
+          @if (suite.explainabilitySummary) {
+            <div class="inline-note">{{ suite.explainabilitySummary }}</div>
+          }
+          @if (suiteWarnings(suite).length > 0) {
+            <div class="list-stack compact">
+              @for (warning of suiteWarnings(suite); track warning) {
+                <div class="inline-note amber-note">{{ warning }}</div>
+              }
+            </div>
+          }
+          @if (suite.testCases.length === 0) {
+            <app-state-message title="No test cases returned" message="The generation request completed, but this suite does not contain manual tests." />
+          } @else {
+            <div class="test-case-grid">
+              @for (testCase of suite.testCases; track testCase.id) {
+                <article class="test-case-card">
+                  <div class="test-case-header">
+                    <div>
+                      <p class="eyebrow generated-eyebrow">Manual test</p>
+                      <h5>{{ testCase.title }}</h5>
+                      <p>{{ testObjective(testCase) }}</p>
+                    </div>
+                    <div class="badge-row">
+                      <span class="badge cyan-badge">{{ testCase.type }}</span>
+                      @if (testCase.testLayer) { <span class="badge">{{ testCase.testLayer }}</span> }
+                      @if (testCase.priority) { <span class="badge status-badge">{{ testCase.priority }}</span> }
+                      @if (testCase.riskLevel) { <span class="badge amber-badge">{{ testCase.riskLevel }} risk</span> }
+                      <span class="badge" [class.status-badge]="testCase.automationCandidate">{{ testCase.automationCandidate ? 'Automation candidate' : 'Manual priority' }}</span>
+                      <span class="badge">{{ formatScore(testCase.confidenceScore) }} confidence</span>
+                      @if (testCase.qualityScore != null) { <span class="badge" [style.color]="qualityColor(testCase)">Quality {{ testCase.qualityScore }}/100</span> }
+                      @if (testCase.confidenceLevel) { <span class="badge" [style.color]="qualityColor(testCase)">{{ testCase.confidenceLevel }}</span> }
+                      <span
+                        class="badge review-status-badge"
+                        [class.review-approved]="displayReviewStatus(testCase) === 'APPROVED'"
+                        [class.review-rejected]="displayReviewStatus(testCase) === 'REJECTED'"
+                        [class.review-attention]="displayReviewStatus(testCase) === 'NEEDS_REVIEW' || displayReviewStatus(testCase) === 'NEEDS_CLARIFICATION'"
+                        [class.review-draft]="displayReviewStatus(testCase) === 'DRAFT'"
+                      >
+                        {{ formatLabel(displayReviewStatus(testCase)) }}
+                      </span>
+                    </div>
+                  </div>
+
+                  @if (!testCase.id) {
+                    <div class="inline-note amber-note">This generated test case is missing a persisted backend ID, so review actions are disabled.</div>
+                  } @else if (canEdit()) {
+                    <section class="review-workflow-panel">
+                      <div class="review-action-grid">
+                        <button class="button approve-button" type="button" (click)="updateReviewStatus(testCase, 'APPROVED')" [disabled]="isReviewBusy(testCase)">Approve</button>
+                        <button class="button danger" type="button" (click)="updateReviewStatus(testCase, 'REJECTED')" [disabled]="isReviewBusy(testCase)">Reject</button>
+                        <button class="button clarification-button" type="button" (click)="updateReviewStatus(testCase, 'NEEDS_CLARIFICATION')" [disabled]="isReviewBusy(testCase)">Needs clarification</button>
+                        <button class="button review-button" type="button" (click)="updateReviewStatus(testCase, 'NEEDS_REVIEW')" [disabled]="isReviewBusy(testCase)">Needs review</button>
+                      </div>
+                      <div class="review-field-grid">
+                        <label>
+                          <span>Priority</span>
+                          <select [value]="testCase.priority ?? ''" (change)="updatePriority(testCase, $any($event.target).value)" [disabled]="isReviewBusy(testCase)">
+                            <option value="" disabled>Not set</option>
+                            @for (priority of priorityOptions; track priority) { <option [value]="priority">{{ formatLabel(priority) }}</option> }
+                          </select>
+                        </label>
+                        <label>
+                          <span>Risk</span>
+                          <select [value]="testCase.riskLevel ?? ''" (change)="updateRisk(testCase, $any($event.target).value)" [disabled]="isReviewBusy(testCase)">
+                            <option value="" disabled>Not set</option>
+                            @for (risk of riskOptions; track risk) { <option [value]="risk">{{ formatLabel(risk) }}</option> }
+                          </select>
+                        </label>
+                        <label class="checkbox-field">
+                          <input type="checkbox" [checked]="testCase.automationCandidate" (change)="updateAutomationCandidate(testCase, $any($event.target).checked)" [disabled]="isReviewBusy(testCase)" />
+                          <span>Automation candidate</span>
+                        </label>
+                      </div>
+                      <label>
+                        <span>Review comment</span>
+                        <input [value]="reviewDraft(testCase)?.comment ?? ''" (input)="updateReviewDraft(testCase, 'comment', $any($event.target).value)" placeholder="Optional note for the review history" [disabled]="isReviewBusy(testCase)" />
+                      </label>
+                    </section>
+                  }
+
+                  @if (testCase.linkedRequirementReferences.length > 0) {
+                    <div class="evidence-row">
+                      <span>Linked requirements</span>
+                      <div class="badge-row">
+                        @for (reference of testCase.linkedRequirementReferences; track reference) { <span class="badge cyan-badge">{{ reference }}</span> }
+                      </div>
+                    </div>
+                  }
+                  @if (testCase.sourceEvidence) { <div class="inline-note">{{ testCase.sourceEvidence }}</div> }
+                  @if (testCase.generationRationale) { <div class="inline-note">Rationale: {{ testCase.generationRationale }}</div> }
+                  @if (testCase.linkedAcceptanceCriteriaText) { <div class="inline-note">AC: {{ testCase.linkedAcceptanceCriteriaText }}</div> }
+
+                  @if (testCase.id && canEdit()) {
+                    <section class="test-detail-section edit-test-case-panel">
+                      <h6>Review edits</h6>
+                      <div class="review-edit-grid">
+                        <label>
+                          <span>Title</span>
+                          <input [value]="reviewDraft(testCase)?.title ?? testCase.title" (input)="updateReviewDraft(testCase, 'title', $any($event.target).value)" [disabled]="isReviewBusy(testCase)" />
+                        </label>
+                        <label>
+                          <span>Objective</span>
+                          <textarea rows="3" [value]="reviewDraft(testCase)?.objective ?? testObjective(testCase)" (input)="updateReviewDraft(testCase, 'objective', $any($event.target).value)" [disabled]="isReviewBusy(testCase)"></textarea>
+                        </label>
+                      </div>
+                      <button class="button secondary" type="button" (click)="saveTestCaseEdits(testCase)" [disabled]="isReviewBusy(testCase)">
+                        {{ isReviewBusy(testCase) ? 'Saving...' : 'Save test case edits' }}
+                      </button>
+                    </section>
+                  }
+
+                  @if (testCase.preconditions) {
+                    <section class="test-detail-section">
+                      <h6>Preconditions</h6>
+                      <p>{{ testCase.preconditions }}</p>
+                    </section>
+                  }
+                  <section class="test-detail-section">
+                    <h6>Test steps</h6>
+                    @if (testCase.steps.length === 0) {
+                      <app-state-message title="No steps returned" message="This test case does not include detailed steps yet." />
+                    } @else {
+                      <div class="step-list">
+                        @for (step of testCase.steps; track step.order) {
+                          <div class="step-row">
+                            <span>{{ step.order }}</span>
+                            <div>
+                              @if (testCase.id && canEdit()) {
+                                <label class="compact-field">
+                                  <span>Action</span>
+                                  <input [value]="stepDraft(testCase, step)?.action ?? step.action" (input)="updateReviewStepDraft(testCase, step, 'action', $any($event.target).value)" [disabled]="isReviewBusy(testCase)" />
+                                </label>
+                                <label class="compact-field">
+                                  <span>Expected result</span>
+                                  <textarea rows="2" [value]="stepDraft(testCase, step)?.expectedResult ?? step.expectedResult ?? ''" (input)="updateReviewStepDraft(testCase, step, 'expectedResult', $any($event.target).value)" [disabled]="isReviewBusy(testCase)"></textarea>
+                                </label>
+                              } @else {
+                                <strong>{{ step.action }}</strong>
+                                <p>{{ step.expectedResult || 'Expected result not specified.' }}</p>
+                              }
+                            </div>
+                          </div>
+                        }
+                      </div>
+                    }
+                  </section>
+
+                  @if (testCase.id) {
+                    <section class="test-detail-section review-history-section">
+                      <div class="history-header">
+                        <h6>Review history</h6>
+                        <button class="button secondary" type="button" (click)="toggleReviewHistory(testCase)" [disabled]="reviewHistoryLoading() && selectedHistoryTestCaseId() === testCase.id">
+                          {{ selectedHistoryTestCaseId() === testCase.id ? 'Hide history' : 'Show history' }}
+                        </button>
+                      </div>
+                      @if (selectedHistoryTestCaseId() === testCase.id) {
+                        @if (reviewHistoryLoading()) {
+                          <app-skeleton [rows]="3" [cols]="2" />
+                        } @else if (reviewHistoryError()) {
+                          <app-state-message title="History unavailable" [message]="reviewHistoryError()" tone="error" />
+                        } @else if (reviewEvents().length === 0) {
+                          <app-state-message title="No review events" message="No review history has been recorded for this test case yet." />
+                        } @else {
+                          <div class="review-event-list">
+                            @for (event of reviewEvents(); track event.id) {
+                              <article class="review-event-row">
+                                <div>
+                                  <strong>{{ formatLabel(event.actionType) }}</strong>
+                                  <p>{{ event.previousValue || 'None' }} -> {{ event.newValue || 'None' }}</p>
+                                  @if (event.comment) { <small>{{ event.comment }}</small> }
+                                </div>
+                                <time>{{ event.createdAt | date:'medium' }}</time>
+                              </article>
+                            }
+                          </div>
+                        }
+                      }
+                    </section>
+                  }
+
+                  <section class="test-detail-section">
+                    <h6>Test data</h6>
+                    @if (testCase.testData.length === 0) {
+                      <app-state-message title="No test data" message="No structured test data was returned for this case." />
+                    } @else {
+                      <div class="test-data-grid">
+                        @for (data of testCase.testData; track data.name) {
+                          <div class="test-data-card">
+                            <span>{{ data.name }}</span>
+                            @if (data.classification) { <small>{{ data.classification }}</small> }
+                            <code>{{ testDataValue(data) }}</code>
+                          </div>
+                        }
+                      </div>
+                    }
+                  </section>
+                  @if (testCase.bddScenario) {
+                    <section class="test-detail-section">
+                      <h6>BDD scenario</h6>
+                      <pre class="bdd-panel"><code>{{ testCase.bddScenario }}</code></pre>
+                    </section>
+                  }
+                </article>
+              }
+            </div>
+          }
+        </article>
+      }
+    </div>
+  }
+</section>
