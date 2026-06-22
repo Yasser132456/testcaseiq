@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostListener, OnChanges, output, input, inject } from '@angular/core';
+import { Component, ElementRef, HostListener, OnChanges, OnDestroy, output, input, inject, signal } from '@angular/core';
 import { gsap } from 'gsap';
 import { LucideX, LucideDynamicIcon } from '@lucide/angular';
 
@@ -7,12 +7,12 @@ import { LucideX, LucideDynamicIcon } from '@lucide/angular';
   standalone: true,
   imports: [LucideDynamicIcon],
   template: `
-    @if (open()) {
-      <div class="drawer-backdrop" aria-hidden="true" (click)="closed.emit()"></div>
+    @if (isVisible()) {
+      <div class="drawer-backdrop" aria-hidden="true" (click)="requestClose()"></div>
       <aside class="drawer-panel" role="dialog" aria-modal="true" [attr.aria-label]="title()">
         <header class="drawer-header">
           <h3>{{ title() }}</h3>
-          <button class="drawer-close" type="button" (click)="closed.emit()" aria-label="Close drawer">
+          <button class="drawer-close" type="button" (click)="requestClose()" aria-label="Close drawer">
             <svg [lucideIcon]="LucideX" [size]="16" [strokeWidth]="2" aria-hidden="true"></svg>
           </button>
         </header>
@@ -113,21 +113,44 @@ import { LucideX, LucideDynamicIcon } from '@lucide/angular';
     }
   `]
 })
-export class DrawerComponent implements OnChanges {
+export class DrawerComponent implements OnChanges, OnDestroy {
   readonly LucideX = LucideX;
   readonly open = input(false);
   readonly title = input('');
   readonly closed = output<void>();
+  readonly closing = signal(false);
+  readonly isVisible = signal(false);
 
   private readonly host = inject(ElementRef<HTMLElement>);
+  private closeTimer?: ReturnType<typeof setTimeout>;
+  private returnFocusTarget: HTMLElement | null = null;
 
   ngOnChanges(): void {
-    if (!this.open() || this.prefersReducedMotion()) {
-      return;
+    if (this.open()) {
+      this.show();
+    } else if (this.isVisible() && !this.closing()) {
+      this.beginClose(false);
     }
+  }
+
+  ngOnDestroy(): void {
+    this.clearCloseTimer();
+  }
+
+  requestClose(): void {
+    this.beginClose(true);
+  }
+
+  private show(): void {
+    this.clearCloseTimer();
+    this.returnFocusTarget = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    this.closing.set(false);
+    this.isVisible.set(true);
+
     queueMicrotask(() => {
       const drawer = this.host.nativeElement.querySelector('.drawer-panel');
-      if (drawer) {
+      this.focusInitialElement();
+      if (drawer && !this.prefersReducedMotion()) {
         gsap.from(drawer, { x: 480, duration: 0.3, ease: 'power2.out' });
       }
     });
@@ -135,8 +158,55 @@ export class DrawerComponent implements OnChanges {
 
   @HostListener('document:keydown', ['$event'])
   onKeydown(event: KeyboardEvent): void {
-    if (this.open() && event.key === 'Escape') {
+    if (this.isVisible() && event.key === 'Escape') {
+      event.preventDefault();
+      this.requestClose();
+    }
+  }
+
+  private beginClose(emitClosed: boolean): void {
+    if (!this.isVisible() || this.closing()) {
+      return;
+    }
+
+    this.closing.set(true);
+    const drawer = this.host.nativeElement.querySelector('.drawer-panel');
+
+    if (drawer && !this.prefersReducedMotion()) {
+      gsap.to(drawer, { x: 480, duration: 0.25, ease: 'power2.in' });
+      this.closeTimer = setTimeout(() => this.finishClose(emitClosed), 250);
+      return;
+    }
+
+    this.finishClose(emitClosed);
+  }
+
+  private finishClose(emitClosed: boolean): void {
+    this.clearCloseTimer();
+    this.isVisible.set(false);
+    this.closing.set(false);
+    this.restoreFocus();
+    if (emitClosed) {
       this.closed.emit();
+    }
+  }
+
+  private focusInitialElement(): void {
+    const focusableSelector = 'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href]';
+    const bodyTarget = this.host.nativeElement.querySelector(`.drawer-body ${focusableSelector}`) as HTMLElement | null;
+    const fallback = this.host.nativeElement.querySelector('.drawer-close') as HTMLElement | null;
+    (bodyTarget ?? fallback)?.focus({ preventScroll: true });
+  }
+
+  private restoreFocus(): void {
+    this.returnFocusTarget?.focus({ preventScroll: true });
+    this.returnFocusTarget = null;
+  }
+
+  private clearCloseTimer(): void {
+    if (this.closeTimer) {
+      clearTimeout(this.closeTimer);
+      this.closeTimer = undefined;
     }
   }
 
