@@ -1,0 +1,39 @@
+<button
+  class="notification-trigger"
+  type="button"
+  popovertarget="notification-center-popover"
+  aria-label="Notifications"
+  (click)="onBellClick()">
+  <svg [lucideIcon]="LucideBell" [size]="18" [strokeWidth]="1.8" aria-hidden="true"></svg>
+  @if (unreadCount() > 0) {
+    <span class="notification-badge">{{ unreadCount() }}</span>
+  }
+</button>
+
+<div #popover id="notification-center-popover" [attr.popover]="'auto'" class="notification-popover">
+  <div class="notification-header">
+    <strong>Notifications</strong>
+    <button class="mark-read-button" type="button" (click)="markAllRead()" [disabled]="unreadCount() === 0">
+      <svg [lucideIcon]="LucideCheckCheck" [size]="14" [strokeWidth]="1.8" aria-hidden="true"></svg>
+      <span>Mark all read</span>
+    </button>
+  </div>
+
+  <div class="notification-list">
+    @if (loading()) {
+      <div class="notification-state">Loading notifications</div>
+    } @else {
+      @for (item of notifications(); track item.id) {
+        <div class="notification-row" [class.unread]="!item.read">
+          <svg [lucideIcon]="iconFor(item.type)" [size]="16" [strokeWidth]="1.8" aria-hidden="true"></svg>
+          <div class="notification-copy">
+            <span>{{ item.message }}</span>
+            <span class="meta-text">{{ relativeTime(item.createdAt) }}</span>
+          </div>
+        </div>
+      } @empty {
+        <div class="notification-state">No notifications</div>
+      }
+    }
+  </div>
+</div>

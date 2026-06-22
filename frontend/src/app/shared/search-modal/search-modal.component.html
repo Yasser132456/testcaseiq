@@ -1,0 +1,49 @@
+<div class="search-backdrop" (click)="onBackdropClick($event)" (keydown)="onKeydown($event)">
+  <section #panel class="search-panel" role="dialog" aria-modal="true" aria-label="Global search">
+    <div class="search-field">
+      <svg [lucideIcon]="LucideSearch" [size]="18" [strokeWidth]="1.8" aria-hidden="true"></svg>
+      <input
+        #searchInput
+        type="search"
+        maxlength="100"
+        placeholder="Search projects, stories, suites, cases"
+        (input)="onInput(searchInput.value)"
+        aria-label="Search" />
+      <button class="icon-button" type="button" aria-label="Close search" (click)="close()">
+        <svg [lucideIcon]="LucideX" [size]="18" [strokeWidth]="1.8" aria-hidden="true"></svg>
+      </button>
+    </div>
+
+    <div class="search-content">
+      @if (loading()) {
+        <div class="search-state">
+          <span class="spinner" aria-hidden="true"></span>
+          <span>Searching</span>
+        </div>
+      } @else if (isEmpty()) {
+        <div class="search-state">No results for '{{ query() }}'</div>
+      } @else {
+        @for (group of groups(); track group.label) {
+          <div class="result-group">
+            <div class="group-label">
+              <svg [lucideIcon]="group.icon" [size]="14" [strokeWidth]="1.8" aria-hidden="true"></svg>
+              <span>{{ group.label }}</span>
+            </div>
+            @for (row of group.rows; track row.type + row.id) {
+              <button
+                type="button"
+                class="result-row"
+                [class.active]="rows()[activeIndex()]?.id === row.id && rows()[activeIndex()]?.type === row.type"
+                (click)="select(row)">
+                <svg [lucideIcon]="row.icon" [size]="16" [strokeWidth]="1.8" aria-hidden="true"></svg>
+                <span>{{ row.label }}</span>
+              </button>
+            }
+          </div>
+        } @empty {
+          <div class="search-state">No recent searches</div>
+        }
+      }
+    </div>
+  </section>
+</div>

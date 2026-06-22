@@ -1,5 +1,6 @@
 package com.testcaseiq.api.domain.repository;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -12,6 +13,8 @@ import com.testcaseiq.api.domain.enums.ReviewStatus;
 import com.testcaseiq.api.domain.model.TestSuite;
 
 public interface TestSuiteRepository extends JpaRepository<TestSuite, UUID> {
+
+    List<TestSuite> findByNameContainingIgnoreCase(String name, Pageable pageable);
 
     @Query(value = "SELECT e FROM TestSuite e WHERE " +
                    "(:storyId IS NULL OR e.story.id = :storyId) AND " +

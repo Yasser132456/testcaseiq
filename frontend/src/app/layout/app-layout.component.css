@@ -304,6 +304,8 @@
 
 .topbar-actions { display: flex; align-items: center; gap: 0.75rem; }
 
+.topbar-search-button { width: 2rem; height: 2rem; min-height: 2rem; padding: 0; color: var(--color-text-2); }
+
 .avatar-btn { display: flex; padding: 0; background: transparent; border: none; cursor: pointer; border-radius: 50%; }
 
 .avatar-btn > span {
