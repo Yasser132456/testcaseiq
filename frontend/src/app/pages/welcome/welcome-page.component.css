@@ -291,6 +291,8 @@
 
 .wl-card {
   position: absolute;
+  width: 240px;
+  left: 50%;
   background: rgba(18,18,24,0.75);
   border: 1px solid rgba(255,255,255,0.11);
   border-radius: 14px;
@@ -302,9 +304,8 @@
 }
 
 .wl-card-a {
-  width: 240px;
-  top: 0; left: 8%;
-  transform: rotate(-4deg);
+  top: 0;
+  transform: translateX(calc(-50% - 88px)) rotate(-4deg);
   z-index: 1;
   border-color: rgba(167,139,250,0.22);
   box-shadow: 0 8px 32px rgba(0,0,0,0.45), 0 0 40px rgba(167,139,250,0.08);
@@ -316,9 +317,8 @@
 }
 
 .wl-card-b {
-  width: 220px;
-  top: 80px; left: 33%;
-  transform: rotate(1.5deg);
+  top: 80px;
+  transform: translateX(calc(-50% - 12px)) rotate(1.5deg);
   z-index: 3;
   border-color: rgba(34,211,238,0.25);
   box-shadow: 0 24px 64px rgba(0,0,0,0.6), 0 0 50px rgba(34,211,238,0.10);
@@ -330,9 +330,8 @@
 }
 
 .wl-card-c {
-  width: 210px;
-  top: 160px; right: 0;
-  transform: rotate(3deg);
+  top: 160px;
+  transform: translateX(calc(-50% + 76px)) rotate(3deg);
   z-index: 2;
   border-color: rgba(184,255,90,0.20);
   box-shadow: 0 8px 32px rgba(0,0,0,0.45), 0 0 40px rgba(184,255,90,0.07);
