@@ -1,297 +1,184 @@
-import { HttpHeaders, HttpResponse } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, provideRouter } from '@angular/router';
-import { of, Subject, throwError } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { AnalysisService } from '../../core/services/analysis.service';
-import { ExportService } from '../../core/services/export.service';
+import { GeneratedTestCase, GeneratedTestSuiteResult, ReviewStatus } from '../../core/models/generated-test.model';
+import { TestCaseResponse } from '../../core/models/review.model';
+import { Story, StoryStatus } from '../../core/models/story.model';
 import { ReviewService } from '../../core/services/review.service';
 import { StoryService } from '../../core/services/story.service';
 import { TestGenerationService } from '../../core/services/test-generation.service';
 import { StoryDetailPageComponent } from './story-detail-page.component';
 
-describe('StoryDetailPageComponent export actions', () => {
+describe('StoryDetailPageComponent tabs and review workflow', () => {
   let fixture: ComponentFixture<StoryDetailPageComponent>;
-  let component: StoryDetailPageComponent;
-  let exportResponse: Subject<HttpResponse<Blob>>;
-  let exportService: jasmine.SpyObj<ExportService>;
+  let storyService: jasmine.SpyObj<StoryService>;
+  let reviewService: jasmine.SpyObj<ReviewService>;
 
   beforeEach(async () => {
-    exportResponse = new Subject<HttpResponse<Blob>>();
-    exportService = jasmine.createSpyObj<ExportService>('ExportService', ['exportApprovedTestCases']);
-    exportService.exportApprovedTestCases.and.returnValue(exportResponse.asObservable());
+    window.history.replaceState({ projectContext: { projectId: 'project-1', name: 'Commerce' } }, '', '/stories/story-1');
+    storyService = jasmine.createSpyObj<StoryService>('StoryService', ['get', 'update', 'delete']);
+    reviewService = jasmine.createSpyObj<ReviewService>('ReviewService', [
+      'updateReviewStatus',
+      'updatePriority',
+      'updateRisk',
+      'updateAutomationCandidate',
+      'updateTestCase',
+      'getReviewEvents'
+    ]);
+    storyService.get.and.returnValue(of(storyFixture('TESTS_GENERATED')));
+    storyService.update.and.callFake((_id, request) => of(storyFixture(request.status ?? 'TESTS_GENERATED')));
+    reviewService.updateReviewStatus.and.returnValue(of(updatedTestCase('APPROVED')));
+    reviewService.getReviewEvents.and.returnValue(of([]));
 
     await TestBed.configureTestingModule({
       imports: [StoryDetailPageComponent],
       providers: [
         provideRouter([]),
-        {
-          provide: ActivatedRoute,
-          useValue: {
-            snapshot: {
-              paramMap: {
-                get: (key: string) => key === 'storyId' ? 'story-1' : null
-              }
-            }
-          }
-        },
-        {
-          provide: StoryService,
-          useValue: jasmine.createSpyObj<StoryService>('StoryService', {
-            get: of({
-              id: 'story-1',
-              projectId: 'project-1',
-              title: 'Checkout story',
-              rawText: 'As a shopper, I can checkout.',
-              type: 'USER_STORY',
-              status: 'TESTS_GENERATED',
-              externalReference: null,
-              metadataJson: null,
-              createdAt: '2026-06-14T00:00:00Z',
-              updatedAt: '2026-06-14T00:00:00Z'
-            })
-          })
-        },
-        {
-          provide: AnalysisService,
-          useValue: jasmine.createSpyObj<AnalysisService>('AnalysisService', {
-            getAnalysis: throwError(() => new Error('No analysis yet.'))
-          })
-        },
-        {
-          provide: TestGenerationService,
-          useValue: jasmine.createSpyObj<TestGenerationService>('TestGenerationService', {
-            getTestSuites: of([
-              {
-                id: null,
-                storyId: 'story-1',
-                suiteName: 'Regression suite',
-                testCases: [
-                  {
-                    id: 'test-case-1',
-                    title: 'Checkout happy path',
-                    description: 'Validate checkout.',
-                    objective: 'Validate checkout.',
-                    type: 'FUNCTIONAL',
-                    testLayer: 'UI',
-                    priority: 'HIGH',
-                    riskLevel: 'MEDIUM',
-                    automationCandidate: true,
-                    confidenceScore: 0.9,
-                    reviewStatus: 'APPROVED',
-                    linkedRequirementReferences: [],
-                    bddScenario: null,
-                    steps: [],
-                    testData: []
-                  }
-                ],
-                qaValidation: {
-                  requirementQualityScore: 0.9,
-                  testabilityScore: 0.9,
-                  warnings: []
-                },
-                provider: 'mock-ai-provider',
-                generatedAt: '2026-06-14T00:00:00Z'
-              }
-            ])
-          })
-        },
-        {
-          provide: ReviewService,
-          useValue: jasmine.createSpyObj<ReviewService>('ReviewService', [
-            'updateReviewStatus',
-            'updatePriority',
-            'updateRisk',
-            'updateAutomationCandidate',
-            'updateTestCase',
-            'getReviewEvents'
-          ])
-        },
-        {
-          provide: ExportService,
-          useValue: exportService
-        }
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'story-1' } } } },
+        { provide: StoryService, useValue: storyService },
+        { provide: AnalysisService, useValue: jasmine.createSpyObj<AnalysisService>('AnalysisService', {
+          getAnalysis: throwError(() => new Error('No analysis yet.'))
+        }) },
+        { provide: TestGenerationService, useValue: jasmine.createSpyObj<TestGenerationService>('TestGenerationService', {
+          getTestSuites: of([suiteFixture()])
+        }) },
+        { provide: ReviewService, useValue: reviewService }
       ]
     }).compileComponents();
 
     fixture = TestBed.createComponent(StoryDetailPageComponent);
-    component = fixture.componentInstance;
     fixture.detectChanges();
   });
 
-  it('calls the markdown export endpoint and disables all export actions while loading', () => {
-    const exportButtons = exportActionButtons();
+  it('renders the sticky story header with project breadcrumb, status menu, workflow, and counted tabs', () => {
+    const header = fixture.nativeElement.querySelector('.story-sticky-header') as HTMLElement;
+    const tabs = tabButtons();
 
-    exportButtons[0].click();
-    fixture.detectChanges();
-
-    expect(exportService.exportApprovedTestCases).toHaveBeenCalledOnceWith('story-1', 'markdown');
-    expect(exportActionButtons().every((button) => button.disabled)).toBeTrue();
+    expect(header).not.toBeNull();
+    expect(header.textContent).toContain('Commerce');
+    expect(header.textContent).toContain('Checkout story');
+    expect(header.querySelector('.workflow-progress')).not.toBeNull();
+    expect(tabs.map((tab) => tab.textContent?.trim())).toEqual([
+      'Story',
+      'Test Cases (2)',
+      'Review (1 pending)'
+    ]);
   });
 
-  it('downloads the backend filename when content disposition is provided', () => {
-    let clickedDownload = '';
-    spyOn(HTMLAnchorElement.prototype, 'click').and.callFake(function (this: HTMLAnchorElement) {
-      clickedDownload = this.download;
+  it('persists manual display status changes through the existing story update service', () => {
+    const statusButton = fixture.nativeElement.querySelector('.status-menu-button') as HTMLButtonElement;
+    statusButton.click();
+    fixture.detectChanges();
+
+    const allReviewedOption = Array.from(fixture.nativeElement.querySelectorAll('.status-menu-item'))
+      .find((button) => (button as HTMLButtonElement).textContent?.includes('All Reviewed')) as HTMLButtonElement;
+    allReviewedOption.click();
+    fixture.detectChanges();
+
+    expect(storyService.update).toHaveBeenCalledWith('story-1', jasmine.objectContaining({ status: 'REVIEWED' }));
+    expect(statusButton.textContent).toContain('All Reviewed');
+  });
+
+  it('approves the selected pending review case only when the review panel receives the shortcut', () => {
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', bubbles: true }));
+    fixture.detectChanges();
+    expect(reviewService.updateReviewStatus).not.toHaveBeenCalled();
+
+    clickTab('Review');
+    const reviewPanel = fixture.nativeElement.querySelector('.story-review-tab') as HTMLElement;
+    reviewPanel.focus();
+    reviewPanel.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', bubbles: true }));
+    fixture.detectChanges();
+
+    expect(reviewService.updateReviewStatus).toHaveBeenCalledOnceWith('test-case-1', {
+      status: 'APPROVED',
+      comment: null
     });
-    spyOn(URL, 'createObjectURL').and.returnValue('blob:story-export');
-    spyOn(URL, 'revokeObjectURL');
-
-    exportActionButtons()[1].click();
-    exportResponse.next(new HttpResponse({
-      body: new Blob(['id,title'], { type: 'text/csv' }),
-      headers: new HttpHeaders({
-        'Content-Disposition': 'attachment; filename="backend-approved-tests.csv"'
-      })
-    }));
-    fixture.detectChanges();
-
-    expect(clickedDownload).toBe('backend-approved-tests.csv');
-    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:story-export');
-    expect(component.exportMessage()).toBe('CSV export download started.');
+    expect(tabButton('Review')?.textContent).toContain('Review (0 pending)');
   });
 
-  it('calls the postman export endpoint and uses postman_collection.json filename fallback', () => {
-    let downloadedFilename = '';
-    spyOn(HTMLAnchorElement.prototype, 'click').and.callFake(function (this: HTMLAnchorElement) {
-      downloadedFilename = this.download;
-    });
-    spyOn(URL, 'createObjectURL').and.returnValue('blob:postman-export');
-    spyOn(URL, 'revokeObjectURL');
-
-    exportActionButtons()[4].click();
+  function clickTab(label: string): void {
+    tabButton(label)?.click();
     fixture.detectChanges();
+  }
 
-    expect(exportService.exportApprovedTestCases).toHaveBeenCalledOnceWith('story-1', 'postman');
+  function tabButton(label: string): HTMLButtonElement | undefined {
+    return tabButtons().find((button) => button.textContent?.includes(label));
+  }
 
-    exportResponse.next(new HttpResponse({
-      body: new Blob(['{"info":{},"item":[]}'], { type: 'application/json' }),
-      headers: new HttpHeaders({})
-    }));
-    fixture.detectChanges();
+  function tabButtons(): HTMLButtonElement[] {
+    return Array.from(fixture.nativeElement.querySelectorAll('.detail-tabs .tab-btn')) as HTMLButtonElement[];
+  }
 
-    expect(downloadedFilename).toContain('.postman_collection.json');
-    expect(component.exportMessage()).toContain('Postman');
-  });
+  function storyFixture(status: StoryStatus): Story {
+    return {
+      id: 'story-1',
+      projectId: 'project-1',
+      title: 'Checkout story',
+      rawText: 'As a shopper, I can checkout.',
+      type: 'USER_STORY',
+      status,
+      externalReference: null,
+      metadataJson: null,
+      createdAt: '2026-06-14T00:00:00Z',
+      updatedAt: '2026-06-14T00:00:00Z'
+    };
+  }
 
-  it('calls the Jira Xray export endpoint and uses the xray csv filename fallback', () => {
-    let downloadedFilename = '';
-    spyOn(HTMLAnchorElement.prototype, 'click').and.callFake(function (this: HTMLAnchorElement) {
-      downloadedFilename = this.download;
-    });
-    spyOn(URL, 'createObjectURL').and.returnValue('blob:xray-export');
-    spyOn(URL, 'revokeObjectURL');
-
-    exportButtonByText('Jira/Xray CSV').click();
-    fixture.detectChanges();
-
-    expect(exportService.exportApprovedTestCases).toHaveBeenCalledOnceWith('story-1', 'xray-csv');
-
-    exportResponse.next(new HttpResponse({
-      body: new Blob(['Summary,Action,Data,Expected Result'], { type: 'text/csv' }),
-      headers: new HttpHeaders({})
-    }));
-    fixture.detectChanges();
-
-    expect(downloadedFilename).toBe('story-story-1-approved-tests-xray.csv');
-    expect(component.exportMessage()).toBe('Jira/Xray CSV export download started.');
-  });
-
-  it('calls the Azure DevOps export endpoint and uses the azure csv filename fallback', () => {
-    let downloadedFilename = '';
-    spyOn(HTMLAnchorElement.prototype, 'click').and.callFake(function (this: HTMLAnchorElement) {
-      downloadedFilename = this.download;
-    });
-    spyOn(URL, 'createObjectURL').and.returnValue('blob:azure-devops-export');
-    spyOn(URL, 'revokeObjectURL');
-
-    exportButtonByText('Azure DevOps CSV').click();
-    fixture.detectChanges();
-
-    expect(exportService.exportApprovedTestCases).toHaveBeenCalledOnceWith('story-1', 'azure-devops-csv');
-
-    exportResponse.next(new HttpResponse({
-      body: new Blob(['Test Case ID,Title,Export Warning'], { type: 'text/csv' }),
-      headers: new HttpHeaders({})
-    }));
-    fixture.detectChanges();
-
-    expect(downloadedFilename).toBe('story-story-1-approved-tests-azure-devops.csv');
-    expect(component.exportMessage()).toBe('Azure DevOps CSV export download started.');
-  });
-
-  it('shows Azure DevOps export card in the export panel', () => {
-    const exportPanelText = (fixture.nativeElement.querySelector('.export-panel') as HTMLElement).textContent ?? '';
-
-    expect(exportPanelText).toContain('Azure DevOps CSV');
-    expect(exportPanelText).toContain('Draft Azure import mapping');
-    expect(exportPanelText).toContain('Only APPROVED test cases are exported.');
-  });
-
-  it('shows Jira Xray export card in the export panel', () => {
-    const exportPanelText = (fixture.nativeElement.querySelector('.export-panel') as HTMLElement).textContent ?? '';
-
-    expect(exportPanelText).toContain('Jira/Xray CSV');
-    expect(exportPanelText).toContain('Draft import mapping CSV');
-    expect(exportPanelText).toContain('Only APPROVED test cases are exported.');
-  });
-
-  it('shows the workflow progress indicator at the current analysis step when analysis is missing', () => {
-    const steps = workflowSteps();
-
-    expect(steps.length).toBe(3);
-    expect(steps[0].textContent).toContain('Analysis');
-    expect(steps[0].classList).toContain('is-current');
-    expect(steps[1].classList).toContain('is-pending');
-    expect(steps[2].classList).toContain('is-pending');
-  });
-
-  it('moves the workflow progress indicator to review when analysis and suites exist', () => {
-    component.analysis.set({
+  function suiteFixture(): GeneratedTestSuiteResult {
+    return {
+      id: 'suite-1',
       storyId: 'story-1',
-      actor: 'Shopper',
-      goal: 'Checkout',
-      businessValue: 'Complete purchase',
-      confidenceScore: 0.9,
-      requirements: {
-        requirements: [],
-        acceptanceCriteria: []
-      },
-      ambiguities: {
-        ambiguities: []
-      },
-      coveragePlan: {
-        coverageItems: []
-      },
-      qaValidation: {
-        requirementQualityScore: 0.9,
-        testabilityScore: 0.9,
-        warnings: []
-      },
+      suiteName: 'Regression suite',
+      testCases: [
+        testCaseFixture('test-case-1', 'Checkout happy path', 'NEEDS_REVIEW'),
+        testCaseFixture('test-case-2', 'Card declined', 'APPROVED')
+      ],
+      qaValidation: { requirementQualityScore: 0.9, testabilityScore: 0.9, warnings: [] },
       provider: 'mock-ai-provider',
       generatedAt: '2026-06-14T00:00:00Z'
-    });
-    fixture.detectChanges();
-
-    const steps = workflowSteps();
-
-    expect(steps[0].classList).toContain('is-complete');
-    expect(steps[1].classList).toContain('is-complete');
-    expect(steps[2].classList).toContain('is-current');
-  });
-
-  function exportActionButtons(): HTMLButtonElement[] {
-    return Array.from(fixture.nativeElement.querySelectorAll('.export-card')) as HTMLButtonElement[];
+    };
   }
 
-  function workflowSteps(): HTMLElement[] {
-    return Array.from(fixture.nativeElement.querySelectorAll('.workflow-step')) as HTMLElement[];
+  function testCaseFixture(id: string, title: string, reviewStatus: ReviewStatus): GeneratedTestCase {
+    return {
+      id,
+      title,
+      description: 'Validate checkout.',
+      objective: 'Validate checkout.',
+      type: 'FUNCTIONAL',
+      testLayer: 'UI',
+      priority: 'HIGH',
+      riskLevel: 'MEDIUM',
+      automationCandidate: true,
+      confidenceScore: 0.9,
+      reviewStatus,
+      linkedRequirementReferences: [],
+      bddScenario: null,
+      steps: [],
+      testData: []
+    };
   }
 
-  function exportButtonByText(text: string): HTMLButtonElement {
-    const button = exportActionButtons().find((candidate) => candidate.textContent?.includes(text));
-    if (!button) {
-      throw new Error(`Export button not found: ${text}`);
-    }
-    return button;
+  function updatedTestCase(reviewStatus: ReviewStatus): TestCaseResponse {
+    return {
+      id: 'test-case-1',
+      testSuiteId: 'suite-1',
+      title: 'Checkout happy path',
+      objective: 'Validate checkout.',
+      type: 'FUNCTIONAL',
+      testLayer: 'UI',
+      priority: 'HIGH',
+      riskLevel: 'MEDIUM',
+      reviewStatus,
+      automationCandidate: true,
+      preconditions: null,
+      bddScenario: null,
+      linkedRequirementReferences: [],
+      steps: [],
+      createdAt: '2026-06-14T00:00:00Z',
+      updatedAt: '2026-06-14T00:00:00Z'
+    };
   }
 });

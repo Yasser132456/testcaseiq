@@ -1,0 +1,303 @@
+<section class="story-detail-page">
+  @if (loading()) {
+    <app-skeleton [rows]="5" [cols]="3" />
+  } @else if (error()) {
+    <app-state-message title="Story unavailable" [message]="error()" tone="error" />
+  } @else if (story()) {
+    <header class="story-sticky-header">
+      <div class="story-header-row breadcrumb-row">
+        <a class="story-breadcrumb" [routerLink]="['/projects', story()?.projectId]">← {{ projectName() }}</a>
+      </div>
+      <div class="story-header-row title-row">
+        <h1>{{ story()?.title }}</h1>
+        <div class="status-menu" [class.is-open]="statusMenuOpen()">
+          <button
+            class="status-menu-button"
+            type="button"
+            (click)="statusMenuOpen.update(value => !value)"
+            [disabled]="statusSaving()"
+            [attr.aria-expanded]="statusMenuOpen()"
+          >
+            {{ formatLabel(displayStatus()) }}
+          </button>
+          @if (statusMenuOpen()) {
+            <div class="status-menu-list" role="menu">
+              @for (status of storyStatuses; track status) {
+                <button class="status-menu-item" type="button" role="menuitem" (click)="setStoryStatus(status)">
+                  {{ formatLabel(status) }}
+                </button>
+              }
+            </div>
+          }
+        </div>
+      </div>
+      <nav class="workflow-progress" aria-label="Story workflow progress">
+        @for (step of workflowSteps; track step.key) {
+          <div
+            class="workflow-step"
+            [class.is-complete]="step.index < currentWorkflowStep()"
+            [class.is-current]="step.index === currentWorkflowStep()"
+            [class.is-pending]="step.index > currentWorkflowStep()"
+            [style.--step-color]="step.color"
+          >
+            <span class="workflow-circle">
+              @if (step.index < currentWorkflowStep()) {
+                <svg [lucideIcon]="LucideCheck" [size]="14" [strokeWidth]="2.4" aria-hidden="true"></svg>
+              } @else {
+                {{ step.index }}
+              }
+            </span>
+            <span class="workflow-label">{{ step.label }}</span>
+          </div>
+        }
+      </nav>
+    </header>
+
+    <nav class="detail-tabs" aria-label="Story sections">
+      <button class="tab-btn" type="button" [class.active]="activeTab() === 'story'" (click)="setTab('story')">Story</button>
+      <button class="tab-btn" type="button" [class.active]="activeTab() === 'test-cases'" (click)="setTab('test-cases')">Test Cases ({{ totalTestCases() }})</button>
+      <button class="tab-btn" type="button" [class.active]="activeTab() === 'review'" (click)="setTab('review')">Review ({{ pendingReviewCount() }} pending)</button>
+    </nav>
+
+    <div class="story-tab-content">
+      @if (activeTab() === 'story') {
+        <div class="story-tab-panel">
+          <section class="panel story-summary-panel">
+            <div class="section-header">
+              <div class="badge-row">
+                <span class="badge">{{ formatLabel(story()?.type ?? '') }}</span>
+                <span class="badge status-badge">{{ formatLabel(displayStatus()) }}</span>
+              </div>
+              <button class="button secondary toggle-btn" type="button" (click)="toggleStorySummary()" [attr.aria-expanded]="storySummaryExpanded()">
+                {{ storySummaryExpanded() ? 'Hide story' : 'Show story text' }}
+              </button>
+            </div>
+            @if (storySummaryExpanded()) {
+              <p class="raw-story-text">{{ story()?.rawText }}</p>
+            }
+          </section>
+
+          @if (canEdit()) {
+            <section class="panel form-panel wide">
+              <div class="section-header">
+                <h3>Edit story</h3>
+                <button class="button secondary toggle-btn" type="button" (click)="toggleEditForm()" [attr.aria-expanded]="editFormExpanded()">
+                  {{ editFormExpanded() ? 'Close' : 'Edit' }}
+                </button>
+              </div>
+              @if (editFormExpanded()) {
+                <form [formGroup]="form" (ngSubmit)="saveStory()">
+                  <label>
+                    <span>Title</span>
+                    <input formControlName="title" />
+                  </label>
+                  @if (form.controls.title.touched && form.controls.title.invalid) {
+                    <small class="field-error">Story title is required.</small>
+                  }
+                  <label>
+                    <span>Raw text</span>
+                    <textarea formControlName="rawText" rows="10"></textarea>
+                  </label>
+                  @if (form.controls.rawText.touched && form.controls.rawText.invalid) {
+                    <small class="field-error">Story raw text is required.</small>
+                  }
+                  <div class="form-grid">
+                    <label>
+                      <span>Type</span>
+                      <select formControlName="type">
+                        @for (type of storyTypes; track type) {
+                          <option [value]="type">{{ formatLabel(type) }}</option>
+                        }
+                      </select>
+                    </label>
+                    <label>
+                      <span>Status</span>
+                      <select formControlName="status">
+                        <option value="DRAFT">Draft</option>
+                        <option value="ANALYZED">Analyzed</option>
+                        <option value="TESTS_GENERATED">Tests Generated</option>
+                        <option value="REVIEWED">All Reviewed</option>
+                      </select>
+                    </label>
+                  </div>
+                  <button class="button" type="submit" [disabled]="form.invalid || saving()">
+                    {{ saving() ? 'Saving...' : 'Save changes' }}
+                  </button>
+                </form>
+              }
+            </section>
+          }
+
+          <section class="panel analysis-panel">
+            <div class="section-header">
+              <div>
+                <h3>Story analysis</h3>
+                @if (analysis()?.generatedAt) {
+                  <span class="muted-text">Generated {{ analysis()?.generatedAt | date:'medium' }}</span>
+                }
+              </div>
+              <button class="button secondary toggle-btn" type="button" (click)="toggleAnalysis()" [attr.aria-expanded]="analysisExpanded()">
+                {{ analysisExpanded() ? 'Collapse' : 'Expand' }}
+              </button>
+            </div>
+            @if (analysisLoading()) {
+              <app-skeleton [rows]="3" [cols]="3" />
+            } @else if (analysisError()) {
+              <app-state-message title="Analysis unavailable" [message]="analysisError()" tone="error" />
+            } @else if (!hasAnalysis()) {
+              <div class="empty-analysis">
+                <h3>No analysis has been generated yet.</h3>
+                <p>Run the mock AI analysis to extract requirements, ambiguities, scores, and coverage suggestions.</p>
+                @if (canEdit()) {
+                  <button class="button analysis-button" type="button" (click)="analyzeStory()" [disabled]="analyzing()">
+                    {{ analyzing() ? 'Analyzing...' : 'Analyze Story' }}
+                  </button>
+                }
+              </div>
+            } @else if (analysisExpanded()) {
+              <div class="score-grid">
+                <article class="score-card"><span>Requirement quality</span><strong>{{ formatScore(analysis()?.qaValidation?.requirementQualityScore) }}</strong></article>
+                <article class="score-card"><span>Testability</span><strong>{{ formatScore(analysis()?.qaValidation?.testabilityScore) }}</strong></article>
+                <article class="score-card"><span>Confidence</span><strong>{{ formatScore(analysis()?.confidenceScore) }}</strong></article>
+              </div>
+              <div class="analysis-grid">
+                <section class="analysis-card">
+                  <div class="analysis-card-header"><h4>Story understanding</h4></div>
+                  <dl class="definition-list">
+                    <div><dt>Actor</dt><dd>{{ analysis()?.actor || 'Not identified' }}</dd></div>
+                    <div><dt>Goal</dt><dd>{{ analysis()?.goal || 'Not identified' }}</dd></div>
+                    <div><dt>Business value</dt><dd>{{ analysis()?.businessValue || 'Not provided by this analysis contract' }}</dd></div>
+                  </dl>
+                </section>
+                <section class="analysis-card">
+                  <div class="analysis-card-header"><h4>QA validation notes</h4></div>
+                  @if ((analysis()?.qaValidation?.warnings?.length ?? 0) > 0) {
+                    <div class="list-stack compact">
+                      @for (warning of qaWarnings(); track warning) {
+                        <div class="inline-note amber-note">{{ warning }}</div>
+                      }
+                    </div>
+                  } @else {
+                    <app-state-message title="No warnings" message="The analysis did not flag any QA validation warnings." tone="success" />
+                  }
+                </section>
+              </div>
+              <section class="analysis-card full-span">
+                <div class="analysis-card-header"><h4>Extracted requirements</h4></div>
+                @if (requirementCount() === 0) {
+                  <app-state-message title="No requirements extracted" message="Run analysis again after adding more story detail." />
+                } @else {
+                  <div class="requirement-groups">
+                    @for (type of requirementTypes; track type) {
+                      @if (requirementsByType(type).length > 0) {
+                        <div class="requirement-group">
+                          <h5>{{ formatLabel(type) }}</h5>
+                          <div class="list-stack compact">
+                            @for (requirement of requirementsByType(type); track requirement.reference || requirement.title) {
+                              <article class="result-row">
+                                <div><strong>{{ requirement.title }}</strong><p>{{ requirement.description || 'No description provided.' }}</p></div>
+                                <div class="badge-row">
+                                  @if (requirement.reference) { <span class="badge cyan-badge">{{ requirement.reference }}</span> }
+                                  @if (requirement.priority) { <span class="badge">{{ requirement.priority }}</span> }
+                                  @if (requirement.riskLevel) { <span class="badge amber-badge">{{ requirement.riskLevel }} risk</span> }
+                                </div>
+                              </article>
+                            }
+                          </div>
+                        </div>
+                      }
+                    }
+                    @if ((analysis()?.requirements?.acceptanceCriteria?.length ?? 0) > 0) {
+                      <div class="requirement-group">
+                        <h5>Acceptance criteria</h5>
+                        <div class="list-stack compact">
+                          @for (criterion of acceptanceCriteria(); track criterion) {
+                            <div class="inline-note">{{ criterion }}</div>
+                          }
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
+              </section>
+              <div class="analysis-grid">
+                <section class="analysis-card">
+                  <div class="analysis-card-header"><h4>Questions and risks</h4></div>
+                  @if ((analysis()?.ambiguities?.ambiguities?.length ?? 0) === 0) {
+                    <app-state-message title="No ambiguities found" message="The story is clear enough for this analysis pass." tone="success" />
+                  } @else {
+                    <div class="list-stack compact">
+                      @for (severity of ambiguitySeverities; track severity) {
+                        @if (ambiguitiesBySeverity(severity).length > 0) {
+                          <div class="severity-group">
+                            <span class="badge" [class]="severityClass(severity)">{{ severity }}</span>
+                            @for (ambiguity of ambiguitiesBySeverity(severity); track ambiguity.question) {
+                              <article class="result-row ambiguity-row">
+                                <div>
+                                  <strong>{{ ambiguity.question }}</strong>
+                                  <p>{{ ambiguity.context || ambiguity.impact || 'Impact has not been specified.' }}</p>
+                                  @if (ambiguity.affectedArea) { <small>Affected area: {{ ambiguity.affectedArea }}</small> }
+                                </div>
+                              </article>
+                            }
+                          </div>
+                        }
+                      }
+                    </div>
+                  }
+                </section>
+                <section class="analysis-card">
+                  <div class="analysis-card-header"><h4>Coverage suggestions</h4></div>
+                  @if ((analysis()?.coveragePlan?.coverageItems?.length ?? 0) === 0) {
+                    <app-state-message title="No coverage suggestions" message="Coverage planning will appear after analysis produces suggestions." />
+                  } @else {
+                    <div class="coverage-grid">
+                      @for (category of coverageCategories; track category) {
+                        <article class="coverage-tile" [class.empty]="coverageByCategory(category).length === 0">
+                          <span>{{ formatLabel(category) }}</span>
+                          @if (coverageByCategory(category).length > 0) {
+                            @for (coverage of coverageByCategory(category); track coverage.description) {
+                              <p>{{ coverage.description }}</p>
+                              <div class="badge-row">
+                                @if (coverage.requirementReference) { <span class="badge cyan-badge">{{ coverage.requirementReference }}</span> }
+                                @if (coverage.riskLevel) { <span class="badge amber-badge">{{ coverage.riskLevel }}</span> }
+                              </div>
+                            }
+                          } @else {
+                            <p>No suggestion yet.</p>
+                          }
+                        </article>
+                      }
+                    </div>
+                  }
+                </section>
+              </div>
+            } @else {
+              <p class="muted-text">Expand to view extracted requirements, ambiguities, and coverage suggestions.</p>
+            }
+          </section>
+        </div>
+      }
+
+      @if (activeTab() === 'test-cases') {
+        <app-story-test-cases-tab
+          [storyTitle]="story()?.title ?? ''"
+          [testSuites]="testSuites()"
+          [loading]="testSuitesLoading()"
+          [error]="testGenerationError()"
+          [canEdit]="canEdit()"
+          [generatingTests]="generatingTests()"
+          (generateRequested)="generateTestCases()"
+          (testCaseUpdated)="onTestCaseUpdated($event)"
+        />
+      }
+
+      @if (activeTab() === 'review') {
+        <app-story-review-tab
+          [testSuites]="testSuites()"
+          (testCaseUpdated)="onTestCaseUpdated($event)"
+        />
+      }
+    </div>
+  }
+</section>
