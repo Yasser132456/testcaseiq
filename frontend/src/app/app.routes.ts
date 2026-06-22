@@ -14,8 +14,10 @@ import { StoryDetailPageComponent } from './pages/stories/story-detail-page.comp
 import { TestSuitesListPageComponent } from './pages/test-suites/test-suites-list-page.component';
 import { TestSuiteDetailPageComponent } from './pages/test-suites/test-suite-detail-page.component';
 import { ReviewBoardPageComponent } from './pages/review-board/review-board-page.component';
+import { WelcomePageComponent } from './pages/welcome/welcome-page.component';
 
 export const routes: Routes = [
+  { path: '', pathMatch: 'full', component: WelcomePageComponent },
   { path: 'login', component: LoginPageComponent },
   { path: 'register', component: RegisterPageComponent },
   {
@@ -23,7 +25,6 @@ export const routes: Routes = [
     component: AppLayoutComponent,
     canActivateChild: [authGuard],
     children: [
-      { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
       { path: 'dashboard', component: DashboardPageComponent, data: { requiresAuth: true } },
       { path: 'projects', component: ProjectListPageComponent, data: { requiresAuth: true } },
       { path: 'projects/:projectId', component: ProjectDetailPageComponent, data: { requiresAuth: true } },
