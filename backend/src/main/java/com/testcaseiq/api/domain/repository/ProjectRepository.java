@@ -13,4 +13,6 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
     Optional<Project> findByKey(String key);
 
     List<Project> findAllByOrderByCreatedAtDesc();
+
+    List<Project> findTop3ByOrderByUpdatedAtDesc();
 }

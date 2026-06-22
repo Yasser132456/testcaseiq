@@ -51,6 +51,10 @@ class DashboardControllerTests {
     private static final DashboardMetricsResponse METRICS = new DashboardMetricsResponse(
             3, 12, 9, 3, 18, 72, 45, 8, 14, 5, 6,
             62.5, 11.1, 19.4, 62.5,
+            List.of(new DashboardMetricsResponse.RecentProjectItem(
+                    "11111111-1111-1111-1111-111111111111", "Claims Portal", "CLAIMS",
+                    "Claims regression coverage", "2026-06-21T00:00:00Z"
+            )),
             List.of(new DashboardMetricsResponse.RecentActivityItem(
                     "2026-06-21T00:00:00Z", "TEST_GENERATION_REQUESTED",
                     "qa@example.com", "QA_ENGINEER", "STORY", "SUCCESS", "Tests generated"
@@ -59,7 +63,7 @@ class DashboardControllerTests {
 
     private static final DashboardMetricsResponse ZERO_METRICS = new DashboardMetricsResponse(
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0.0, 0.0, 0.0, 0.0, List.of()
+            0.0, 0.0, 0.0, 0.0, List.of(), List.of()
     );
 
     @Test
@@ -73,6 +77,7 @@ class DashboardControllerTests {
                 .andExpect(jsonPath("$.totalTestCases").value(72))
                 .andExpect(jsonPath("$.approvedTestCases").value(45))
                 .andExpect(jsonPath("$.approvalRate").value(62.5))
+                .andExpect(jsonPath("$.recentProjects[0].name").value("Claims Portal"))
                 .andExpect(jsonPath("$.recentActivity[0].action").value("TEST_GENERATION_REQUESTED"));
     }
 
@@ -111,6 +116,7 @@ class DashboardControllerTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalProjects").value(0))
                 .andExpect(jsonPath("$.approvalRate").value(0.0))
+                .andExpect(jsonPath("$.recentProjects").isArray())
                 .andExpect(jsonPath("$.recentActivity").isArray());
     }
 

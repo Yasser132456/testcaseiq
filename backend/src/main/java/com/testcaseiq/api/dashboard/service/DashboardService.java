@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.testcaseiq.api.audit.AuditEventRepository;
 import com.testcaseiq.api.dashboard.dto.DashboardMetricsResponse;
 import com.testcaseiq.api.dashboard.dto.DashboardMetricsResponse.RecentActivityItem;
+import com.testcaseiq.api.dashboard.dto.DashboardMetricsResponse.RecentProjectItem;
 import com.testcaseiq.api.domain.enums.ReviewStatus;
 import com.testcaseiq.api.domain.repository.ExportJobRepository;
 import com.testcaseiq.api.domain.repository.ProjectRepository;
@@ -54,6 +55,17 @@ public class DashboardService {
         long draft = testCaseRepository.countByReviewStatus(ReviewStatus.DRAFT);
         long totalExports = exportJobRepository.count();
 
+        List<RecentProjectItem> recentProjects = projectRepository.findTop3ByOrderByUpdatedAtDesc()
+                .stream()
+                .map(p -> new RecentProjectItem(
+                        p.getId().toString(),
+                        p.getName(),
+                        p.getKey(),
+                        p.getDescription(),
+                        p.getUpdatedAt().toString()
+                ))
+                .toList();
+
         List<RecentActivityItem> recentActivity = auditEventRepository
                 .findWithFilters(null, null, null, null, null, null, null, PageRequest.of(0, 8))
                 .stream()
@@ -84,6 +96,7 @@ public class DashboardService {
                 rate(rejected, totalTestCases),
                 rate(pendingReview, totalTestCases),
                 rate(approved, totalTestCases),
+                recentProjects,
                 recentActivity
         );
     }

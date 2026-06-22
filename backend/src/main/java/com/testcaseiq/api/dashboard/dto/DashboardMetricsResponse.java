@@ -18,8 +18,17 @@ public record DashboardMetricsResponse(
         double rejectionRate,
         double pendingReviewRate,
         double exportReadinessRate,
+        List<RecentProjectItem> recentProjects,
         List<RecentActivityItem> recentActivity
 ) {
+    public record RecentProjectItem(
+            String id,
+            String name,
+            String key,
+            String description,
+            String updatedAt
+    ) {}
+
     public record RecentActivityItem(
             String timestamp,
             String action,

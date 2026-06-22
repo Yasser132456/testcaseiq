@@ -19,6 +19,15 @@ const MOCK_METRICS: DashboardMetrics = {
   rejectionRate: 11.1,
   pendingReviewRate: 19.4,
   exportReadinessRate: 62.5,
+  recentProjects: [
+    {
+      id: 'project-1',
+      name: 'Claims Portal',
+      key: 'CLAIMS',
+      description: 'Claims regression coverage',
+      updatedAt: '2026-06-21T00:00:00Z'
+    }
+  ],
   recentActivity: [
     {
       timestamp: '2026-06-21T00:00:00Z',
@@ -50,6 +59,8 @@ describe('DashboardService', () => {
       expect(metrics.totalTestCases).toBe(72);
       expect(metrics.approvedTestCases).toBe(45);
       expect(metrics.approvalRate).toBe(62.5);
+      expect(metrics.recentProjects.length).toBe(1);
+      expect(metrics.recentProjects[0].name).toBe('Claims Portal');
       expect(metrics.recentActivity.length).toBe(1);
       expect(metrics.recentActivity[0].action).toBe('TEST_GENERATION_REQUESTED');
     });
@@ -59,7 +70,14 @@ describe('DashboardService', () => {
   });
 
   it('should handle zero-data state', () => {
-    const emptyMetrics: DashboardMetrics = { ...MOCK_METRICS, totalProjects: 0, totalTestCases: 0, approvalRate: 0, recentActivity: [] };
+    const emptyMetrics: DashboardMetrics = {
+      ...MOCK_METRICS,
+      totalProjects: 0,
+      totalTestCases: 0,
+      approvalRate: 0,
+      recentProjects: [],
+      recentActivity: []
+    };
     service.getMetrics().subscribe(metrics => {
       expect(metrics.totalProjects).toBe(0);
       expect(metrics.recentActivity.length).toBe(0);
