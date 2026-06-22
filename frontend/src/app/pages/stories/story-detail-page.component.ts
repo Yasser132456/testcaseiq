@@ -1,9 +1,10 @@
 import { DatePipe } from '@angular/common';
-import { AfterViewInit, Component, ElementRef, computed, inject, signal } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { LucideCheck, LucideDynamicIcon } from '@lucide/angular';
 import { gsap } from 'gsap';
+import VanillaTilt, { HTMLVanillaTiltElement, TiltOptions } from 'vanilla-tilt';
 import {
   AmbiguitySeverity,
   CoverageCategory,
@@ -26,6 +27,7 @@ import { StoryTestCasesTabComponent } from './story-test-cases-tab.component';
 
 type StoryDetailTab = 'story' | 'test-cases' | 'review';
 type StoryDisplayStatus = 'DRAFT' | 'ANALYZED' | 'TESTS_GENERATED' | 'NEEDS_REVIEW' | 'ALL_REVIEWED';
+const TILT_OPTIONS: TiltOptions = { max: 4, speed: 400, glare: true, 'max-glare': 0.05 };
 
 @Component({
   selector: 'app-story-detail-page',
@@ -43,7 +45,7 @@ type StoryDisplayStatus = 'DRAFT' | 'ANALYZED' | 'TESTS_GENERATED' | 'NEEDS_REVI
   templateUrl: './story-detail-page.component.html',
   styleUrl: './story-detail-page.component.css'
 })
-export class StoryDetailPageComponent implements AfterViewInit {
+export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
   private readonly host = inject(ElementRef<HTMLElement>);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -55,6 +57,7 @@ export class StoryDetailPageComponent implements AfterViewInit {
   private readonly authService = inject(AuthService);
   private readonly projectContext = (this.router.getCurrentNavigation()?.extras.state?.['projectContext'] ?? window.history.state?.projectContext) as { name?: string } | null;
   private storyId = '';
+  private tiltElements: HTMLVanillaTiltElement[] = [];
 
   readonly LucideCheck = LucideCheck;
   readonly storyTypes = STORY_TYPES;
@@ -114,14 +117,26 @@ export class StoryDetailPageComponent implements AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    queueMicrotask(() => this.animateWorkflowStep());
+    queueMicrotask(() => {
+      this.animateWorkflowStep();
+      this.initTilt();
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.destroyTilt();
   }
 
   setTab(tab: StoryDetailTab): void {
     this.activeTab.set(tab);
   }
 
-  toggleAnalysis(): void { this.analysisExpanded.update((value) => !value); }
+  toggleAnalysis(): void {
+    this.analysisExpanded.update((value) => !value);
+    if (this.analysisExpanded()) {
+      queueMicrotask(() => this.initTilt());
+    }
+  }
   toggleStorySummary(): void { this.storySummaryExpanded.update((value) => !value); }
   toggleEditForm(): void { this.editFormExpanded.update((value) => !value); }
 
@@ -177,6 +192,7 @@ export class StoryDetailPageComponent implements AfterViewInit {
         this.updateStoryStatus('ANALYZED');
         this.analyzing.set(false);
         this.animateWorkflowStep();
+        queueMicrotask(() => this.initTilt());
       },
       error: () => {
         this.analysisError.set('The story could not be analyzed. Confirm the backend is running and try again.');
@@ -260,6 +276,7 @@ export class StoryDetailPageComponent implements AfterViewInit {
         this.analysis.set(analysis);
         this.analysisLoading.set(false);
         this.animateWorkflowStep();
+        queueMicrotask(() => this.initTilt());
       },
       error: () => {
         this.analysis.set(null);
@@ -352,5 +369,19 @@ export class StoryDetailPageComponent implements AfterViewInit {
 
   private prefersReducedMotion(): boolean {
     return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+  }
+
+  private initTilt(): void {
+    if (this.prefersReducedMotion()) return;
+    this.destroyTilt();
+    const elements = Array.from((this.host.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('.score-card, .coverage-tile'));
+    if (elements.length === 0) return;
+    VanillaTilt.init(elements, TILT_OPTIONS);
+    this.tiltElements = elements as HTMLVanillaTiltElement[];
+  }
+
+  private destroyTilt(): void {
+    this.tiltElements.forEach((el) => el.vanillaTilt?.destroy());
+    this.tiltElements = [];
   }
 }

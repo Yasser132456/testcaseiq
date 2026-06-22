@@ -1,8 +1,8 @@
-import { DatePipe } from '@angular/common';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { LucideFolderKanban } from '@lucide/angular';
+import VanillaTilt, { HTMLVanillaTiltElement, TiltOptions } from 'vanilla-tilt';
 import { Project } from '../../core/models/project.model';
 import { AuthService } from '../../core/services/auth.service';
 import { ProjectService } from '../../core/services/project.service';
@@ -11,13 +11,34 @@ import { StateMessageComponent } from '../../shared/components/state-message.com
 import { DrawerComponent } from '../../shared/components/drawer.component';
 import { EmptyStateComponent } from '../../shared/empty-state/empty-state.component';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
-import { TableStaggerDirective } from '../../shared/directives/table-stagger.directive';
+
+type ProjectCard = Project & {
+  storyCount?: number;
+  suiteCount?: number;
+  coveragePercent?: number;
+  lastActivityAt?: string;
+};
+
+const TILT_OPTIONS: TiltOptions = { max: 4, speed: 400, glare: true, 'max-glare': 0.05 };
 
 @Component({
   selector: 'app-project-list-page',
   standalone: true,
-  imports: [DatePipe, ReactiveFormsModule, RouterLink, DrawerComponent, StateMessageComponent, SkeletonComponent, EmptyStateComponent, TableStaggerDirective],
-  styles: [`.td-muted { color: var(--color-text-2); white-space: nowrap; }`],
+  imports: [ReactiveFormsModule, RouterLink, DrawerComponent, StateMessageComponent, SkeletonComponent, EmptyStateComponent],
+  styles: [`
+    .project-card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--space-4, 1rem); }
+    .project-card { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 1rem; align-items: start; min-height: 12rem; padding: 1rem; border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface-2); transform-style: preserve-3d; transition: border-color var(--dur) var(--ease), transform var(--dur-slow) var(--ease); }
+    .project-card:hover { border-color: var(--color-accent-border); transform: translateY(-2px); }
+    .coverage-ring { width: 56px; height: 56px; overflow: visible; }
+    .coverage-ring-bg, .coverage-ring-arc { fill: none; stroke-width: 6; }
+    .coverage-ring-bg { stroke: var(--color-surface-1); }
+    .coverage-ring-arc { stroke: var(--color-accent); stroke-linecap: round; transform: rotate(-90deg); transform-origin: 28px 28px; }
+    .coverage-ring text { fill: var(--color-text); font-family: var(--font-mono); font-size: 0.68rem; font-weight: 700; text-anchor: middle; dominant-baseline: middle; }
+    .project-card-body { display: grid; gap: 0.45rem; min-width: 0; }
+    .project-card h4 { margin: 0; color: var(--color-text); overflow-wrap: anywhere; }
+    .project-card .secondary-text, .project-card .meta-text { color: var(--color-text-2); }
+    .project-open-link { justify-self: start; margin-top: 0.35rem; }
+  `],
   template: `
     <section class="page-stack">
       <div class="section-header">
@@ -72,42 +93,47 @@ import { TableStaggerDirective } from '../../shared/directives/table-stagger.dir
               message="Create a project to start mapping your product to stories and generate your first test suite."
             />
           } @else {
-            <table class="data-table" tableStagger>
-              <thead>
-                <tr>
-                  <th>Project</th>
-                  <th>Created</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (project of projects(); track project.id) {
-                  <tr [routerLink]="['/projects', project.id]">
-                    <td><div class="row-inner"><strong>{{ project.name }}</strong></div></td>
-                    <td><div class="row-inner td-muted">{{ project.createdAt | date:'mediumDate' }}</div></td>
-                    <td>
-                      <a class="button ghost" [routerLink]="['/projects', project.id]" (click)="$event.stopPropagation()">
-                        Open →
-                      </a>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
+            <div class="project-card-grid">
+              @for (project of projects(); track project.id) {
+                <article class="project-card">
+                  <svg class="coverage-ring" viewBox="0 0 56 56" role="img" [attr.aria-label]="'Coverage ' + coveragePercent(project) + '%'">
+                    <circle class="coverage-ring-bg" cx="28" cy="28" r="22"></circle>
+                    <circle
+                      class="coverage-ring-arc"
+                      cx="28"
+                      cy="28"
+                      r="22"
+                      [attr.stroke-dasharray]="coverageCircumference"
+                      [attr.stroke-dashoffset]="coverageDashOffset(project)"
+                    ></circle>
+                    <text x="28" y="29">{{ coveragePercent(project) }}%</text>
+                  </svg>
+                  <div class="project-card-body">
+                    <h4 class="card-title">{{ project.name }}</h4>
+                    <span class="secondary-text">{{ storyCount(project) }} stories &middot; {{ suiteCount(project) }} suites</span>
+                    <span class="meta-text">Last activity {{ relativeActivity(project) }}</span>
+                    <a class="button ghost project-open-link" [routerLink]="['/projects', project.id]">Open &rarr;</a>
+                  </div>
+                </article>
+              }
+            </div>
           }
         </section>
       </div>
     </section>
   `
 })
-export class ProjectListPageComponent implements OnInit {
+export class ProjectListPageComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly LucideFolderKanban = LucideFolderKanban;
+  readonly coverageCircumference = 2 * Math.PI * 22;
 
+  private readonly host = inject(ElementRef<HTMLElement>);
   private readonly fb = inject(FormBuilder);
   private readonly projectService = inject(ProjectService);
   private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
   private readonly toastService = inject(ToastService);
+  private tiltElements: HTMLVanillaTiltElement[] = [];
 
   readonly canEdit = computed(() => {
     if (!this.authService.isAuthenticated()) return true;
@@ -119,7 +145,7 @@ export class ProjectListPageComponent implements OnInit {
     this.authService.isAuthenticated() && this.authService.currentRole() === 'VIEWER'
   );
 
-  readonly projects = signal<Project[]>([]);
+  readonly projects = signal<ProjectCard[]>([]);
   readonly loading = signal(true);
   readonly creating = signal(false);
   readonly loadError = signal('');
@@ -132,6 +158,14 @@ export class ProjectListPageComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadProjects();
+  }
+
+  ngAfterViewInit(): void {
+    this.initProjectTilt();
+  }
+
+  ngOnDestroy(): void {
+    this.destroyProjectTilt();
   }
 
   createProject(): void {
@@ -152,17 +186,65 @@ export class ProjectListPageComponent implements OnInit {
     });
   }
 
+  storyCount(project: ProjectCard): number {
+    return Math.max(0, project.storyCount ?? 0);
+  }
+
+  suiteCount(project: ProjectCard): number {
+    return Math.max(0, project.suiteCount ?? 0);
+  }
+
+  coveragePercent(project: ProjectCard): number {
+    return Math.max(0, Math.min(100, Math.round(project.coveragePercent ?? 0)));
+  }
+
+  coverageDashOffset(project: ProjectCard): number {
+    return this.coverageCircumference * (1 - this.coveragePercent(project) / 100);
+  }
+
+  relativeActivity(project: ProjectCard): string {
+    const value = new Date(project.lastActivityAt ?? project.updatedAt ?? project.createdAt).getTime();
+    if (Number.isNaN(value)) return 'unknown';
+    const diffMs = Date.now() - value;
+    const minute = 60_000;
+    const hour = 60 * minute;
+    const day = 24 * hour;
+    if (diffMs < minute) return 'just now';
+    if (diffMs < hour) return `${Math.floor(diffMs / minute)}m ago`;
+    if (diffMs < day) return `${Math.floor(diffMs / hour)}h ago`;
+    return `${Math.floor(diffMs / day)}d ago`;
+  }
+
   private loadProjects(): void {
     this.loading.set(true);
     this.projectService.list().subscribe({
       next: (projects) => {
         this.projects.set(projects);
         this.loading.set(false);
+        queueMicrotask(() => this.initProjectTilt());
       },
       error: () => {
         this.loadError.set('Unable to load projects. Confirm the backend is running.');
         this.loading.set(false);
       }
     });
+  }
+
+  private initProjectTilt(): void {
+    if (this.prefersReducedMotion()) return;
+    this.destroyProjectTilt();
+    const cards = Array.from((this.host.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('.project-card'));
+    if (cards.length === 0) return;
+    VanillaTilt.init(cards, TILT_OPTIONS);
+    this.tiltElements = cards as HTMLVanillaTiltElement[];
+  }
+
+  private destroyProjectTilt(): void {
+    this.tiltElements.forEach((el) => el.vanillaTilt?.destroy());
+    this.tiltElements = [];
+  }
+
+  private prefersReducedMotion(): boolean {
+    return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
   }
 }

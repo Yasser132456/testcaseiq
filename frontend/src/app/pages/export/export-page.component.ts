@@ -1,7 +1,8 @@
 import { DatePipe } from '@angular/common';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { LucideDownload, LucideDynamicIcon } from '@lucide/angular';
+import VanillaTilt, { HTMLVanillaTiltElement, TiltOptions } from 'vanilla-tilt';
 import { ExportFormat, ExportService } from '../../core/services/export.service';
 import { TestSuitePage, TestSuiteSummary } from '../../core/models/test-suite.model';
 import { TestSuiteService } from '../../core/services/test-suite.service';
@@ -17,6 +18,8 @@ interface ExportOption {
   description: string;
   cardClass?: string;
 }
+
+const TILT_OPTIONS: TiltOptions = { max: 4, speed: 400, glare: true, 'max-glare': 0.05 };
 
 @Component({
   selector: 'app-export-page',
@@ -271,12 +274,14 @@ interface ExportOption {
     }
   `]
 })
-export class ExportPageComponent implements OnInit {
+export class ExportPageComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly LucideDownload = LucideDownload;
 
+  private readonly host = inject(ElementRef<HTMLElement>);
   private readonly testSuiteService = inject(TestSuiteService);
   private readonly exportService = inject(ExportService);
   private readonly toastService = inject(ToastService);
+  private tiltElements: HTMLVanillaTiltElement[] = [];
 
   readonly page = signal<TestSuitePage | null>(null);
   readonly loading = signal(true);
@@ -338,6 +343,14 @@ export class ExportPageComponent implements OnInit {
     this.load();
   }
 
+  ngAfterViewInit(): void {
+    this.initTilt();
+  }
+
+  ngOnDestroy(): void {
+    this.destroyTilt();
+  }
+
   selectSuite(suite: TestSuiteSummary): void {
     this.selectedSuiteId.set(suite.id);
   }
@@ -387,6 +400,7 @@ export class ExportPageComponent implements OnInit {
         const selectedStillVisible = p.content.some((suite) => suite.id === this.selectedSuiteId());
         this.selectedSuiteId.set(selectedStillVisible ? this.selectedSuiteId() : p.content[0]?.id ?? null);
         this.loading.set(false);
+        queueMicrotask(() => this.initTilt());
       },
       error: () => {
         this.loadError.set('Unable to load approved test suites. Confirm the backend is running.');
@@ -443,5 +457,23 @@ export class ExportPageComponent implements OnInit {
     anchor.download = filename;
     anchor.click();
     URL.revokeObjectURL(objectUrl);
+  }
+
+  private initTilt(): void {
+    if (this.prefersReducedMotion()) return;
+    this.destroyTilt();
+    const cards = Array.from((this.host.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('.export-card'));
+    if (cards.length === 0) return;
+    VanillaTilt.init(cards, TILT_OPTIONS);
+    this.tiltElements = cards as HTMLVanillaTiltElement[];
+  }
+
+  private destroyTilt(): void {
+    this.tiltElements.forEach((el) => el.vanillaTilt?.destroy());
+    this.tiltElements = [];
+  }
+
+  private prefersReducedMotion(): boolean {
+    return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
   }
 }

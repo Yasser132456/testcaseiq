@@ -1,3 +1,44 @@
+:host {
+  display: block;
+  position: relative;
+  isolation: isolate;
+}
+
+.ambient-bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.ambient-orb {
+  position: absolute;
+  border-radius: 50%;
+}
+
+.ambient-orb--phosphor {
+  bottom: -200px;
+  left: -150px;
+  width: 700px;
+  height: 700px;
+  background: rgba(184, 255, 90, 0.04);
+  filter: blur(80px);
+}
+
+.ambient-orb--cyan {
+  top: -150px;
+  right: -100px;
+  width: 550px;
+  height: 550px;
+  background: rgba(34, 211, 238, 0.035);
+  filter: blur(70px);
+}
+
+.layout-shell {
+  position: relative;
+  z-index: 2;
+}
+
 .sidebar {
   width: 220px;
   overflow: hidden;
