@@ -36,7 +36,7 @@ const TRACEABILITY_ROUTES: Record<string, string> = {
   template: `
     <section class="page-stack">
       <div class="section-header">
-        <h2>Activity Log</h2>
+        <h2>Audit Trail</h2>
         <p class="section-subtitle">Audit trail of all significant actions taken in the system.</p>
       </div>
 
