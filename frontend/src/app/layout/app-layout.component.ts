@@ -1,5 +1,5 @@
 import {
-  AfterViewInit, Component, EffectRef, ElementRef, Injector, Signal, ViewChild, effect, inject, signal
+  AfterViewInit, Component, EffectRef, ElementRef, Injector, OnDestroy, Signal, ViewChild, effect, inject, signal
 } from '@angular/core';
 import {
   ActivatedRoute, NavigationEnd, Router,
@@ -13,9 +13,11 @@ import {
   LucideDynamicIcon,
   LucideLayoutDashboard, LucideFolderKanban, LucideClipboardList, LucideCheckSquare2,
   LucideDownload, LucideShieldCheck, LucideUsers, LucideSettings2, LucideChevronLeft, LucideChevronRight,
-  LucideBookOpenText
+  LucideBookOpenText, LucideSearch
 } from '@lucide/angular';
 import { AuthService } from '../core/services/auth.service';
+import { NotificationCenterComponent } from '../shared/notification-center/notification-center.component';
+import { SearchModalComponent } from '../shared/search-modal/search-modal.component';
 
 interface Crumb { label: string; path: string; }
 interface ProjectContext { projectId: string; name: string; storyCount: number; coveragePercent: number; }
@@ -24,7 +26,7 @@ interface ProjectContextSource { projectContext: Signal<ProjectContext | null>; 
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, RouterOutlet, LucideDynamicIcon],
+  imports: [RouterLink, RouterLinkActive, RouterOutlet, LucideDynamicIcon, NotificationCenterComponent, SearchModalComponent],
   styleUrl: './app-layout.component.css',
   template: `
     <div #ambientBg class="ambient-bg" aria-hidden="true">
@@ -186,6 +188,10 @@ interface ProjectContextSource { projectContext: Signal<ProjectContext | null>; 
             }
           </nav>
           <div class="topbar-actions">
+            <button class="button secondary topbar-search-button" type="button" aria-label="Open search" (click)="openSearch()">
+              <svg [lucideIcon]="LucideSearch" [size]="18" [strokeWidth]="1.8" aria-hidden="true"></svg>
+            </button>
+            <app-notification-center />
             @if (authService.currentUser(); as user) {
               <button class="avatar-btn" type="button"
                       popovertarget="user-menu"
@@ -216,9 +222,14 @@ interface ProjectContextSource { projectContext: Signal<ProjectContext | null>; 
       </section>
 
     </div>
+    @defer (when searchOpen()) {
+      @if (searchOpen()) {
+        <app-search-modal (closed)="closeSearch()" />
+      }
+    }
   `
 })
-export class AppLayoutComponent implements AfterViewInit {
+export class AppLayoutComponent implements AfterViewInit, OnDestroy {
   readonly authService = inject(AuthService);
   private readonly router = inject(Router);
   private readonly http = inject(HttpClient);
@@ -229,7 +240,7 @@ export class AppLayoutComponent implements AfterViewInit {
   readonly LucideDownload = LucideDownload;                  readonly LucideShieldCheck = LucideShieldCheck;
   readonly LucideUsers = LucideUsers;                        readonly LucideSettings2 = LucideSettings2;
   readonly LucideChevronLeft = LucideChevronLeft;            readonly LucideChevronRight = LucideChevronRight;
-  readonly LucideBookOpenText = LucideBookOpenText;
+  readonly LucideBookOpenText = LucideBookOpenText;          readonly LucideSearch = LucideSearch;
 
   @ViewChild('sidebarEl') private sidebarEl!: ElementRef<HTMLElement>;
   @ViewChild('ambientBg') private ambientBg?: ElementRef<HTMLElement>;
@@ -239,9 +250,17 @@ export class AppLayoutComponent implements AfterViewInit {
   readonly accessRestricted = signal(false);
   readonly breadcrumbs = signal<Crumb[]>([]);
   readonly projectContext = signal<ProjectContext | null>(null);
+  readonly searchOpen = signal(false);
   private projectContextEffect: EffectRef | null = null;
+  private readonly handleDocumentKeydown = (event: KeyboardEvent): void => {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+      event.preventDefault();
+      this.openSearch();
+    }
+  };
 
   constructor() {
+    document.addEventListener('keydown', this.handleDocumentKeydown);
     inject(ActivatedRoute).queryParamMap.subscribe(params => {
       this.accessRestricted.set(params.get('access') === 'restricted');
     });
@@ -272,6 +291,11 @@ export class AppLayoutComponent implements AfterViewInit {
     }
   }
 
+  ngOnDestroy(): void {
+    document.removeEventListener('keydown', this.handleDocumentKeydown);
+    this.projectContextEffect?.destroy();
+  }
+
   toggleCollapse(): void {
     this.collapsed.update(v => !v);
     const sidebar = this.sidebarEl.nativeElement;
@@ -296,6 +320,14 @@ export class AppLayoutComponent implements AfterViewInit {
     const el = event.currentTarget as HTMLElement;
     const rect = el.getBoundingClientRect();
     el.style.setProperty('--tooltip-y', `${rect.top + rect.height / 2}px`);
+  }
+
+  openSearch(): void {
+    this.searchOpen.set(true);
+  }
+
+  closeSearch(): void {
+    this.searchOpen.set(false);
   }
 
   onRouteActivate(component: unknown): void {
