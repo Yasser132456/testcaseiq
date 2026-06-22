@@ -295,6 +295,7 @@ export class ExportPageComponent implements OnInit {
     return `${suite.name} / ${suite.approvedCases} approved cases`;
   });
   readonly visibleTotalPages = computed(() => Math.max(this.page()?.totalPages ?? 1, 1));
+  readonly isExporting = computed(() => this.exportingFormat() !== null);
 
   readonly exportOptions: ExportOption[] = [
     {
@@ -344,10 +345,6 @@ export class ExportPageComponent implements OnInit {
   goToPage(pageNum: number): void {
     this.currentPage.set(pageNum);
     this.load();
-  }
-
-  isExporting(): boolean {
-    return this.exportingFormat() !== null;
   }
 
   exportSelectedSuite(format: ExportFormat): void {

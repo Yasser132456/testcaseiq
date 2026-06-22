@@ -51,6 +51,7 @@ interface ReviewCaseItem {
         </div>
       } @else {
         <div class="review-master-detail">
+          <div class="sr-only" aria-live="polite" aria-atomic="true">{{ liveAnnouncement() }}</div>
           <aside class="review-case-list" aria-label="Test cases">
             @for (item of reviewCases(); track item.testCase.id) {
               <button
@@ -181,27 +182,28 @@ interface ReviewCaseItem {
     </section>
   `,
   styles: [`
-    .review-master-detail{display:grid;grid-template-columns:320px 1fr;min-height:34rem;border:1px solid var(--color-border);border-radius:var(--radius-lg);background:var(--color-surface-1);overflow:hidden}
-    .review-case-list{display:grid;align-content:start;max-height:calc(100vh - 14rem);overflow-y:auto;border-right:1px solid var(--color-border);background:var(--color-bg)}
-    .review-case-item{display:grid;gap:var(--space-sm);width:100%;min-height:6.25rem;padding:var(--space-md) var(--space-base);border:0;border-bottom:1px solid var(--color-border);background:transparent;color:var(--color-text);text-align:left;cursor:pointer;transition:background var(--dur) var(--ease),color var(--dur) var(--ease),transform var(--dur) var(--ease)}
+    .review-master-detail{--b:1px solid var(--color-border);display:grid;grid-template-columns:320px 1fr;min-height:34rem;border:var(--b);border-radius:var(--radius-lg);background:var(--color-surface-1);overflow:hidden}
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    .review-case-list{display:grid;align-content:start;max-height:calc(100vh - 14rem);overflow-y:auto;border-right:var(--b);background:var(--color-bg)}
+    .review-case-item{display:grid;gap:var(--space-sm);width:100%;min-height:6.25rem;padding:var(--space-md) var(--space-base);border:0;border-bottom:var(--b);background:transparent;color:var(--color-text);text-align:left;cursor:pointer;transition:background var(--dur) var(--ease),color var(--dur) var(--ease),transform var(--dur) var(--ease)}
     .review-case-item:hover:not(:disabled){background:rgba(255,255,255,.03);transform:translateX(2px)}
     .review-case-item:focus-visible{outline:2px solid var(--color-accent);outline-offset:-2px}
     .review-case-item:active:not(:disabled){transform:translateX(2px) scale(.97)}
     .review-case-item:disabled{cursor:not-allowed;opacity:.45}.review-case-item.is-error{color:var(--color-red)}.review-case-item.is-success{color:var(--color-green)}
     .review-case-item.is-active{background:var(--color-accent-bg);color:var(--color-accent);transform:translateX(2px)}
     .review-case-title{min-width:0;font-weight:500;line-height:1.35}.review-case-meta,.shortcut-group,.review-action-buttons{display:flex;align-items:center;gap:var(--space-xs);flex-wrap:wrap}
-    .case-meta-badge,.confidence-badge{display:inline-flex;align-items:center;min-height:1.65rem;padding:0 .55rem;border:1px solid var(--color-border);border-radius:var(--radius-sm);background:var(--color-surface-2);color:var(--color-text-2);font-family:var(--font-mono);font-size:.72rem;font-weight:500}
+    .case-meta-badge,.confidence-badge{display:inline-flex;align-items:center;min-height:1.65rem;padding:0 .55rem;border:var(--b);border-radius:var(--radius-sm);background:var(--color-surface-2);color:var(--color-text-2);font-family:var(--font-mono);font-size:.72rem;font-weight:500}
     .review-detail-panel{position:relative;display:grid;align-content:start;min-width:0;min-height:34rem;background:var(--color-surface-1)}
     .review-detail-main{display:grid;gap:var(--space-lg);padding:var(--space-xl);padding-right:8rem}.review-detail-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--space-base)}
     .review-detail-heading h3,.review-suite-name{margin:0}.review-suite-name{color:var(--color-cyan);font-family:var(--font-mono);font-size:.75rem}
-    .review-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-base);margin:0}.review-detail-grid div{display:grid;gap:.25rem;padding:var(--space-md);border:1px solid var(--color-border);border-radius:var(--radius-md)}
+    .review-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-base);margin:0}.review-detail-grid div{display:grid;gap:.25rem;padding:var(--space-md);border:var(--b);border-radius:var(--radius-md)}
     .review-detail-grid dt{color:var(--color-text-3);font-family:var(--font-mono);font-size:.7rem}.review-detail-grid dd{margin:0;overflow-wrap:anywhere}
     .quality-readout{position:absolute;top:var(--space-lg);right:var(--space-lg);display:grid;justify-items:center;gap:var(--space-xs)}.quality-gauge{width:80px;height:80px;overflow:visible}
     .quality-gauge-track,.quality-gauge-progress{fill:none;stroke-width:7}.quality-gauge-track{stroke:var(--color-border)}.quality-gauge-progress{stroke-linecap:round;transform:rotate(-90deg);transform-origin:40px 40px}
     .quality-gauge text{fill:var(--color-text);font-family:var(--font-mono);font-size:1rem;font-weight:700;text-anchor:middle}.confidence-badge{min-height:auto;padding:.2rem .45rem;font-size:.7rem}
-    .review-sticky-actions{position:sticky;bottom:0;display:flex;align-items:center;justify-content:space-between;gap:var(--space-base);padding:var(--space-md) var(--space-lg);border-top:1px solid var(--color-border);background:var(--color-surface-1);z-index:var(--z-sticky)}
+    .review-sticky-actions{position:sticky;bottom:0;display:flex;align-items:center;justify-content:space-between;gap:var(--space-base);padding:var(--space-md) var(--space-lg);border-top:var(--b);background:var(--color-surface-1);z-index:var(--z-sticky)}
     .shortcut-group{color:var(--color-text-2);font-size:.8rem}
-    @media (max-width:900px){.review-master-detail{grid-template-columns:1fr}.review-case-list{max-height:22rem;border-right:0;border-bottom:1px solid var(--color-border)}.review-detail-main{padding-right:var(--space-xl)}.review-detail-grid{grid-template-columns:1fr}.quality-readout{position:static;justify-self:start;padding:var(--space-lg) var(--space-lg) 0}.review-sticky-actions{align-items:flex-start;flex-direction:column}}
+    @media (max-width:900px){.review-master-detail{grid-template-columns:1fr}.review-case-list{max-height:22rem;border-right:0;border-bottom:var(--b)}.review-detail-main{padding-right:var(--space-xl)}.review-detail-grid{grid-template-columns:1fr}.quality-readout{position:static;justify-self:start;padding:var(--space-lg) var(--space-lg) 0}.review-sticky-actions{align-items:flex-start;flex-direction:column}}
   `]
 })
 export class ReviewBoardPageComponent implements OnInit, OnDestroy {
@@ -225,6 +227,7 @@ export class ReviewBoardPageComponent implements OnInit, OnDestroy {
   readonly rejectState = signal<ButtonState>('default');
   readonly reviewMessage = signal('');
   readonly reviewError = signal('');
+  readonly liveAnnouncement = signal('');
 
   readonly reviewCases = computed<ReviewCaseItem[]>(() => this.suites().flatMap((suite) => (
     suite.testCases.map((testCase) => ({ suite, testCase }))
@@ -255,6 +258,7 @@ export class ReviewBoardPageComponent implements OnInit, OnDestroy {
       return;
     }
     this.selectedCaseId.set(testCaseId);
+    this.liveAnnouncement.set(`Selected: ${this.selectedCase()?.testCase.title ?? ''}`);
     this.animateDetailEntrance();
     this.animateQualityGauge();
   }
@@ -367,6 +371,7 @@ export class ReviewBoardPageComponent implements OnInit, OnDestroy {
         })));
         const message = status === 'APPROVED' ? 'Test case approved.' : 'Test case rejected.';
         this.reviewMessage.set(message);
+        this.liveAnnouncement.set(status === 'APPROVED' ? 'Approved' : 'Rejected');
         this.toastService.show(message, 'success');
         this.approveState.set(status === 'APPROVED' ? 'success' : 'default');
         this.rejectState.set(status === 'REJECTED' ? 'success' : 'default');
