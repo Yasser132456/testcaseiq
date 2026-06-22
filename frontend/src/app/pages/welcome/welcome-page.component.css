@@ -221,7 +221,10 @@
 
 .wl-word {
   display: inline-block;
+  margin-right: 0.26em;
 }
+
+.wl-word:last-of-type { margin-right: 0; }
 
 .wl-accent { color: var(--color-accent); }
 
@@ -288,25 +291,28 @@
 
 .wl-card {
   position: absolute;
-  background: rgba(255,255,255,0.035);
-  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(18,18,24,0.75);
+  border: 1px solid rgba(255,255,255,0.11);
   border-radius: 14px;
   padding: 1.1rem 1.2rem;
-  backdrop-filter: blur(16px);
+  backdrop-filter: blur(20px);
   transform-style: preserve-3d;
   will-change: transform;
-  transition: box-shadow 300ms;
-}
-
-.wl-card:hover {
-  box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 40px rgba(184,255,90,0.06);
+  transition: box-shadow 300ms, border-color 300ms;
 }
 
 .wl-card-a {
   width: 240px;
-  top: 0; left: 10%;
+  top: 0; left: 8%;
   transform: rotate(-4deg);
   z-index: 1;
+  border-color: rgba(167,139,250,0.22);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.45), 0 0 40px rgba(167,139,250,0.08);
+}
+
+.wl-card-a:hover {
+  border-color: rgba(167,139,250,0.38);
+  box-shadow: 0 20px 56px rgba(0,0,0,0.55), 0 0 60px rgba(167,139,250,0.14);
 }
 
 .wl-card-b {
@@ -314,7 +320,13 @@
   top: 80px; left: 33%;
   transform: rotate(1.5deg);
   z-index: 3;
-  box-shadow: 0 24px 64px rgba(0,0,0,0.6);
+  border-color: rgba(34,211,238,0.25);
+  box-shadow: 0 24px 64px rgba(0,0,0,0.6), 0 0 50px rgba(34,211,238,0.10);
+}
+
+.wl-card-b:hover {
+  border-color: rgba(34,211,238,0.42);
+  box-shadow: 0 28px 72px rgba(0,0,0,0.65), 0 0 70px rgba(34,211,238,0.18);
 }
 
 .wl-card-c {
@@ -322,6 +334,13 @@
   top: 160px; right: 0;
   transform: rotate(3deg);
   z-index: 2;
+  border-color: rgba(184,255,90,0.20);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.45), 0 0 40px rgba(184,255,90,0.07);
+}
+
+.wl-card-c:hover {
+  border-color: rgba(184,255,90,0.35);
+  box-shadow: 0 20px 56px rgba(0,0,0,0.55), 0 0 60px rgba(184,255,90,0.12);
 }
 
 /* Card internals */
@@ -398,8 +417,9 @@
   background: rgba(255,255,255,0.09);
 }
 
-.wl-bdd-cyan  { background: rgba(34,211,238,0.25); }
-.wl-bdd-green { background: rgba(184,255,90,0.22); }
+.wl-bdd-cyan   { background: rgba(34,211,238,0.30); }
+.wl-bdd-green  { background: rgba(184,255,90,0.26); }
+.wl-bdd-purple { background: rgba(167,139,250,0.28); }
 
 /* Checklist rows */
 .wl-chk {
