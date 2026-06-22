@@ -7,6 +7,7 @@ import { AppSettings } from '../../core/models/settings.model';
 import { AuthUser } from '../../core/models/auth.model';
 import { SettingsPageComponent } from './settings-page.component';
 import { provideRouter } from '@angular/router';
+import { ToastService } from '../../core/services/toast.service';
 
 const mockSettings: AppSettings = {
   activeProvider: 'MOCK',
@@ -36,6 +37,7 @@ describe('SettingsPageComponent', () => {
   let fixture: ComponentFixture<SettingsPageComponent>;
   let component: SettingsPageComponent;
   let settingsService: jasmine.SpyObj<SettingsService>;
+  let toastService: jasmine.SpyObj<ToastService>;
   let authStub: Partial<AuthService>;
 
   async function setup(hasRoleFn: (r: string | string[]) => boolean = () => true): Promise<void> {
@@ -44,13 +46,15 @@ describe('SettingsPageComponent', () => {
     settingsService = jasmine.createSpyObj<SettingsService>('SettingsService', ['getSettings', 'updateSettings']);
     settingsService.getSettings.and.returnValue(of(mockSettings));
     settingsService.updateSettings.and.returnValue(of(mockSettings));
+    toastService = jasmine.createSpyObj<ToastService>('ToastService', ['show']);
 
     await TestBed.configureTestingModule({
       imports: [SettingsPageComponent],
       providers: [
         provideRouter([]),
         { provide: SettingsService, useValue: settingsService },
-        { provide: AuthService, useValue: authStub }
+        { provide: AuthService, useValue: authStub },
+        { provide: ToastService, useValue: toastService }
       ]
     }).compileComponents();
 
@@ -70,7 +74,7 @@ describe('SettingsPageComponent', () => {
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain('Settings');
     expect(text).toContain('AI Provider');
-    expect(text).toContain('QA Behaviour');
+    expect(text).toContain('Security');
     expect(text).toContain('System');
   });
 
@@ -82,16 +86,16 @@ describe('SettingsPageComponent', () => {
   it('shows AI Provider tab by default', () => {
     expect(component.activeTab()).toBe('ai');
     const text = fixture.nativeElement.textContent as string;
-    expect(text).toContain('Active provider');
-    expect(text).toContain('Generation mode');
+    expect(text).toContain('Mock');
+    expect(text).toContain('OpenAI');
   });
 
-  it('switches to QA Behaviour tab on click', () => {
+  it('switches to Security tab on click', () => {
     const tabs = fixture.nativeElement.querySelectorAll('.tab-btn') as NodeListOf<HTMLButtonElement>;
     tabs[1].click();
     fixture.detectChanges();
 
-    expect(component.activeTab()).toBe('qa');
+    expect(component.activeTab()).toBe('security');
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain('Require review before export');
   });
@@ -106,12 +110,26 @@ describe('SettingsPageComponent', () => {
     expect(text).toContain('Authentication enforcement');
   });
 
-  it('save calls updateSettings and shows success', () => {
+  it('renders provider radio cards and reveals API key input for OpenAI', () => {
+    const cards = fixture.nativeElement.querySelectorAll('.provider-card') as NodeListOf<HTMLButtonElement>;
+
+    expect(cards.length).toBe(2);
+    expect(cards[0].textContent).toContain('Mock');
+    expect(cards[1].textContent).toContain('OpenAI');
+
+    cards[1].click();
+    fixture.detectChanges();
+
+    expect(component.draft.activeProvider).toBe('OPENAI');
+    expect(fixture.nativeElement.querySelector('input[name="openAiApiKey"]')).not.toBeNull();
+  });
+
+  it('save calls updateSettings and shows success toast', () => {
     component.save();
     fixture.detectChanges();
 
     expect(settingsService.updateSettings).toHaveBeenCalledTimes(1);
-    expect(component.saveSuccess()).toBeTrue();
+    expect(toastService.show).toHaveBeenCalledWith('AI provider updated', 'success');
   });
 
   it('shows error when save fails', () => {
@@ -119,7 +137,7 @@ describe('SettingsPageComponent', () => {
     component.save();
     fixture.detectChanges();
 
-    expect(component.saveError()).toContain('could not be saved');
+    expect(toastService.show).toHaveBeenCalledWith('Settings could not be saved. Check input values and try again.', 'error');
   });
 
   it('isValid returns false when maxTestCasesPerStory is out of range', () => {
@@ -165,7 +183,8 @@ describe('SettingsPageComponent', () => {
       providers: [
         provideRouter([]),
         { provide: SettingsService, useValue: settingsService },
-        { provide: AuthService, useValue: authStub }
+        { provide: AuthService, useValue: authStub },
+        { provide: ToastService, useValue: jasmine.createSpyObj<ToastService>('ToastService', ['show']) }
       ]
     }).compileComponents();
 

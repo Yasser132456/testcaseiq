@@ -1,12 +1,14 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, ElementRef, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { gsap } from 'gsap';
 import { AuthService } from '../../core/services/auth.service';
 import { SettingsService } from '../../core/services/settings.service';
 import { AppSettings, AppSettingsUpdate, AiProvider, GenerationMode } from '../../core/models/settings.model';
+import { ToastService } from '../../core/services/toast.service';
 import { StateMessageComponent } from '../../shared/components/state-message.component';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
 
-type SettingsTab = 'ai' | 'qa' | 'system';
+type SettingsTab = 'ai' | 'security' | 'system';
 
 @Component({
   selector: 'app-settings-page',
@@ -33,9 +35,9 @@ type SettingsTab = 'ai' | 'qa' | 'system';
             (click)="setTab('ai')">AI Provider</button>
           <button
             class="tab-btn"
-            [class.active]="activeTab() === 'qa'"
+            [class.active]="activeTab() === 'security'"
             type="button"
-            (click)="setTab('qa')">QA Behaviour</button>
+            (click)="setTab('security')">Security</button>
           <button
             class="tab-btn"
             [class.active]="activeTab() === 'system'"
@@ -48,34 +50,53 @@ type SettingsTab = 'ai' | 'qa' | 'system';
         } @else if (loading()) {
           <app-skeleton [rows]="4" [cols]="2" />
         } @else {
-          @if (saveSuccess()) {
-            <app-state-message title="Settings saved" message="Your changes have been applied." tone="success" />
-          }
-          @if (saveError()) {
-            <app-state-message title="Could not save settings" [message]="saveError()" tone="error" />
-          }
-
           @if (activeTab() === 'ai') {
             <div class="panel settings-panel">
               <h3>AI Provider</h3>
-              <p class="muted-text">Configure which AI provider generates test cases and how generation behaves. API keys and credentials are never stored here.</p>
+              <p class="muted-text">Configure which AI provider generates test cases and how generation behaves.</p>
+
+              <div class="provider-card-grid" role="radiogroup" aria-label="AI provider">
+                <button
+                  class="provider-card"
+                  type="button"
+                  role="radio"
+                  [class.selected]="draft.activeProvider === 'MOCK'"
+                  [attr.aria-checked]="draft.activeProvider === 'MOCK'"
+                  [disabled]="!canEdit()"
+                  (click)="setProvider('MOCK')"
+                >
+                  <strong>Mock</strong>
+                  <span>Built-in deterministic provider for demos, offline work, and predictable QA reviews.</span>
+                </button>
+                <button
+                  class="provider-card"
+                  type="button"
+                  role="radio"
+                  [class.selected]="draft.activeProvider === 'OPENAI'"
+                  [attr.aria-checked]="draft.activeProvider === 'OPENAI'"
+                  [disabled]="!canEdit()"
+                  (click)="setProvider('OPENAI')"
+                >
+                  <strong>OpenAI</strong>
+                  <span>Production provider for generated test design using your configured API credentials.</span>
+                </button>
+              </div>
+
+              @if (draft.activeProvider === 'OPENAI') {
+                <label class="openai-key-field">
+                  <span>API key</span>
+                  <input
+                    type="password"
+                    [(ngModel)]="openAiApiKey"
+                    [disabled]="!canEdit()"
+                    name="openAiApiKey"
+                    autocomplete="off"
+                    placeholder="Stored outside TestCaseIQ"
+                  />
+                </label>
+              }
 
               <div class="settings-grid">
-                <div class="setting-row">
-                  <div class="setting-label">
-                    <strong>Active provider</strong>
-                    <small>The AI backend used for test generation. API keys must be set via environment variables.</small>
-                  </div>
-                  <select
-                    [(ngModel)]="draft.activeProvider"
-                    [disabled]="!canEdit()"
-                    name="activeProvider">
-                    @for (p of providerOptions; track p.value) {
-                      <option [value]="p.value">{{ p.label }}</option>
-                    }
-                  </select>
-                </div>
-
                 <div class="setting-row">
                   <div class="setting-label">
                     <strong>Generation mode</strong>
@@ -152,10 +173,10 @@ type SettingsTab = 'ai' | 'qa' | 'system';
             </div>
           }
 
-          @if (activeTab() === 'qa') {
+          @if (activeTab() === 'security') {
             <div class="panel settings-panel">
-              <h3>QA Behaviour</h3>
-              <p class="muted-text">Rules that govern the review and export workflow.</p>
+              <h3>Security</h3>
+              <p class="muted-text">Rules that govern review gates, export readiness, and acceptance criteria traceability.</p>
 
               <div class="settings-grid">
                 <div class="setting-row">
@@ -235,11 +256,29 @@ type SettingsTab = 'ai' | 'qa' | 'system';
   `,
   styles: [`
     .page-header { margin-bottom: 1.5rem; }
-    .settings-tabs { display: flex; gap: 0.25rem; border-bottom: 1px solid var(--border); margin-bottom: 1.5rem; }
-    .tab-btn { background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-muted); cursor: pointer; font-size: 0.875rem; font-weight: 500; padding: 0.5rem 1rem; margin-bottom: -1px; transition: color 0.15s, border-color 0.15s; }
-    .tab-btn:hover { color: var(--text); }
-    .tab-btn.active { border-bottom-color: var(--accent); color: var(--accent); }
+    .settings-tabs { display: inline-flex; gap: 0.25rem; padding: 0.25rem; border: 1px solid var(--color-border); border-radius: 9999px; background: var(--color-surface-1); margin-bottom: 1.5rem; }
+    .tab-btn { background: transparent; border: 1px solid transparent; border-radius: 9999px; color: var(--color-text-2); cursor: pointer; font-size: 0.875rem; font-weight: 500; padding: 0.45rem 0.9rem; transition: background var(--dur) var(--ease), color var(--dur) var(--ease); }
+    .tab-btn:hover { color: var(--color-text); }
+    .tab-btn:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+    .tab-btn:active:not(:disabled) { transform: scale(0.97); }
+    .tab-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .tab-btn[aria-busy="true"], .tab-btn.loading { opacity: 0.7; cursor: progress; }
+    .tab-btn.error { color: var(--color-red); border-color: var(--color-red-border); background: var(--color-red-bg); }
+    .tab-btn.success { color: var(--color-green); border-color: var(--color-green-border); background: var(--color-green-bg); }
+    .tab-btn.active { background: var(--color-surface-2); color: var(--color-text); border-color: var(--color-border); }
     .settings-panel h3 { margin-bottom: 0.25rem; }
+    .provider-card-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.85rem; margin-top: 1.25rem; }
+    .provider-card { display: grid; gap: 0.4rem; min-height: 8rem; padding: 1rem; border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface-2); color: var(--color-text); text-align: left; cursor: pointer; transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease), transform var(--dur) var(--ease); }
+    .provider-card:hover:not(:disabled) { transform: translateY(-2px); border-color: var(--color-accent-border); }
+    .provider-card:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+    .provider-card:active:not(:disabled) { transform: scale(0.97); }
+    .provider-card:disabled { opacity: 0.45; cursor: not-allowed; }
+    .provider-card[aria-busy="true"], .provider-card.loading { opacity: 0.7; cursor: progress; }
+    .provider-card.error { border-color: var(--color-red-border); background: var(--color-red-bg); }
+    .provider-card.success { border-color: var(--color-green-border); background: var(--color-green-bg); }
+    .provider-card.selected { border-color: var(--color-accent-border); background: var(--color-accent-bg); }
+    .provider-card span { color: var(--color-text-2); font-size: 0.82rem; line-height: 1.5; }
+    .openai-key-field { display: grid; gap: 0.4rem; margin-top: 1rem; overflow: hidden; }
     .settings-grid { display: flex; flex-direction: column; gap: 1.25rem; margin-top: 1.25rem; }
     .setting-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 1.5rem; padding: 0.875rem 0; border-bottom: 1px solid var(--border-subtle); }
     .setting-row:last-child { border-bottom: none; }
@@ -253,10 +292,16 @@ type SettingsTab = 'ai' | 'qa' | 'system';
     select[disabled] { opacity: 0.6; cursor: not-allowed; }
     .save-row { display: flex; align-items: center; gap: 1rem; margin-top: 1.25rem; }
     .field-error { color: var(--red); font-size: 0.8rem; }
+    @media (max-width: 900px) {
+      .provider-card-grid { grid-template-columns: 1fr; }
+      .setting-row { flex-direction: column; }
+    }
   `]
 })
 export class SettingsPageComponent implements OnInit {
+  private readonly host = inject(ElementRef<HTMLElement>);
   private readonly settingsService = inject(SettingsService);
+  private readonly toastService = inject(ToastService);
   readonly authService = inject(AuthService);
 
   readonly settings = signal<AppSettings | null>(null);
@@ -266,6 +311,7 @@ export class SettingsPageComponent implements OnInit {
   readonly saveSuccess = signal(false);
   readonly saveError = signal('');
   readonly activeTab = signal<SettingsTab>('ai');
+  openAiApiKey = '';
 
   draft: AppSettingsUpdate & { maxTestCasesPerStory: number } = {
     activeProvider: 'MOCK',
@@ -287,11 +333,6 @@ export class SettingsPageComponent implements OnInit {
     return this.authService.hasRole('ADMIN');
   });
 
-  readonly providerOptions: { value: AiProvider; label: string }[] = [
-    { value: 'MOCK', label: 'Mock (built-in, no API key needed)' },
-    { value: 'OPENAI', label: 'OpenAI (requires OPENAI_API_KEY env var)' }
-  ];
-
   readonly modeOptions: { value: GenerationMode; label: string }[] = [
     { value: 'STRICT', label: 'Strict — maximum coverage, fewer creative cases' },
     { value: 'BALANCED', label: 'Balanced — recommended default' },
@@ -312,6 +353,16 @@ export class SettingsPageComponent implements OnInit {
     this.saveError.set('');
   }
 
+  setProvider(provider: AiProvider): void {
+    if (!this.canEdit()) {
+      return;
+    }
+    this.draft.activeProvider = provider;
+    if (provider === 'OPENAI') {
+      this.animateOpenAiInput();
+    }
+  }
+
   isValid(): boolean {
     const max = this.draft.maxTestCasesPerStory;
     return max >= 1 && max <= 50;
@@ -328,10 +379,13 @@ export class SettingsPageComponent implements OnInit {
         this.settings.set(updated);
         this.applyToDraft(updated);
         this.saveSuccess.set(true);
+        this.toastService.show('AI provider updated', 'success');
         this.saving.set(false);
       },
       error: () => {
-        this.saveError.set('Settings could not be saved. Check input values and try again.');
+        const message = 'Settings could not be saved. Check input values and try again.';
+        this.saveError.set(message);
+        this.toastService.show(message, 'error');
         this.saving.set(false);
       }
     });
@@ -361,5 +415,21 @@ export class SettingsPageComponent implements OnInit {
       requireReviewBeforeExport: s.requireReviewBeforeExport,
       enforceAcceptanceCriteriaMapping: s.enforceAcceptanceCriteriaMapping
     };
+  }
+
+  private animateOpenAiInput(): void {
+    if (this.prefersReducedMotion()) {
+      return;
+    }
+    queueMicrotask(() => {
+      const input = this.host.nativeElement.querySelector('.openai-key-field');
+      if (input) {
+        gsap.from(input, { height: 0, opacity: 0, duration: 0.22, ease: 'power2.out' });
+      }
+    });
+  }
+
+  private prefersReducedMotion(): boolean {
+    return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
   }
 }
