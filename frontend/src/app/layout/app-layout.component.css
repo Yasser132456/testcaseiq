@@ -59,7 +59,7 @@
 .nav-groups {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1rem;
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
@@ -143,6 +143,28 @@
   flex-shrink: 0;
 }
 
+.project-context-panel {
+  display: grid;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-bg);
+}
+
+.project-context-panel a {
+  width: fit-content;
+  color: var(--color-text-2);
+  font-size: 0.78rem;
+  text-decoration: none;
+  transition: color var(--dur) var(--ease);
+}
+
+.project-context-panel a:hover { color: var(--color-accent); }
+.project-context-panel strong { color: var(--color-text); font-size: 0.86rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.project-context-panel span { color: var(--color-text-2); font-family: var(--font-mono); font-size: 0.68rem; }
+
 [data-tooltip]:hover::after {
   content: attr(data-tooltip);
   position: fixed;
@@ -162,14 +184,25 @@
 }
 
 .sidebar-footer {
-  display: flex;
-  align-items: center;
+  display: grid;
   gap: 0.65rem;
   margin-top: auto;
   padding-top: 0.75rem;
   border-top: 1px solid var(--color-border);
   flex-shrink: 0;
   overflow: hidden;
+}
+
+.footer-settings {
+  width: 100%;
+  padding-inline: 0.85rem;
+}
+
+.footer-user {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
 }
 
 .footer-avatar {

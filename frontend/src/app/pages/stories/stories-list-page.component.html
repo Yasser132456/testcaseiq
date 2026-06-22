@@ -1,0 +1,89 @@
+<section class="page-stack">
+  <div class="section-header">
+    <div>
+      <h2>Stories</h2>
+      <p class="section-subtitle">Browse story work across projects and review readiness.</p>
+    </div>
+  </div>
+
+  <div class="filter-panel panel">
+    <div class="filter-row">
+      <label>
+        <span>Project</span>
+        <select [(ngModel)]="projectFilter" (ngModelChange)="onFilterChange()">
+          <option value="">All projects</option>
+          @for (project of projects(); track project.id) {
+            <option [value]="project.id">{{ project.name }}</option>
+          }
+        </select>
+      </label>
+      <label>
+        <span>Type</span>
+        <select [(ngModel)]="typeFilter" (ngModelChange)="onFilterChange()">
+          <option value="">All types</option>
+          @for (type of storyTypes; track type) {
+            <option [value]="type">{{ formatLabel(type) }}</option>
+          }
+        </select>
+      </label>
+      <label>
+        <span>Status</span>
+        <select [(ngModel)]="statusFilter" (ngModelChange)="onFilterChange()">
+          <option value="">All statuses</option>
+          @for (status of storyStatuses; track status) {
+            <option [value]="status">{{ formatLabel(status) }}</option>
+          }
+        </select>
+      </label>
+      <button class="button secondary small" type="button" (click)="resetFilters()">Reset</button>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <app-skeleton [rows]="5" [cols]="5" />
+  } @else if (loadError()) {
+    <app-state-message title="Could not load stories" [message]="loadError()" tone="error" />
+  } @else if (filteredStories().length === 0) {
+    <div class="panel">
+      <app-empty-state
+        [icon]="LucideBookOpenText"
+        title="No stories found"
+        message="No stories match the current filters. Reset filters or create stories from a project."
+      />
+    </div>
+  } @else {
+    <div class="panel table-panel">
+      <table class="data-table" tableStagger>
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Project</th>
+            <th>Type</th>
+            <th>Status</th>
+            <th>Created</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of pagedStories(); track item.story.id) {
+            <tr class="selectable-row" (click)="openStory(item)">
+              <td><div class="row-inner story-title">{{ item.story.title }}</div></td>
+              <td><div class="row-inner project-name">{{ item.project.name }}</div></td>
+              <td><div class="row-inner"><span class="type-badge">{{ formatLabel(item.story.type) }}</span></div></td>
+              <td><div class="row-inner"><span [class]="statusClass(displayStatus(item.story))">{{ formatLabel(displayStatus(item.story)) }}</span></div></td>
+              <td><div class="row-inner td-muted">{{ item.story.createdAt | date:'mediumDate' }}</div></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pagination-bar">
+      <button class="button secondary small" type="button" [disabled]="currentPage() === 0" (click)="goToPage(currentPage() - 1)">Previous</button>
+      <span class="page-info">
+        Page {{ currentPage() + 1 }} of {{ totalPages() }}
+        &nbsp;({{ filteredStories().length }} stories)
+      </span>
+      <button class="button secondary small" type="button" [disabled]="currentPage() >= totalPages() - 1" (click)="goToPage(currentPage() + 1)">Next</button>
+    </div>
+  }
+</section>
