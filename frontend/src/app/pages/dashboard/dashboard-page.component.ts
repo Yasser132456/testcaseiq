@@ -96,7 +96,7 @@ import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
                   </strong>
                 </div>
                 <div class="rate-bar-track">
-                  <div class="rate-bar-fill green-fill" [style.width.%]="metrics()!.approvalRate"></div>
+                  <div class="rate-bar-fill green-fill approval-fill"></div>
                 </div>
               </div>
               <div class="rate-item">
@@ -107,7 +107,7 @@ import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
                   </strong>
                 </div>
                 <div class="rate-bar-track">
-                  <div class="rate-bar-fill amber-fill" [style.width.%]="metrics()!.pendingReviewRate"></div>
+                  <div class="rate-bar-fill amber-fill pending-fill"></div>
                 </div>
               </div>
               <div class="rate-item">
@@ -118,7 +118,7 @@ import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
                   </strong>
                 </div>
                 <div class="rate-bar-track">
-                  <div class="rate-bar-fill red-fill" [style.width.%]="metrics()!.rejectionRate"></div>
+                  <div class="rate-bar-fill red-fill rejection-fill"></div>
                 </div>
               </div>
               <div class="rate-item">
@@ -129,7 +129,7 @@ import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
                   </strong>
                 </div>
                 <div class="rate-bar-track">
-                  <div class="rate-bar-fill green-fill" [style.width.%]="metrics()!.exportReadinessRate"></div>
+                  <div class="rate-bar-fill green-fill export-fill"></div>
                 </div>
               </div>
             </div>
@@ -294,6 +294,7 @@ export class DashboardPageComponent implements OnInit, OnDestroy {
     const rm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     this.initTilt(rm);
     this.runCountUp(m, rm);
+    this.animateRateBars(m, rm);
     this.animateDonut(m, rm);
     if (!rm) this.animateTimeline();
   }
@@ -317,6 +318,26 @@ export class DashboardPageComponent implements OnInit, OnDestroy {
         ...(isRate ? { suffix: '%', decimalPlaces: 1 } : {})
       });
       cu.start();
+    });
+  }
+
+  private animateRateBars(m: DashboardMetrics, rm: boolean): void {
+    const fills = [
+      { selector: '.approval-fill', width: m.approvalRate },
+      { selector: '.pending-fill', width: m.pendingReviewRate },
+      { selector: '.rejection-fill', width: m.rejectionRate },
+      { selector: '.export-fill', width: m.exportReadinessRate }
+    ];
+
+    fills.forEach(({ selector, width }) => {
+      const fill = this.el.nativeElement.querySelector<HTMLElement>(selector);
+      if (!fill) return;
+      if (rm) {
+        fill.style.transition = 'none';
+        fill.style.width = `${width}%`;
+        return;
+      }
+      gsap.to(fill, { width: `${width}%`, duration: 1.2, ease: 'power2.out' });
     });
   }
 

@@ -82,10 +82,22 @@
 .amber-val { color: var(--color-amber); }
 .red-val   { color: var(--color-red); }
 .rate-bar-track { height: 4px; border-radius: 2px; background: var(--color-surface-1); overflow: hidden; }
-.rate-bar-fill  { height: 100%; border-radius: 2px; min-width: 2px; }
+.rate-bar-fill {
+  width: 0;
+  height: 100%;
+  border-radius: 2px;
+  min-width: 2px;
+  transition: width 1.2s cubic-bezier(0, 0, 0.2, 1);
+}
 .green-fill { background: var(--color-green); }
 .amber-fill { background: var(--color-amber); }
 .red-fill   { background: var(--color-red); }
+
+@media (prefers-reduced-motion: reduce) {
+  .rate-bar-fill {
+    transition: none;
+  }
+}
 
 /* Coverage donut */
 .donut-wrap { display: flex; align-items: center; gap: 2rem; padding: 0.75rem 0; }
