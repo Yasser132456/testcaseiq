@@ -116,7 +116,12 @@
 .nav-item:hover .nav-inner { transform: translateX(2px); }
 .nav-item:hover .nav-icon-wrap { opacity: 1; }
 
-.nav-item.active { background: var(--color-accent-bg); color: var(--color-accent); }
+.nav-item.active {
+  box-shadow: inset 2px 0 0 var(--color-accent);
+  background: var(--color-accent-bg);
+  color: var(--color-accent);
+  font-weight: 600;
+}
 .nav-item.active .nav-inner { transform: translateX(2px); }
 .nav-item.active .nav-icon-wrap { opacity: 1; color: var(--color-accent); }
 
