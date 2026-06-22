@@ -71,10 +71,23 @@ function createComponent(role: string, metrics: DashboardMetrics | null = MOCK_M
 }
 
 describe('DashboardPageComponent', () => {
+  beforeEach(() => {
+    spyOn(window, 'matchMedia').and.returnValue({
+      matches: true,
+      media: '(prefers-reduced-motion: reduce)',
+      onchange: null,
+      addListener: () => undefined,
+      removeListener: () => undefined,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+      dispatchEvent: () => true
+    } as MediaQueryList);
+  });
+
   it('renders KPI cards with data', () => {
     const { element } = createComponent('ADMIN');
     const cards = element.querySelectorAll('.metric-card');
-    expect(cards.length).toBe(7);
+    expect(cards.length).toBe(8);
     expect(element.textContent).toContain('3');  // totalProjects
     expect(element.textContent).toContain('72'); // totalTestCases
     expect(element.textContent).toContain('45'); // approvedTestCases
