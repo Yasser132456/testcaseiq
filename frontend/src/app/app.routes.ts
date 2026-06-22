@@ -4,6 +4,7 @@ import { AppLayoutComponent } from './layout/app-layout.component';
 import { AdminUsersPageComponent } from './pages/admin/admin-users-page.component';
 import { AuditLogPageComponent } from './pages/admin/audit-log-page.component';
 import { DashboardPageComponent } from './pages/dashboard/dashboard-page.component';
+import { ExportPageComponent } from './pages/export/export-page.component';
 import { LoginPageComponent } from './pages/auth/login-page.component';
 import { ProjectDetailPageComponent } from './pages/projects/project-detail-page.component';
 import { ProjectListPageComponent } from './pages/projects/project-list-page.component';
@@ -29,6 +30,7 @@ export const routes: Routes = [
       { path: 'test-suites', component: TestSuitesListPageComponent, data: { requiresAuth: true } },
       { path: 'test-suites/:id', component: TestSuiteDetailPageComponent, data: { requiresAuth: true } },
       { path: 'review-board', component: ReviewBoardPageComponent, data: { requiresAuth: true } },
+      { path: 'export', component: ExportPageComponent, data: { requiresAuth: true } },
       {
         path: 'admin/users',
         component: AdminUsersPageComponent,
