@@ -1,7 +1,10 @@
 import { DatePipe } from '@angular/common';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { Check, LucideAngularModule } from 'lucide-angular';
 import { AuthService } from '../../core/services/auth.service';
 import {
   AmbiguitySeverity,
@@ -39,7 +42,7 @@ interface ReviewDraft {
 @Component({
   selector: 'app-story-detail-page',
   standalone: true,
-  imports: [DatePipe, ReactiveFormsModule, RouterLink, StateMessageComponent, SkeletonComponent],
+  imports: [DatePipe, ReactiveFormsModule, RouterLink, LucideAngularModule, StateMessageComponent, SkeletonComponent],
   template: `
     <section class="page-stack">
       @if (loading()) {
@@ -68,7 +71,29 @@ interface ReviewDraft {
           </div>
         </div>
 
-        <section class="panel story-summary-panel">
+        <nav class="workflow-progress" aria-label="Story workflow progress">
+          @for (step of workflowSteps; track step.key) {
+            <div
+              class="workflow-step"
+              [class.is-complete]="step.index < currentWorkflowStep()"
+              [class.is-current]="step.index === currentWorkflowStep()"
+              [class.is-pending]="step.index > currentWorkflowStep()"
+              [style.--step-color]="step.color"
+            >
+              <span class="workflow-circle">
+                @if (step.index < currentWorkflowStep()) {
+                  <lucide-angular [img]="Check" [size]="14" [strokeWidth]="2.4" aria-hidden="true" />
+                } @else {
+                  {{ step.index }}
+                }
+              </span>
+              <span class="workflow-label">{{ step.label }}</span>
+            </div>
+          }
+        </nav>
+
+        <div class="story-sections">
+        <section class="panel story-summary-panel story-section">
           <div class="section-header">
             <div class="badge-row">
               <span class="badge">{{ formatLabel(story()?.type ?? '') }}</span>
@@ -84,7 +109,7 @@ interface ReviewDraft {
         </section>
 
         @if (canEdit()) {
-          <section class="panel form-panel wide">
+          <section class="panel form-panel wide story-section">
             <div class="section-header">
               <h3>Edit story</h3>
               <button class="button secondary toggle-btn" type="button" (click)="toggleEditForm()" [attr.aria-expanded]="editFormExpanded()">
@@ -140,7 +165,7 @@ interface ReviewDraft {
           </section>
         }
 
-        <section class="panel analysis-panel">
+        <section class="panel analysis-panel story-section">
           <div class="section-header">
             <div>
               <h3>Story analysis</h3>
@@ -340,7 +365,7 @@ interface ReviewDraft {
           }
         </section>
 
-        <section class="panel generated-tests-panel">
+        <section class="panel generated-tests-panel story-section">
           <div class="section-header">
             <div>
               <h3>Generated test cases</h3>
@@ -681,11 +706,13 @@ interface ReviewDraft {
             </div>
           }
         </section>
+        </div>
       }
     </section>
   `
 })
-export class StoryDetailPageComponent implements OnInit {
+export class StoryDetailPageComponent implements OnInit, AfterViewInit, OnDestroy {
+  private readonly host = inject(ElementRef<HTMLElement>);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
@@ -695,7 +722,9 @@ export class StoryDetailPageComponent implements OnInit {
   private readonly reviewService = inject(ReviewService);
   private readonly exportService = inject(ExportService);
   private readonly authService = inject(AuthService);
+  private storySectionsTween: gsap.core.Tween | null = null;
 
+  readonly Check = Check;
   readonly canEdit = computed(() => {
     if (!this.authService.isAuthenticated()) return true;
     const role = this.authService.currentRole();
@@ -778,6 +807,11 @@ export class StoryDetailPageComponent implements OnInit {
       description: 'Draft Azure import mapping'
     }
   ];
+  readonly workflowSteps = [
+    { key: 'analysis', index: 1, label: 'Analysis', color: 'var(--color-purple)' },
+    { key: 'generation', index: 2, label: 'Test Generation', color: 'var(--color-cyan)' },
+    { key: 'review', index: 3, label: 'Review', color: 'var(--color-green)' }
+  ];
 
   readonly story = signal<Story | null>(null);
   readonly analysis = signal<StoryAnalysisResult | null>(null);
@@ -850,6 +884,18 @@ export class StoryDetailPageComponent implements OnInit {
     });
   }
 
+  ngAfterViewInit(): void {
+    queueMicrotask(() => {
+      this.animateWorkflowStep();
+      this.setupStorySectionMotion();
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.storySectionsTween?.kill();
+    this.storySectionsTween = null;
+  }
+
   saveStory(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -882,6 +928,7 @@ export class StoryDetailPageComponent implements OnInit {
         this.analysis.set(analysis);
         this.updateStoryStatus('ANALYZED');
         this.analyzing.set(false);
+        this.animateWorkflowStep();
       },
       error: () => {
         this.analysisError.set('The story could not be analyzed. Confirm the backend is running and try again.');
@@ -901,6 +948,7 @@ export class StoryDetailPageComponent implements OnInit {
         this.testSuites.set([suite, ...this.testSuites()]);
         this.updateStoryStatus('TESTS_GENERATED');
         this.generatingTests.set(false);
+        this.animateWorkflowStep();
       },
       error: () => {
         this.testGenerationError.set('The test cases could not be generated. Confirm the backend is running and try again.');
@@ -970,6 +1018,16 @@ export class StoryDetailPageComponent implements OnInit {
 
   totalTestCases(): number {
     return this.testSuites().reduce((total, suite) => total + suite.testCases.length, 0);
+  }
+
+  currentWorkflowStep(): number {
+    if (!this.hasAnalysis()) {
+      return 1;
+    }
+    if (!this.hasTestSuites()) {
+      return 2;
+    }
+    return 3;
   }
 
   requirementCount(): number {
@@ -1215,10 +1273,12 @@ export class StoryDetailPageComponent implements OnInit {
       next: (analysis) => {
         this.analysis.set(analysis);
         this.analysisLoading.set(false);
+        this.animateWorkflowStep();
       },
       error: () => {
         this.analysis.set(null);
         this.analysisLoading.set(false);
+        this.animateWorkflowStep();
       }
     });
   }
@@ -1286,10 +1346,12 @@ export class StoryDetailPageComponent implements OnInit {
         if (!testSuites.some(s => s.testCases.length > 0)) {
           this.analysisExpanded.set(true);
         }
+        this.animateWorkflowStep();
       },
       error: () => {
         this.testSuites.set([]);
         this.testSuitesLoading.set(false);
+        this.animateWorkflowStep();
       }
     });
   }
@@ -1426,5 +1488,46 @@ export class StoryDetailPageComponent implements OnInit {
         this.reviewHistoryLoading.set(false);
       }
     });
+  }
+
+  private animateWorkflowStep(): void {
+    if (this.prefersReducedMotion()) {
+      return;
+    }
+    queueMicrotask(() => {
+      const circle = this.host.nativeElement.querySelector('.workflow-step.is-current .workflow-circle') as HTMLElement | null;
+      const step = this.workflowSteps.find((item) => item.index === this.currentWorkflowStep());
+      if (!circle || !step) {
+        return;
+      }
+      const targetColor = step.index === this.currentWorkflowStep()
+        ? getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim()
+        : step.color;
+      gsap.to(circle, { backgroundColor: targetColor, duration: 0.2, ease: 'power2.out' });
+    });
+  }
+
+  private setupStorySectionMotion(): void {
+    if (this.prefersReducedMotion()) {
+      return;
+    }
+    const trigger = this.host.nativeElement.querySelector('.story-sections');
+    const sections = this.host.nativeElement.querySelectorAll('.story-section');
+    if (!trigger || sections.length === 0) {
+      return;
+    }
+    gsap.registerPlugin(ScrollTrigger);
+    this.storySectionsTween = gsap.from(sections, {
+      y: 16,
+      opacity: 0,
+      stagger: 0.08,
+      duration: 0.3,
+      ease: 'power2.out',
+      scrollTrigger: { trigger, start: 'top 85%' }
+    });
+  }
+
+  private prefersReducedMotion(): boolean {
+    return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
   }
 }
