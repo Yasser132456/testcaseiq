@@ -46,6 +46,18 @@
   --color-approve-glow:   rgba(34, 197, 94, 0.15);
   --color-clarify-glow:   rgba(251, 191, 36, 0.12);
 
+  /* ── Glass Material ──────────────────────────────────── */
+  --glass-1:          rgba(18, 18, 18, 0.55);
+  --glass-2:          rgba(12, 12, 12, 0.70);
+  --glass-3:          rgba(8,  8,  8,  0.80);
+  --glass-blur-sm:    blur(8px);
+  --glass-blur-md:    blur(16px);
+  --glass-blur-lg:    blur(28px);
+  --glass-border:     rgba(255, 255, 255, 0.055);
+  --glass-border-hi:  rgba(255, 255, 255, 0.095);
+  --glass-shimmer:    rgba(255, 255, 255, 0.035);
+  --glass-shadow:     0 8px 40px rgba(0,0,0,0.55), 0 1px 0 rgba(255,255,255,0.04) inset;
+
   /* ── Typography ──────────────────────────────────────── */
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
@@ -57,11 +69,14 @@
   --space-base: 1rem;
   --space-lg:   1.25rem;
   --space-xl:   1.5rem;
+  --space-2xl:  2rem;
+  --space-3xl:  3rem;
 
   /* ── Radius ──────────────────────────────────────────── */
   --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 10px;
+  --radius-xl:  14px;
 
   /* ── Motion ──────────────────────────────────────────── */
   --dur:      150ms;

@@ -32,6 +32,7 @@ interface ProjectContextSource { projectContext: Signal<ProjectContext | null>; 
     <div #ambientBg class="ambient-bg" aria-hidden="true">
       <div class="ambient-orb ambient-orb--phosphor"></div>
       <div class="ambient-orb ambient-orb--cyan"></div>
+      <div class="ambient-orb ambient-orb--violet"></div>
     </div>
     <div class="grain" aria-hidden="true"></div>
     <div class="layout-shell">
