@@ -9,6 +9,7 @@ import { Project } from '../../core/models/project.model';
 import { STORY_TYPES, Story, StoryType } from '../../core/models/story.model';
 import { ProjectService } from '../../core/services/project.service';
 import { StoryService } from '../../core/services/story.service';
+import { StoryStatusPillComponent } from '../../components/story-status-pill/story-status-pill.component';
 import { StateMessageComponent } from '../../shared/components/state-message.component';
 import { EmptyStateComponent } from '../../shared/empty-state/empty-state.component';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
@@ -30,7 +31,8 @@ interface StoryListItem {
     StateMessageComponent,
     EmptyStateComponent,
     SkeletonComponent,
-    TableStaggerDirective
+    TableStaggerDirective,
+    StoryStatusPillComponent
   ],
   templateUrl: './stories-list-page.component.html',
   styleUrl: './stories-list-page.component.css'
@@ -97,10 +99,6 @@ export class StoriesListPageComponent implements OnInit {
   displayStatus(story: Story): StoryDisplayStatus {
     if (story.status === 'REVIEWED' || story.status === 'EXPORTED') return 'ALL_REVIEWED';
     return story.status;
-  }
-
-  statusClass(status: StoryDisplayStatus): string {
-    return `story-status status-${status.toLowerCase().replaceAll('_', '-')}`;
   }
 
   formatLabel(value: string): string {

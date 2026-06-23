@@ -20,6 +20,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { StoryService } from '../../core/services/story.service';
 import { TestGenerationService } from '../../core/services/test-generation.service';
 import { ToastService } from '../../core/services/toast.service';
+import { StoryStatusPillComponent } from '../../components/story-status-pill/story-status-pill.component';
 import { StateMessageComponent } from '../../shared/components/state-message.component';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
 import { StoryReviewTabComponent } from './story-review-tab.component';
@@ -37,6 +38,7 @@ const TILT_OPTIONS: TiltOptions = { max: 4, speed: 400, glare: true, 'max-glare'
     ReactiveFormsModule,
     RouterLink,
     LucideDynamicIcon,
+    StoryStatusPillComponent,
     StateMessageComponent,
     SkeletonComponent,
     StoryTestCasesTabComponent,

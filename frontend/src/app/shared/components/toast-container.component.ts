@@ -49,15 +49,23 @@ import { ToastItem, ToastService, ToastType } from '../../core/services/toast.se
       color: var(--color-text);
       font-size: 0.875rem;
       line-height: 1.45;
+      opacity: 1;
       pointer-events: auto;
+      transform: translateY(0);
     }
 
-    .toast--success { border-top-color: var(--color-green); }
-    .toast--error { border-top-color: var(--color-red); }
+    .toast--success {
+      border-top-color: var(--color-border);
+      box-shadow: inset 3px 0 0 var(--color-accent);
+    }
+    .toast--error {
+      border-top-color: var(--color-border);
+      box-shadow: inset 3px 0 0 rgba(239,68,68,0.8);
+    }
     .toast--warning { border-top-color: var(--color-amber); }
     .toast--info { border-top-color: var(--color-accent); }
-    .toast--success svg { color: var(--color-green); }
-    .toast--error svg { color: var(--color-red); }
+    .toast--success svg { color: var(--color-accent); }
+    .toast--error svg { color: rgba(239,68,68,0.8); }
     .toast--warning svg { color: var(--color-amber); }
     .toast--info svg { color: var(--color-accent); }
   `]
@@ -95,7 +103,7 @@ export class ToastContainerComponent {
     queueMicrotask(() => {
       const el = this.toastElement(toast.id);
       if (el) {
-        gsap.from(el, { y: 16, opacity: 0, duration: 0.22, ease: 'power2.out' });
+        gsap.fromTo(el, { y: 8, opacity: 0 }, { y: 0, opacity: 1, duration: 0.22, ease: 'power2.out' });
       }
     });
   }

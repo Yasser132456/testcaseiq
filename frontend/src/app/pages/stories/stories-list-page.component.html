@@ -69,7 +69,7 @@
               <td><div class="row-inner story-title">{{ item.story.title }}</div></td>
               <td><div class="row-inner project-name">{{ item.project.name }}</div></td>
               <td><div class="row-inner"><span class="type-badge">{{ formatLabel(item.story.type) }}</span></div></td>
-              <td><div class="row-inner"><span [class]="statusClass(displayStatus(item.story))">{{ formatLabel(displayStatus(item.story)) }}</span></div></td>
+              <td><div class="row-inner"><app-story-status-pill [status]="displayStatus(item.story)" /></div></td>
               <td><div class="row-inner td-muted">{{ item.story.createdAt | date:'mediumDate' }}</div></td>
             </tr>
           }
