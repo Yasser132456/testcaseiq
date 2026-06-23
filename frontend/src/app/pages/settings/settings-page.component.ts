@@ -258,7 +258,7 @@ const TILT_OPTIONS: TiltOptions = { max: 4, speed: 400, glare: true, 'max-glare'
   `,
   styles: [`
     .page-header { margin-bottom: 1.5rem; }
-    .settings-tabs { display: inline-flex; gap: 0.25rem; padding: 0.25rem; border: 1px solid var(--color-border); border-radius: 9999px; background: var(--color-surface-1); margin-bottom: 1.5rem; }
+    .settings-tabs { display: inline-flex; gap: 0.25rem; padding: 0.25rem; border: 1px solid var(--glass-border); border-radius: 9999px; background: var(--glass-1); margin-bottom: 1.5rem; }
     .tab-btn { background: transparent; border: 1px solid transparent; border-radius: 9999px; color: var(--color-text-2); cursor: pointer; font-size: 0.875rem; font-weight: 500; padding: 0.45rem 0.9rem; transition: background var(--dur) var(--ease), color var(--dur) var(--ease); }
     .tab-btn:hover { color: var(--color-text); }
     .tab-btn:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
@@ -267,10 +267,10 @@ const TILT_OPTIONS: TiltOptions = { max: 4, speed: 400, glare: true, 'max-glare'
     .tab-btn[aria-busy="true"], .tab-btn.loading { opacity: 0.7; cursor: progress; }
     .tab-btn.error { color: var(--color-red); border-color: var(--color-red-border); background: var(--color-red-bg); }
     .tab-btn.success { color: var(--color-green); border-color: var(--color-green-border); background: var(--color-green-bg); }
-    .tab-btn.active { background: var(--color-surface-2); color: var(--color-text); border-color: var(--color-border); }
+    .tab-btn.active { background: var(--glass-2); color: var(--color-text); border-color: var(--glass-border-hi); }
     .settings-panel h3 { margin-bottom: 0.25rem; }
     .provider-card-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.85rem; margin-top: 1.25rem; }
-    .provider-card { display: grid; gap: 0.4rem; min-height: 8rem; padding: 1rem; border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface-2); color: var(--color-text); text-align: left; cursor: pointer; transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease), transform var(--dur) var(--ease); }
+    .provider-card { display: grid; gap: 0.4rem; min-height: 8rem; padding: 1rem; border: 1px solid var(--glass-border); border-radius: var(--radius-lg); background: var(--glass-1); color: var(--color-text); text-align: left; cursor: pointer; transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease), transform var(--dur) var(--ease); }
     .provider-card:hover:not(:disabled) { transform: translateY(-2px); border-color: var(--color-accent-border); }
     .provider-card:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
     .provider-card:active:not(:disabled) { transform: scale(0.97); }
@@ -290,7 +290,7 @@ const TILT_OPTIONS: TiltOptions = { max: 4, speed: 400, glare: true, 'max-glare'
     .toggle-label { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; white-space: nowrap; }
     .toggle-label input[disabled] { cursor: not-allowed; }
     .number-input { width: 80px; text-align: right; }
-    select { background: var(--color-surface-2); color: var(--color-text); border: 1px solid var(--color-border); border-radius: 4px; padding: 0.35rem 0.5rem; font-size: 0.875rem; }
+    select { background: var(--glass-1); color: var(--color-text); border: 1px solid var(--glass-border); border-radius: 4px; padding: 0.35rem 0.5rem; font-size: 0.875rem; }
     select[disabled] { opacity: 0.6; cursor: not-allowed; }
     .save-row { display: flex; align-items: center; gap: 1rem; margin-top: 1.25rem; }
     .field-error { color: var(--color-red); font-size: 0.8rem; }

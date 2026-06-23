@@ -223,9 +223,9 @@ const TILT_OPTIONS: TiltOptions = { max: 4, speed: 400, glare: true, 'max-glare'
 
     .layer-badge {
       padding: 0.15rem 0.45rem;
-      border: 1px solid var(--color-border);
+      border: 1px solid var(--glass-border);
       border-radius: 4px;
-      background: var(--color-surface-2);
+      background: var(--glass-1);
       color: var(--color-text-2);
       font-family: var(--font-mono);
       font-size: 0.72rem;

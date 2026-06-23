@@ -27,7 +27,7 @@ const TILT_OPTIONS: TiltOptions = { max: 4, speed: 400, glare: true, 'max-glare'
   imports: [ReactiveFormsModule, RouterLink, DrawerComponent, StateMessageComponent, SkeletonComponent, EmptyStateComponent],
   styles: [`
     .project-card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--space-4, 1rem); }
-    .project-card { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 1rem; align-items: start; min-height: 12rem; padding: 1rem; border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface-2); transform-style: preserve-3d; transition: border-color var(--dur) var(--ease), transform var(--dur-slow) var(--ease); }
+    .project-card { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 1rem; align-items: start; min-height: 12rem; padding: 1rem; border: 1px solid var(--glass-border); border-radius: var(--radius-lg); background: var(--glass-1); transform-style: preserve-3d; transition: border-color var(--dur) var(--ease), transform var(--dur-slow) var(--ease); }
     .project-card:hover { border-color: var(--color-accent-border); transform: translateY(-2px); }
     .coverage-ring { width: 56px; height: 56px; overflow: visible; }
     .coverage-ring-bg, .coverage-ring-arc { fill: none; stroke-width: 6; }

@@ -44,7 +44,7 @@
  .wl-arr{transition:transform 150ms}
  .wl-btn-secondary:hover .wl-arr{transform:translateX(3px)}
  .wl-cards{position:relative;height:540px}
- .wl-card{position:absolute;width:265px;background:rgba(14,14,20,0.82);border:1px solid rgba(255,255,255,0.10);border-radius:14px;padding:1.25rem 1.35rem;backdrop-filter:blur(20px);transform-style:preserve-3d;will-change:transform;transition:box-shadow 450ms var(--ease-out-expo),border-color 300ms var(--ease-out-expo),z-index 0s 450ms}
+.wl-card{position:absolute;width:265px;background:var(--glass-1);border:1px solid var(--glass-border-hi);border-radius:var(--radius-xl);padding:1.25rem 1.35rem;transform-style:preserve-3d;will-change:transform;transition:box-shadow 450ms var(--ease-out-expo),border-color 300ms var(--ease-out-expo),z-index 0s 450ms}
  .wl-card:hover{transition:box-shadow 450ms var(--ease-out-expo),border-color 300ms var(--ease-out-expo),z-index 0s}
  .wl-card-a{top:0;left:0;transform:rotate(-1.5deg);z-index:1;border-color:rgba(167,139,250,0.20);box-shadow:0 8px 32px rgba(0,0,0,0.5),0 0 40px rgba(167,139,250,0.07)}
  .wl-card-a:hover{z-index:10;border-color:rgba(167,139,250,0.38);box-shadow:0 20px 56px rgba(0,0,0,0.6),0 0 60px rgba(167,139,250,0.14)}
