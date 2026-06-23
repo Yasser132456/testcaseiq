@@ -1,4 +1,5 @@
 :host {
+  view-transition-name: app-shell;
   display: block;
   position: relative;
   isolation: isolate;

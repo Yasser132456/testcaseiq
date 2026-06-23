@@ -2,6 +2,7 @@
 
 /* ── Atmosphere ─────────────────────────────────────────────────────────── */
 :host {
+  view-transition-name: welcome-page;
   display: block;
   position: relative;
   background: #06060a;

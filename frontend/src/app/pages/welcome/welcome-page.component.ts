@@ -3,6 +3,7 @@ import { Router, RouterLink } from '@angular/router';
 import { CountUp } from 'countup.js';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import Lenis from 'lenis';
 import VanillaTilt from 'vanilla-tilt';
 import { AuthService } from '../../core/services/auth.service';
 
@@ -25,6 +26,8 @@ export class WelcomePageComponent implements OnInit, OnDestroy {
   private lerpX  = 0;
   private lerpY  = 0;
   private rafId  = 0;
+  private lenisRafId = 0;
+  private lenis?: Lenis;
   private mouseFn!: (e: MouseEvent) => void;
   private countObserver?: IntersectionObserver;
 
@@ -35,6 +38,16 @@ export class WelcomePageComponent implements OnInit, OnDestroy {
     }
 
     afterNextRender(() => {
+      this.lenis = new Lenis({
+        duration: 1.1,
+        easing: t => 1 - Math.pow(1 - t, 4)
+      });
+      const lenisFrame = (time: number) => {
+        this.lenis?.raf(time);
+        this.lenisRafId = requestAnimationFrame(lenisFrame);
+      };
+      this.lenisRafId = requestAnimationFrame(lenisFrame);
+
       this.runEntrance();
       this.initTilt();
       this.initCounters();
@@ -124,6 +137,8 @@ export class WelcomePageComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     document.removeEventListener('mousemove', this.mouseFn);
     cancelAnimationFrame(this.rafId);
+    cancelAnimationFrame(this.lenisRafId);
+    this.lenis?.destroy();
     this.countObserver?.disconnect();
     ScrollTrigger.getAll().forEach(t => t.kill());
     document.querySelectorAll<HTMLElement & { vanillaTilt?: { destroy(): void } }>('.wl-card')
