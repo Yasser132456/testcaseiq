@@ -30,35 +30,38 @@
   letter-spacing: 0.04em;
   line-height: 1;
   white-space: nowrap;
+  background: var(--glass-1);
+  backdrop-filter: var(--glass-blur-sm);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
 }
 
 .status-pill--draft {
   border-color: rgba(107,114,128,0.35);
-  background: rgba(107,114,128,0.15);
+  background: linear-gradient(rgba(107,114,128,0.15), rgba(107,114,128,0.15)), var(--glass-1);
   color: #6b7280;
 }
 
 .status-pill--in-review {
   border-color: rgba(34,211,238,0.35);
-  background: rgba(34,211,238,0.15);
+  background: linear-gradient(rgba(34,211,238,0.15), rgba(34,211,238,0.15)), var(--glass-1);
   color: rgba(34,211,238,0.95);
 }
 
 .status-pill--needs-review {
   border-color: rgba(251,191,36,0.35);
-  background: rgba(251,191,36,0.15);
+  background: linear-gradient(rgba(251,191,36,0.15), rgba(251,191,36,0.15)), var(--glass-1);
   color: rgba(251,191,36,0.95);
 }
 
 .status-pill--approved {
   border-color: rgba(184,255,90,0.35);
-  background: rgba(184,255,90,0.15);
+  background: linear-gradient(rgba(184,255,90,0.15), rgba(184,255,90,0.15)), var(--glass-1);
   color: rgba(184,255,90,0.95);
 }
 
 .status-pill--rejected {
   border-color: rgba(239,68,68,0.35);
-  background: rgba(239,68,68,0.15);
+  background: linear-gradient(rgba(239,68,68,0.15), rgba(239,68,68,0.15)), var(--glass-1);
   color: rgba(239,68,68,0.95);
 }
 
@@ -73,4 +76,8 @@
     opacity: 1;
     transform: scale(1);
   }
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .status-pill { background: var(--color-surface-2); }
 }
