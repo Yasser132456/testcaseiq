@@ -42,32 +42,38 @@ import { ToastItem, ToastService, ToastType } from '../../core/services/toast.se
       align-items: center;
       gap: var(--space-sm);
       padding: var(--space-md) var(--space-base);
-      border: 1px solid var(--color-border);
-      border-top-width: 2px;
-      border-radius: calc(var(--radius-md) + 2px);
-      background: var(--color-surface-2);
+      border: 1px solid var(--glass-border-hi);
+      border-radius: var(--radius-xl);
+      background: var(--glass-3);
+      backdrop-filter: var(--glass-blur-md);
+      -webkit-backdrop-filter: var(--glass-blur-md);
       color: var(--color-text);
       font-size: 0.875rem;
       line-height: 1.45;
       opacity: 1;
       pointer-events: auto;
       transform: translateY(0);
+      box-shadow: var(--glass-shadow);
     }
 
     .toast--success {
-      border-top-color: var(--color-border);
-      box-shadow: inset 3px 0 0 var(--color-accent);
+      border-color: var(--color-green-border);
+      box-shadow: var(--glass-shadow), inset 3px 0 0 var(--color-accent);
     }
     .toast--error {
-      border-top-color: var(--color-border);
-      box-shadow: inset 3px 0 0 rgba(239,68,68,0.8);
+      border-color: var(--color-red-border);
+      box-shadow: var(--glass-shadow), inset 3px 0 0 rgba(239,68,68,0.8);
     }
-    .toast--warning { border-top-color: var(--color-amber); }
-    .toast--info { border-top-color: var(--color-accent); }
+    .toast--warning { border-color: var(--color-amber-border); }
+    .toast--info { border-color: var(--color-purple-border); }
     .toast--success svg { color: var(--color-accent); }
     .toast--error svg { color: rgba(239,68,68,0.8); }
     .toast--warning svg { color: var(--color-amber); }
     .toast--info svg { color: var(--color-accent); }
+
+    @supports not (backdrop-filter: blur(1px)) {
+      .toast { background: var(--color-surface-2); }
+    }
   `]
 })
 export class ToastContainerComponent {
