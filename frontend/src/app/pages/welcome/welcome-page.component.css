@@ -303,24 +303,24 @@
 }
 
 .wl-card-a {
-  width: 240px;
-  top: 0; left: 10%;
-  transform: rotate(-4deg);
+  width: 220px;
+  top: 10px; left: 2%;
+  transform: rotate(-6deg);
   z-index: 1;
 }
 
 .wl-card-b {
   width: 220px;
-  top: 80px; left: 33%;
-  transform: rotate(1.5deg);
+  top: 0; left: 18%;
+  transform: rotate(1deg);
   z-index: 3;
   box-shadow: 0 24px 64px rgba(0,0,0,0.6);
 }
 
 .wl-card-c {
-  width: 210px;
-  top: 160px; right: 0;
-  transform: rotate(3deg);
+  width: 220px;
+  top: 25px; left: 34%;
+  transform: rotate(5deg);
   z-index: 2;
 }
 
