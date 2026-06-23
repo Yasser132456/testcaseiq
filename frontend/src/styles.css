@@ -6,10 +6,11 @@
  @media (prefers-reduced-motion:no-preference){body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:repeating-linear-gradient(0deg,transparent,transparent 79px,rgba(255,255,255,0.03) 79px,rgba(255,255,255,0.03) 80px),repeating-linear-gradient(90deg,transparent,transparent 79px,rgba(255,255,255,0.03) 79px,rgba(255,255,255,0.03) 80px)}
 }
  h2,.page-title{font-size:1.25rem;font-weight:700}
- h3,.section-title{font-size:1rem;font-weight:600}
- h4,.card-title{font-size:0.9rem;font-weight:600}
- h1,h2,h3{text-wrap:balance}
- body,p,li,td,.body-text{font-size:0.875rem;font-weight:400}
+h3,.section-title{font-size:1rem;font-weight:600}
+h4,.card-title{font-size:0.9rem;font-weight:600}
+h1,h2,h3{text-wrap:balance}
+h1,h2,.hero-panel h2,.detail-hero h2,.page-title{font-family:var(--font-display)}
+body,p,li,td,.body-text{font-size:0.875rem;font-weight:400}
  .secondary-text{font-size:0.8rem;font-weight:400}
  .meta-text,.mono-text{font-size:0.75rem;font-weight:400}
  .micro-text,.badge-label,th{font-size:0.72rem;font-weight:400}
@@ -30,7 +31,8 @@
  .generated-eyebrow{color:var(--cyan)}
  .export-eyebrow{color:var(--green)}
  .page-stack{display:grid;gap:1.5rem}
- .hero-panel,.detail-hero,.panel{padding:1.25rem}
+.hero-panel{padding:var(--space-2xl)}
+.detail-hero,.panel{padding:1.25rem}
  .hero-panel{display:grid;gap:0.8rem}
  .hero-panel h2{max-width:20ch;font-size:clamp(1.75rem,5vw,4rem);font-weight:800;line-height:1.05;letter-spacing:-0.02em}
  .hero-panel p,.detail-hero p{max-width:58rem;margin:0;line-height:1.65}
@@ -103,7 +105,7 @@
  .user-chip strong{grid-area:name;min-width:0;max-width:12rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:0.78rem}
  .user-chip small{grid-area:role;color:var(--cyan);font-family:var(--font-mono);font-size:0.63rem;font-weight:800}
  .auth-shell{min-height:100vh;display:grid;place-items:center;padding:1.5rem;background:radial-gradient(ellipse 42% 26% at 22% 12%,rgba(34,211,238,0.08),transparent 62%),radial-gradient(ellipse 42% 26% at 80% 82%,rgba(184,255,90,0.07),transparent 58%),var(--bg)}
- .auth-panel{display:grid;gap:1.1rem;width:min(100%,28rem);padding:1.25rem;border:1px solid var(--glass-border-hi);border-radius:var(--radius-xl);background:var(--glass-3);backdrop-filter:var(--glass-blur-lg);-webkit-backdrop-filter:var(--glass-blur-lg);box-shadow:var(--glass-shadow)}
+.auth-panel{display:grid;gap:1.1rem;width:min(100%,28rem);padding:var(--space-2xl);border:1px solid var(--glass-border-hi);border-radius:var(--radius-xl);background:var(--glass-3);backdrop-filter:var(--glass-blur-lg);-webkit-backdrop-filter:var(--glass-blur-lg);box-shadow:var(--glass-shadow)}
  .auth-brand{padding-bottom:1rem;margin-bottom:0}
  .auth-copy{display:grid;gap:0.55rem}
  .auth-copy h1,.auth-copy p{margin:0}

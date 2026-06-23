@@ -222,7 +222,7 @@ const TRACEABILITY_ROUTES: Record<string, string> = {
     .section-subtitle { color: var(--color-text-2); margin-top: 0.25rem; font-size: 0.875rem; }
     .audit-filter-strip { display: flex; align-items: center; gap: var(--space-sm); flex-wrap: wrap; }
     .filter-chip-row { display: flex; align-items: center; gap: var(--space-xs); flex-wrap: wrap; }
-    .filter-chip { display: inline-flex; align-items: center; gap: var(--space-xs); background: var(--color-surface-2); border: 1px solid var(--color-border); border-radius: 9999px; padding: var(--space-xs) var(--space-sm); color: var(--color-text); font-family: var(--font-mono); font-size: 0.75rem; }
+    .filter-chip { display: inline-flex; align-items: center; gap: var(--space-xs); background: var(--glass-1); border: 1px solid var(--glass-border); border-radius: 9999px; padding: var(--space-xs) var(--space-sm); color: var(--color-text); font-family: var(--font-mono); font-size: 0.75rem; }
     .filter-chip.is-empty { color: var(--color-text-3); }
     .filter-chip button { border: 0; background: transparent; color: var(--color-text-3); cursor: pointer; padding: 0; font: inherit; }
     .filter-chip button:hover { color: var(--color-text); }
@@ -234,7 +234,7 @@ const TRACEABILITY_ROUTES: Record<string, string> = {
     .filter-chip button.success { color: var(--color-green); }
     .filter-form { display: grid; gap: var(--space-md); }
     .filter-form label { display: grid; gap: 0.35rem; }
-    .filter-select, .filter-input { background: var(--color-surface-2); color: var(--color-text); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 0.45rem 0.55rem; font-size: 0.85rem; min-width: 160px; }
+    .filter-select, .filter-input { background: var(--glass-1); color: var(--color-text); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 0.45rem 0.55rem; font-size: 0.85rem; min-width: 160px; }
     .filter-input[type="datetime-local"] { min-width: 200px; color-scheme: dark; }
     .td-muted { color: var(--color-text-2); white-space: nowrap; }
     .action-name, .resource-id, .meta-key, .meta-val { font-family: var(--font-mono); }

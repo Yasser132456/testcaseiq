@@ -38,15 +38,18 @@ export class WelcomePageComponent implements OnInit, OnDestroy {
     }
 
     afterNextRender(() => {
-      this.lenis = new Lenis({
-        duration: 1.1,
-        easing: t => 1 - Math.pow(1 - t, 4)
-      });
-      const lenisFrame = (time: number) => {
-        this.lenis?.raf(time);
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (!prefersReducedMotion) {
+        this.lenis = new Lenis({
+          duration: 1.1,
+          easing: t => 1 - Math.pow(1 - t, 4)
+        });
+        const lenisFrame = (time: number) => {
+          this.lenis?.raf(time);
+          this.lenisRafId = requestAnimationFrame(lenisFrame);
+        };
         this.lenisRafId = requestAnimationFrame(lenisFrame);
-      };
-      this.lenisRafId = requestAnimationFrame(lenisFrame);
+      }
 
       this.runEntrance();
       this.initTilt();
@@ -58,7 +61,14 @@ export class WelcomePageComponent implements OnInit, OnDestroy {
 
   /* ── Entrance timeline ─────────────────────────────── */
   private runEntrance(): void {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      gsap.set('.wl-nav, .wl-eyebrow, .wl-word, .wl-sub, .wl-ctas, .wl-cards, .wl-scroll-cue, .wl-stat', {
+        opacity: 1,
+        y: 0,
+        x: 0
+      });
+      return;
+    }
 
     const tl = gsap.timeline({ defaults: { ease: 'power4.out' } });
 
@@ -123,6 +133,11 @@ export class WelcomePageComponent implements OnInit, OnDestroy {
 
   /* ── GSAP ScrollTrigger reveals for lower sections ─── */
   private initScrollReveal(): void {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      gsap.set('.wl-reveal', { opacity: 1, y: 0, x: 0 });
+      return;
+    }
+
     gsap.utils.toArray<HTMLElement>('.wl-reveal').forEach((el, i) => {
       gsap.from(el, {
         opacity: 0, y: 32,
