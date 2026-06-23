@@ -43,7 +43,13 @@
 .sidebar {
   width: 220px;
   overflow: hidden;
-  background: var(--color-surface-1);
+  background:
+    linear-gradient(
+      to right,
+      rgba(184,255,90,0.03) 0%,
+      transparent 100%
+    ),
+    var(--color-surface-1);
   border-right: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
