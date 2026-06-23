@@ -8,8 +8,7 @@
 .selectable-row { cursor: pointer; }
 .story-title { font-weight: 600; }
 .project-name { color: var(--color-text-2); }
-.type-badge,
-.story-status {
+.type-badge {
   display: inline-flex;
   min-height: 1.55rem;
   align-items: center;
@@ -21,10 +20,6 @@
   font-size: 0.73rem;
   font-weight: 600;
 }
-.status-draft { border-color: var(--color-purple-border); background: var(--color-purple-bg); color: var(--color-purple); }
-.status-analyzed { border-color: var(--color-cyan-border); background: var(--color-cyan-bg); color: var(--color-cyan); }
-.status-tests-generated { border-color: var(--color-amber-border); background: var(--color-amber-bg); color: var(--color-amber); }
-.status-all-reviewed { border-color: var(--color-green-border); background: var(--color-green-bg); color: var(--color-green); }
 .td-muted { color: var(--color-text-2); white-space: nowrap; }
 .pagination-bar { display: flex; align-items: center; gap: 1rem; padding: 0.75rem 0; justify-content: center; }
 .page-info { color: var(--color-text-2); font-size: 0.875rem; }

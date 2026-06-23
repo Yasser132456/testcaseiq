@@ -1,0 +1,76 @@
+:host {
+  display: inline-flex;
+}
+
+.status-pill-shell {
+  position: relative;
+  display: inline-flex;
+}
+
+.status-pill-shell--needs-review::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border: 1px solid rgba(251,191,36,0.5);
+  border-radius: 999px;
+  animation: needs-review-pulse 1.8s ease-out infinite;
+  pointer-events: none;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.status-pill--draft {
+  border-color: rgba(107,114,128,0.35);
+  background: rgba(107,114,128,0.15);
+  color: #6b7280;
+}
+
+.status-pill--in-review {
+  border-color: rgba(34,211,238,0.35);
+  background: rgba(34,211,238,0.15);
+  color: rgba(34,211,238,0.95);
+}
+
+.status-pill--needs-review {
+  border-color: rgba(251,191,36,0.35);
+  background: rgba(251,191,36,0.15);
+  color: rgba(251,191,36,0.95);
+}
+
+.status-pill--approved {
+  border-color: rgba(184,255,90,0.35);
+  background: rgba(184,255,90,0.15);
+  color: rgba(184,255,90,0.95);
+}
+
+.status-pill--rejected {
+  border-color: rgba(239,68,68,0.35);
+  background: rgba(239,68,68,0.15);
+  color: rgba(239,68,68,0.95);
+}
+
+@keyframes needs-review-pulse {
+  0% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.18); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status-pill-shell--needs-review::before {
+    animation: none;
+    opacity: 1;
+    transform: scale(1);
+  }
+}

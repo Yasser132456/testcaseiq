@@ -12,6 +12,7 @@ import { ProjectService } from '../../core/services/project.service';
 import { StoryService } from '../../core/services/story.service';
 import { TestSuiteService } from '../../core/services/test-suite.service';
 import { ToastService } from '../../core/services/toast.service';
+import { StoryStatusPillComponent } from '../../components/story-status-pill/story-status-pill.component';
 import { DrawerComponent } from '../../shared/components/drawer.component';
 import { StateMessageComponent } from '../../shared/components/state-message.component';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
@@ -22,7 +23,7 @@ type StoryDisplayStatus = 'DRAFT' | 'ANALYZED' | 'TESTS_GENERATED' | 'ALL_REVIEW
 @Component({
   selector: 'app-project-detail-page',
   standalone: true,
-  imports: [DatePipe, ReactiveFormsModule, RouterLink, DrawerComponent, StateMessageComponent, SkeletonComponent],
+  imports: [DatePipe, ReactiveFormsModule, RouterLink, StoryStatusPillComponent, DrawerComponent, StateMessageComponent, SkeletonComponent],
   template: `
     <section class="page-stack">
       @if (loading()) {
@@ -137,7 +138,7 @@ type StoryDisplayStatus = 'DRAFT' | 'ANALYZED' | 'TESTS_GENERATED' | 'ALL_REVIEW
                       <strong>{{ story.title }}</strong>
                       <span>{{ formatLabel(story.type) }} · {{ story.createdAt | date:'mediumDate' }}</span>
                     </a>
-                    <span class="story-status" [class]="statusClass(displayStoryStatus(story))">{{ formatLabel(displayStoryStatus(story)) }}</span>
+                    <app-story-status-pill [status]="displayStoryStatus(story)" />
                     @if (canDelete()) {
                       <button class="text-danger" type="button" (click)="deleteStory(story)">Delete</button>
                     }
@@ -185,7 +186,7 @@ type StoryDisplayStatus = 'DRAFT' | 'ANALYZED' | 'TESTS_GENERATED' | 'ALL_REVIEW
                 <div class="coverage-row">
                   <div>
                     <strong>{{ story.title }}</strong>
-                    <span>{{ formatLabel(displayStoryStatus(story)) }}</span>
+                    <app-story-status-pill [status]="displayStoryStatus(story)" />
                   </div>
                   <span>{{ suitesForStory(story.id).length }} suites</span>
                 </div>
@@ -206,11 +207,7 @@ type StoryDisplayStatus = 'DRAFT' | 'ANALYZED' | 'TESTS_GENERATED' | 'ALL_REVIEW
     .metadata-grid div, .coverage-summary-grid article, .coverage-row { padding: 0.85rem; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-surface-2); }
     .metadata-grid dt, .coverage-summary-grid span, .coverage-row span { color: var(--color-text-2); font-size: 0.8rem; }
     .metadata-grid dd { margin: 0.25rem 0 0; overflow-wrap: anywhere; }
-    .health-badge, .suite-count, .story-status { display: inline-flex; min-height: 1.55rem; align-items: center; padding: 0 0.5rem; border: 1px solid var(--color-green-border); border-radius: 6px; background: var(--color-green-bg); color: var(--color-green); font-size: 0.73rem; font-weight: 600; white-space: nowrap; }
-    .story-status.status-draft { border-color: var(--color-purple-border); background: var(--color-purple-bg); color: var(--color-purple); }
-    .story-status.status-analyzed { border-color: var(--color-cyan-border); background: var(--color-cyan-bg); color: var(--color-cyan); }
-    .story-status.status-tests-generated { border-color: var(--color-amber-border); background: var(--color-amber-bg); color: var(--color-amber); }
-    .story-status.status-all-reviewed { border-color: var(--color-green-border); background: var(--color-green-bg); color: var(--color-green); }
+    .health-badge, .suite-count { display: inline-flex; min-height: 1.55rem; align-items: center; padding: 0 0.5rem; border: 1px solid var(--color-green-border); border-radius: 6px; background: var(--color-green-bg); color: var(--color-green); font-size: 0.73rem; font-weight: 600; white-space: nowrap; }
     .activity-row { display: flex; justify-content: space-between; gap: 1rem; padding: 0.75rem; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-surface-2); }
     .activity-row span { color: var(--color-text-2); white-space: nowrap; }
     .coverage-summary-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.85rem; margin-bottom: 1rem; }
@@ -331,10 +328,6 @@ export class ProjectDetailPageComponent implements OnInit {
   displayStoryStatus(story: Story): StoryDisplayStatus {
     if (story.status === 'REVIEWED' || story.status === 'EXPORTED') return 'ALL_REVIEWED';
     return story.status;
-  }
-
-  statusClass(status: string): string {
-    return `status-${status.toLowerCase().replaceAll('_', '-')}`;
   }
 
   suitesForStory(storyId: string): TestSuiteSummary[] {

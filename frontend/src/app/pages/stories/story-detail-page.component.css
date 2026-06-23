@@ -68,11 +68,11 @@
   display: inline-flex;
   align-items: center;
   min-height: 2.1rem;
-  padding: 0 var(--space-md);
-  border: 1px solid var(--color-amber-border);
+  padding: 0;
+  border: 0;
   border-radius: var(--radius-sm);
-  background: var(--color-amber-bg);
-  color: var(--color-amber);
+  background: transparent;
+  color: inherit;
   cursor: pointer;
   font-family: var(--font-mono);
   font-size: 0.76rem;
