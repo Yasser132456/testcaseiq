@@ -57,9 +57,12 @@
   --font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', 'Fira Code', monospace;
 
   /* Motion */
-  --ease:     cubic-bezier(0.0, 0.0, 0.2, 1);
-  --dur:      150ms;
-  --dur-slow: 250ms;
+  --ease:           cubic-bezier(0.0, 0.0, 0.2, 1);
+  --ease-out-expo:  cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-in-out:    cubic-bezier(0.4, 0, 0.2, 1);
+  --dur:            150ms;
+  --dur-slow:       250ms;
 
   font-family: var(--font-sans);
   background: var(--bg);
@@ -67,6 +70,14 @@
 }
 
 *, *::before, *::after { box-sizing: border-box; }
+* { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.12) transparent; }
+
+::selection { background: rgba(184,255,90,0.28); color: inherit; }
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.22); }
 
 html, body { overflow-x: clip; }
 
@@ -107,6 +118,7 @@ body {
 h2, .page-title { font-size: 1.25rem; font-weight: 700; }
 h3, .section-title { font-size: 1rem; font-weight: 600; }
 h4, .card-title { font-size: 0.9rem; font-weight: 600; }
+h1, h2, h3 { text-wrap: balance; }
 body, p, li, td, .body-text { font-size: 0.875rem; font-weight: 400; }
 .secondary-text { font-size: 0.8rem; font-weight: 400; }
 .meta-text, .mono-text { font-size: 0.75rem; font-weight: 400; }
