@@ -1265,12 +1265,38 @@ kbd {
 @keyframes fade-out { to { opacity: 0; } }
 @keyframes fade-in { from { opacity: 0; } }
 
-::view-transition-old(root) {
-  animation: 110ms var(--ease) both fade-out;
-}
+@media (not (prefers-reduced-motion: reduce)) {
+  ::view-transition-old(root) {
+    animation: 110ms var(--ease) both fade-out;
+  }
 
-::view-transition-new(root) {
-  animation: 110ms var(--ease) both fade-in;
+  ::view-transition-new(root) {
+    animation: 110ms var(--ease) both fade-in;
+  }
+
+  ::view-transition-old(welcome-page) {
+    animation: vt-fade-slide-out 280ms ease-in forwards;
+  }
+
+  ::view-transition-new(welcome-page) {
+    animation: vt-fade-slide-in 320ms ease-out forwards;
+  }
+
+  ::view-transition-old(app-shell) {
+    animation: fade-out 200ms ease forwards;
+  }
+
+  ::view-transition-new(app-shell) {
+    animation: fade-in 200ms ease forwards;
+  }
+
+  @keyframes vt-fade-slide-out {
+    to { opacity: 0; transform: translateY(-12px); }
+  }
+
+  @keyframes vt-fade-slide-in {
+    from { opacity: 0; transform: translateY(12px); }
+  }
 }
 
 @keyframes skeletonSweep {
@@ -1294,11 +1320,6 @@ kbd {
   *, *::before, *::after {
     animation-duration: 1ms !important;
     transition-duration: 1ms !important;
-  }
-
-  ::view-transition-old(*),
-  ::view-transition-new(*) {
-    animation-duration: 0.01ms !important;
   }
 }
 
