@@ -1,5 +1,6 @@
 import { DatePipe } from '@angular/common';
 import { Component, inject, input, output, signal } from '@angular/core';
+import { LucideClipboardList } from '@lucide/angular';
 import { Priority, RiskLevel } from '../../core/models/analysis.model';
 import {
   GeneratedTestCase,
@@ -12,6 +13,7 @@ import { ReviewEvent, TestCaseResponse } from '../../core/models/review.model';
 import { ReviewService } from '../../core/services/review.service';
 import { ToastService } from '../../core/services/toast.service';
 import { StateMessageComponent } from '../../shared/components/state-message.component';
+import { EmptyStateComponent } from '../../shared/empty-state/empty-state.component';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
 
 interface ReviewDraft {
@@ -24,7 +26,7 @@ interface ReviewDraft {
 @Component({
   selector: 'app-story-test-cases-tab',
   standalone: true,
-  imports: [DatePipe, StateMessageComponent, SkeletonComponent],
+  imports: [DatePipe, StateMessageComponent, EmptyStateComponent, SkeletonComponent],
   templateUrl: './story-test-cases-tab.component.html'
 })
 export class StoryTestCasesTabComponent {
@@ -39,6 +41,7 @@ export class StoryTestCasesTabComponent {
   readonly generatingTests = input(false);
   readonly generateRequested = output<void>();
   readonly testCaseUpdated = output<{ original: GeneratedTestCase; updated: TestCaseResponse }>();
+  readonly LucideClipboardList = LucideClipboardList;
 
   readonly priorityOptions: Priority[] = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
   readonly riskOptions: RiskLevel[] = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];

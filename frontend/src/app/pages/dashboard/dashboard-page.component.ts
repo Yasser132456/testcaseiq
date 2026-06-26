@@ -133,7 +133,7 @@ import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
           } @else {
             <div class="project-card-row">
               @for (project of recentProjects(); track project.id) {
-                <a class="project-card" [routerLink]="['/projects', project.id]">
+                <a class="project-card" [routerLink]="['/projects', project.id]" [attr.data-accent]="projectAccent(project.key)">
                   <span class="project-key">{{ project.key }}</span>
                   <strong>{{ project.name }}</strong>
                   @if (project.description) {
@@ -221,6 +221,13 @@ export class DashboardPageComponent implements OnInit {
 
   isAdmin(): boolean { return this.authService.hasRole('ADMIN'); }
   canMutate(): boolean { return this.authService.hasRole(['ADMIN', 'QA_ENGINEER']); }
+
+  projectAccent(key: string): string {
+    let h = 0;
+    for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) & 0xffff;
+    const palette = ['accent', 'cyan', 'purple', 'green', 'amber'];
+    return palette[h % palette.length];
+  }
 
   avgCasesPerSuite(): string {
     const m = this.metrics();
