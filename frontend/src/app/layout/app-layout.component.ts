@@ -6,6 +6,7 @@ import {
   RouterLink, RouterLinkActive, RouterOutlet
 } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { Title } from '@angular/platform-browser';
 import { catchError, filter } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { gsap } from 'gsap';
@@ -16,6 +17,7 @@ import {
   LucideBookOpenText, LucideSearch
 } from '@lucide/angular';
 import { AuthService } from '../core/services/auth.service';
+import { NotificationService } from '../core/services/notification.service';
 import { NotificationCenterComponent } from '../shared/notification-center/notification-center.component';
 import { SearchModalComponent } from '../shared/search-modal/search-modal.component';
 
@@ -235,6 +237,9 @@ export class AppLayoutComponent implements AfterViewInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly http = inject(HttpClient);
   private readonly injector = inject(Injector);
+  private readonly title = inject(Title);
+  private readonly notificationService = inject(NotificationService);
+  private readonly appTitle = 'TestCaseIQ';
 
   readonly LucideLayoutDashboard = LucideLayoutDashboard;   readonly LucideFolderKanban = LucideFolderKanban;
   readonly LucideClipboardList = LucideClipboardList;        readonly LucideCheckSquare2 = LucideCheckSquare2;
@@ -262,6 +267,10 @@ export class AppLayoutComponent implements AfterViewInit, OnDestroy {
 
   constructor() {
     document.addEventListener('keydown', this.handleDocumentKeydown);
+    effect(() => {
+      const count = this.notificationService.unreadCount();
+      this.title.setTitle(count > 0 ? `(${count}) ${this.appTitle}` : this.appTitle);
+    });
     inject(ActivatedRoute).queryParamMap.subscribe(params => {
       this.accessRestricted.set(params.get('access') === 'restricted');
     });
@@ -276,6 +285,9 @@ export class AppLayoutComponent implements AfterViewInit, OnDestroy {
     this.http.get<{ pendingReviewTestCases: number }>('/api/dashboard/metrics').pipe(
       catchError(() => of({ pendingReviewTestCases: 0 }))
     ).subscribe(m => this.pendingReviewCount.set(m.pendingReviewTestCases));
+    this.notificationService.getUnreadCount().pipe(
+      catchError(() => of({ count: 0 }))
+    ).subscribe();
   }
 
   ngAfterViewInit(): void {

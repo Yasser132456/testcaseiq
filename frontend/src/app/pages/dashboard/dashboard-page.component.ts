@@ -258,6 +258,7 @@ export class DashboardPageComponent implements OnInit {
     this.hasAnimated.set(true);
     const rm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     this.runCountUp(m, rm);
+    this.staggerKpiChips(rm);
     this.animatePipeline(rm);
     this.animateDonut(m, rm);
     if (!rm) this.animateTimeline();
@@ -288,6 +289,12 @@ export class DashboardPageComponent implements OnInit {
       }
       gsap.to(fill, { width: `${width}%`, duration: 1.2, ease: 'power2.out' });
     });
+  }
+
+  private staggerKpiChips(rm: boolean): void {
+    const chips = this.el.nativeElement.querySelectorAll('.kpi-chip-row .kpi-chip');
+    if (rm || !chips.length) return;
+    gsap.from(chips, { y: 8, opacity: 0, stagger: 0.05, duration: 0.28, ease: 'power2.out', clearProps: 'all' });
   }
 
   private animateDonut(m: DashboardMetrics, rm: boolean): void {

@@ -33,6 +33,10 @@
   background: var(--glass-1);
   backdrop-filter: var(--glass-blur-sm);
   -webkit-backdrop-filter: var(--glass-blur-sm);
+  transition:
+    border-color 280ms var(--ease-in-out),
+    background 280ms var(--ease-in-out),
+    color 280ms var(--ease-in-out);
 }
 
 .status-pill--draft {
