@@ -39,8 +39,10 @@ import { LucideX, LucideDynamicIcon } from '@lucide/angular';
       grid-template-rows: auto minmax(0, 1fr);
       width: min(480px, 100vw);
       height: 100dvh;
-      border-left: 1px solid var(--color-border);
-      background: var(--color-surface-1);
+      border-left: 1px solid var(--glass-border-hi);
+      background: var(--glass-2);
+      backdrop-filter: var(--glass-blur-lg);
+      -webkit-backdrop-filter: var(--glass-blur-lg);
     }
 
     .drawer-header {
@@ -110,6 +112,10 @@ import { LucideX, LucideDynamicIcon } from '@lucide/angular';
       border-color: var(--color-green-border);
       color: var(--color-green);
       background: var(--color-green-bg);
+    }
+
+    @supports not (backdrop-filter: blur(1px)) {
+      .drawer-panel { background: var(--color-surface-1); }
     }
   `]
 })

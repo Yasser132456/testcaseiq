@@ -62,12 +62,12 @@ import { ToastItem, ToastService, ToastType } from '../../core/services/toast.se
     }
     .toast--error {
       border-color: var(--color-red-border);
-      box-shadow: var(--glass-shadow), inset 3px 0 0 rgba(239,68,68,0.8);
+      box-shadow: var(--glass-shadow), inset 3px 0 0 var(--color-red);
     }
     .toast--warning { border-color: var(--color-amber-border); }
     .toast--info { border-color: var(--color-purple-border); }
     .toast--success svg { color: var(--color-accent); }
-    .toast--error svg { color: rgba(239,68,68,0.8); }
+    .toast--error svg { color: var(--color-red); }
     .toast--warning svg { color: var(--color-amber); }
     .toast--info svg { color: var(--color-accent); }
 

@@ -4,6 +4,12 @@
 .filter-row label { min-width: 12rem; }
 .filter-row label span { font-size: 0.78rem; }
 .filter-row select { background: var(--glass-1); color: var(--color-text); border: 1px solid var(--glass-border); border-radius: 4px; padding: 0.35rem 0.55rem; font-size: 0.85rem; }
+.filter-row select:focus,
+.filter-row select:focus-visible {
+  border-color: var(--color-accent);
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-accent-glow);
+}
 .table-panel { overflow-x: auto; }
 .selectable-row { cursor: pointer; }
 .story-title { font-weight: 600; }
@@ -14,7 +20,7 @@
   align-items: center;
   padding: 0 0.5rem;
   border: 1px solid var(--glass-border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--glass-1);
   color: var(--color-text-2);
   font-size: 0.73rem;

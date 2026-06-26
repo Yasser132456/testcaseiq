@@ -37,6 +37,11 @@
   --color-red-bg:     rgba(248, 113, 113, 0.10);
   --color-red-border: rgba(248, 113, 113, 0.45);
 
+  /* ── Colors: Neutral (draft/unknown states) ─────────── */
+  --color-neutral:        #6b7280;
+  --color-neutral-bg:     rgba(107, 114, 128, 0.10);
+  --color-neutral-border: rgba(107, 114, 128, 0.30);
+
   /* ── Colors: Interaction Glows ───────────────────────── */
   --color-secondary-glow: rgba(255, 255, 255, 0.06);
   --color-secondary-hover: rgba(255, 255, 255, 0.05);
@@ -74,6 +79,7 @@
   --space-3xl:  3rem;
 
   /* ── Radius ──────────────────────────────────────────── */
+  --radius-xs: 4px;
   --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 10px;
