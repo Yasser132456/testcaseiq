@@ -5,7 +5,7 @@ import { Router } from '@angular/router';
 import { catchError, debounceTime, distinctUntilChanged, finalize, of, switchMap, Subject, takeUntil } from 'rxjs';
 import {
   LucideDynamicIcon, LucideFolderKanban, LucideBookOpenText, LucideClipboardList,
-  LucideCheckSquare2, LucideClock3, LucideIconInput, LucideSearch, LucideX
+  LucideCheckSquare2, LucideClock, LucideClock3, LucideHistory, LucideIconInput, LucideSearch, LucideX
 } from '@lucide/angular';
 import { SearchService } from '../../core/services/search.service';
 import {
@@ -17,6 +17,7 @@ type SearchRow = RecentSearchItem & { icon: LucideIconInput };
 type SearchGroup = { label: string; icon: LucideIconInput; rows: SearchRow[] };
 
 const RECENT_KEY = 'tq_recent_searches';
+const RECENT_SEARCHES_KEY = 'tiq_recent_searches';
 const EMPTY_RESULTS: SearchResultsResponse = { projects: [], stories: [], testSuites: [], testCases: [] };
 
 @Component({
@@ -38,10 +39,13 @@ export class SearchModalComponent implements AfterViewInit, OnDestroy {
 
   readonly LucideSearch = LucideSearch;
   readonly LucideX = LucideX;
+  readonly LucideClock = LucideClock;
+  readonly LucideHistory = LucideHistory;
   readonly query = signal('');
   readonly loading = signal(false);
   readonly results = signal<SearchResultsResponse>(EMPTY_RESULTS);
   readonly recent = signal<RecentSearchItem[]>(this.readRecent());
+  readonly recentSearches = signal<string[]>(this.getRecentSearches());
   readonly activeIndex = signal(0);
   readonly showingRecent = computed(() => this.query().length === 0);
   readonly groups = computed(() => this.buildGroups());
@@ -116,9 +120,30 @@ export class SearchModalComponent implements AfterViewInit, OnDestroy {
   }
 
   select(row: RecentSearchItem): void {
+    this.saveSearch(this.query());
     this.saveRecent(row);
     this.close();
     void this.router.navigateByUrl(row.route);
+  }
+
+  setQuery(term: string): void {
+    const normalized = term.trim().slice(0, 100);
+    if (!normalized) return;
+    if (this.searchInput) {
+      this.searchInput.nativeElement.value = normalized;
+      this.searchInput.nativeElement.focus();
+    }
+    this.query.set(normalized);
+    this.input$.next(normalized);
+  }
+
+  clearRecent(): void {
+    try {
+      localStorage.removeItem(RECENT_SEARCHES_KEY);
+    } catch {
+      // Ignore storage errors; the visible modal state can still be cleared.
+    }
+    this.recentSearches.set([]);
   }
 
   isEmpty(): boolean {
@@ -221,6 +246,29 @@ export class SearchModalComponent implements AfterViewInit, OnDestroy {
     this.recent.set(next);
     try {
       localStorage.setItem(RECENT_KEY, JSON.stringify(next));
+    } catch {
+      return;
+    }
+  }
+
+  private getRecentSearches(): string[] {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(RECENT_SEARCHES_KEY) ?? '[]') as string[];
+      return Array.isArray(parsed)
+        ? parsed.filter((term): term is string => typeof term === 'string' && term.trim().length > 0).slice(0, 5)
+        : [];
+    } catch {
+      return [];
+    }
+  }
+
+  private saveSearch(query: string): void {
+    const normalized = query.trim().slice(0, 100);
+    if (!normalized) return;
+    const next = [normalized, ...this.getRecentSearches().filter(term => term !== normalized)].slice(0, 5);
+    this.recentSearches.set(next);
+    try {
+      localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(next));
     } catch {
       return;
     }

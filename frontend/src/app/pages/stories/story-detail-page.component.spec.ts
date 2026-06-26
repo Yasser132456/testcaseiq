@@ -77,7 +77,7 @@ describe('StoryDetailPageComponent tabs and review workflow', () => {
     fixture.detectChanges();
 
     expect(storyService.update).toHaveBeenCalledWith('story-1', jasmine.objectContaining({ status: 'REVIEWED' }));
-    expect(statusButton.textContent).toContain('All Reviewed');
+    expect(statusButton.textContent).toContain('Approved');
   });
 
   it('approves the selected pending review case only when the review panel receives the shortcut', () => {

@@ -16,6 +16,12 @@
   background: var(--glass-2);
   backdrop-filter: var(--glass-blur-md);
   -webkit-backdrop-filter: var(--glass-blur-md);
+  transition: background 200ms var(--ease), border-color 200ms var(--ease);
+}
+
+.story-sticky-header:not(.sticky-scrolled) {
+  background: rgba(10, 10, 10, 0.4);
+  border-bottom-color: transparent;
 }
 
 .story-header-row {

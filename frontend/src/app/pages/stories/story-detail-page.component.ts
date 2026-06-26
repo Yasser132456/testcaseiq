@@ -60,6 +60,7 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
   private readonly projectContext = (this.router.getCurrentNavigation()?.extras.state?.['projectContext'] ?? window.history.state?.projectContext) as { name?: string } | null;
   private storyId = '';
   private tiltElements: HTMLVanillaTiltElement[] = [];
+  private stickyObserver?: IntersectionObserver;
 
   readonly LucideCheck = LucideCheck;
   readonly storyTypes = STORY_TYPES;
@@ -120,12 +121,14 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
 
   ngAfterViewInit(): void {
     queueMicrotask(() => {
+      this.initStickyHeaderObserver();
       this.animateWorkflowStep();
       this.initTilt();
     });
   }
 
   ngOnDestroy(): void {
+    this.stickyObserver?.disconnect();
     this.destroyTilt();
   }
 
@@ -380,6 +383,19 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
     if (elements.length === 0) return;
     VanillaTilt.init(elements, TILT_OPTIONS);
     this.tiltElements = elements as HTMLVanillaTiltElement[];
+  }
+
+  private initStickyHeaderObserver(): void {
+    if (typeof IntersectionObserver === 'undefined') return;
+    this.stickyObserver?.disconnect();
+    const tabContent = this.host.nativeElement.querySelector('.story-tab-content');
+    const sentinel = this.host.nativeElement.querySelector('.scroll-sentinel');
+    const header = this.host.nativeElement.querySelector('.story-sticky-header');
+    if (!tabContent || !sentinel || !header) return;
+    this.stickyObserver = new IntersectionObserver(([entry]) => {
+      header.classList.toggle('sticky-scrolled', !entry.isIntersecting);
+    }, { root: tabContent, threshold: 0 });
+    this.stickyObserver.observe(sentinel);
   }
 
   private destroyTilt(): void {

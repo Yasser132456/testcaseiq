@@ -62,6 +62,7 @@
     <div class="story-tab-content">
       @if (activeTab() === 'story') {
         <div class="story-tab-panel">
+          <div class="scroll-sentinel" aria-hidden="true" style="height:1px;pointer-events:none"></div>
           <section class="panel story-summary-panel">
             <div class="section-header">
               <div class="badge-row">

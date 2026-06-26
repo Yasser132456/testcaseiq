@@ -23,6 +23,23 @@
       } @else if (isEmpty()) {
         <div class="search-state">No results for '{{ query() }}'</div>
       } @else {
+        @if (query().length === 0 && recentSearches().length > 0) {
+          <div class="result-group">
+            <div class="group-label">
+              <svg [lucideIcon]="LucideClock" [size]="12" aria-hidden="true"></svg>
+              <span>RECENT</span>
+              <button class="clear-recent-btn" (click)="clearRecent()" type="button">
+                Clear
+              </button>
+            </div>
+            @for (term of recentSearches(); track term) {
+              <button class="result-row" type="button" (click)="setQuery(term)">
+                <svg [lucideIcon]="LucideHistory" [size]="14" aria-hidden="true"></svg>
+                <span>{{ term }}</span>
+              </button>
+            }
+          </div>
+        }
         @for (group of groups(); track group.label) {
           <div class="result-group">
             <div class="group-label">
