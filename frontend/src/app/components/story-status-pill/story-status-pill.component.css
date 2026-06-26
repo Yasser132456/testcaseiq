@@ -11,7 +11,7 @@
   content: '';
   position: absolute;
   inset: -3px;
-  border: 1px solid rgba(251,191,36,0.5);
+  border: 1px solid var(--color-amber-border);
   border-radius: 999px;
   animation: needs-review-pulse 1.8s ease-out infinite;
   pointer-events: none;
@@ -36,33 +36,33 @@
 }
 
 .status-pill--draft {
-  border-color: rgba(107,114,128,0.35);
-  background: linear-gradient(rgba(107,114,128,0.15), rgba(107,114,128,0.15)), var(--glass-1);
-  color: #6b7280;
+  border-color: var(--color-neutral-border);
+  background: linear-gradient(var(--color-neutral-bg), var(--color-neutral-bg)), var(--glass-1);
+  color: var(--color-neutral);
 }
 
 .status-pill--in-review {
-  border-color: rgba(34,211,238,0.35);
-  background: linear-gradient(rgba(34,211,238,0.15), rgba(34,211,238,0.15)), var(--glass-1);
-  color: rgba(34,211,238,0.95);
+  border-color: var(--color-cyan-border);
+  background: linear-gradient(var(--color-cyan-bg), var(--color-cyan-bg)), var(--glass-1);
+  color: var(--color-cyan);
 }
 
 .status-pill--needs-review {
-  border-color: rgba(251,191,36,0.35);
-  background: linear-gradient(rgba(251,191,36,0.15), rgba(251,191,36,0.15)), var(--glass-1);
-  color: rgba(251,191,36,0.95);
+  border-color: var(--color-amber-border);
+  background: linear-gradient(var(--color-amber-bg), var(--color-amber-bg)), var(--glass-1);
+  color: var(--color-amber);
 }
 
 .status-pill--approved {
-  border-color: rgba(184,255,90,0.35);
-  background: linear-gradient(rgba(184,255,90,0.15), rgba(184,255,90,0.15)), var(--glass-1);
-  color: rgba(184,255,90,0.95);
+  border-color: var(--color-accent-border);
+  background: linear-gradient(var(--color-accent-bg), var(--color-accent-bg)), var(--glass-1);
+  color: var(--color-accent);
 }
 
 .status-pill--rejected {
-  border-color: rgba(239,68,68,0.35);
-  background: linear-gradient(rgba(239,68,68,0.15), rgba(239,68,68,0.15)), var(--glass-1);
-  color: rgba(239,68,68,0.95);
+  border-color: var(--color-red-border);
+  background: linear-gradient(var(--color-red-bg), var(--color-red-bg)), var(--glass-1);
+  color: var(--color-red);
 }
 
 @keyframes needs-review-pulse {
