@@ -1,5 +1,5 @@
 import {
-  AfterViewInit, Component, EffectRef, ElementRef, Injector, OnDestroy, Signal, ViewChild, effect, inject, signal
+  AfterViewInit, Component, EffectRef, ElementRef, HostListener, Injector, OnDestroy, Signal, ViewChild, effect, inject, signal
 } from '@angular/core';
 import {
   ActivatedRoute, NavigationEnd, Router,
@@ -14,7 +14,7 @@ import {
   LucideDynamicIcon,
   LucideLayoutDashboard, LucideFolderKanban, LucideClipboardList, LucideCheckSquare2,
   LucideDownload, LucideShieldCheck, LucideUsers, LucideSettings2, LucideChevronLeft, LucideChevronRight,
-  LucideBookOpenText, LucideSearch
+  LucideBookOpenText, LucideSearch, LucideMenu, LucideX
 } from '@lucide/angular';
 import { AuthService } from '../core/services/auth.service';
 import { NotificationService } from '../core/services/notification.service';
@@ -192,6 +192,14 @@ interface ProjectContextSource { projectContext: Signal<ProjectContext | null>; 
             }
           </nav>
           <div class="topbar-actions">
+            <button
+              class="mobile-nav-btn"
+              type="button"
+              (click)="openMobileNav()"
+              aria-label="Open navigation"
+              [attr.aria-expanded]="mobileNavOpen()">
+              <svg [lucideIcon]="LucideMenu" [size]="18" aria-hidden="true"></svg>
+            </button>
             <button class="button secondary topbar-search-button" type="button" aria-label="Open search" (click)="openSearch()">
               <svg [lucideIcon]="LucideSearch" [size]="18" [strokeWidth]="1.8" aria-hidden="true"></svg>
             </button>
@@ -226,6 +234,138 @@ interface ProjectContextSource { projectContext: Signal<ProjectContext | null>; 
       </section>
 
     </div>
+    @if (mobileNavOpen()) {
+      <div class="mobile-nav-backdrop" aria-hidden="true" (click)="closeMobileNav()"></div>
+      <nav class="mobile-nav-panel" role="dialog" aria-modal="true" aria-label="Navigation">
+        <button
+          class="mobile-nav-close"
+          type="button"
+          (click)="closeMobileNav()"
+          aria-label="Close navigation">
+          <svg [lucideIcon]="LucideX" [size]="16" aria-hidden="true"></svg>
+        </button>
+
+        <a class="brand" routerLink="/">
+          <span class="brand-mark">TQ</span>
+          <span class="brand-text">
+            <strong>TestCaseIQ</strong>
+            <small>QA workspace</small>
+          </span>
+        </a>
+
+        @if (projectContext()) {
+          <div class="project-context-panel">
+            <a routerLink="/projects">â† Projects</a>
+            <strong>{{ projectContext()?.name }}</strong>
+            <span>{{ projectContext()?.storyCount }} stories Â· {{ projectContext()?.coveragePercent }}%</span>
+          </div>
+        }
+
+        <nav class="nav-groups" aria-label="Mobile navigation">
+          <div class="nav-group">
+            <span class="nav-group-label">HOME</span>
+            <a class="nav-item" routerLink="/dashboard" routerLinkActive="active"
+               [routerLinkActiveOptions]="{ exact: true }"
+               (mouseenter)="onNavItemEnter($event)">
+              <span class="nav-inner">
+                <span class="nav-icon-wrap"><svg [lucideIcon]="LucideLayoutDashboard" [size]="20" [strokeWidth]="1.5" aria-hidden="true"></svg></span>
+                <span class="nav-label">Dashboard</span>
+              </span>
+            </a>
+          </div>
+
+          <div class="nav-group">
+            <span class="nav-group-label">WORKSPACE</span>
+            <a class="nav-item" routerLink="/projects" routerLinkActive="active"
+               (mouseenter)="onNavItemEnter($event)">
+              <span class="nav-inner">
+                <span class="nav-icon-wrap"><svg [lucideIcon]="LucideFolderKanban" [size]="20" [strokeWidth]="1.5" aria-hidden="true"></svg></span>
+                <span class="nav-label">Projects</span>
+              </span>
+            </a>
+            <a class="nav-item" routerLink="/stories" routerLinkActive="active"
+               [routerLinkActiveOptions]="{ exact: true }"
+               (mouseenter)="onNavItemEnter($event)">
+              <span class="nav-inner">
+                <span class="nav-icon-wrap"><svg [lucideIcon]="LucideBookOpenText" [size]="20" [strokeWidth]="1.5" aria-hidden="true"></svg></span>
+                <span class="nav-label">Stories</span>
+              </span>
+            </a>
+            <a class="nav-item" routerLink="/test-suites" routerLinkActive="active"
+               (mouseenter)="onNavItemEnter($event)">
+              <span class="nav-inner">
+                <span class="nav-icon-wrap"><svg [lucideIcon]="LucideClipboardList" [size]="20" [strokeWidth]="1.5" aria-hidden="true"></svg></span>
+                <span class="nav-label">Test Suites</span>
+              </span>
+            </a>
+          </div>
+
+          <div class="nav-group">
+            <span class="nav-group-label">QUALITY</span>
+            <a class="nav-item" routerLink="/review-board" routerLinkActive="active"
+               (mouseenter)="onNavItemEnter($event)">
+              <span class="nav-inner">
+                <span class="nav-icon-wrap"><svg [lucideIcon]="LucideCheckSquare2" [size]="20" [strokeWidth]="1.5" aria-hidden="true"></svg></span>
+                <span class="nav-label">Review Board</span>
+              </span>
+              @if (pendingReviewCount() > 0) {
+                <span class="nav-badge">{{ pendingReviewCount() }}</span>
+              }
+            </a>
+            <a class="nav-item" routerLink="/export" routerLinkActive="active"
+               (mouseenter)="onNavItemEnter($event)">
+              <span class="nav-inner">
+                <span class="nav-icon-wrap"><svg [lucideIcon]="LucideDownload" [size]="20" [strokeWidth]="1.5" aria-hidden="true"></svg></span>
+                <span class="nav-label">Export Hub</span>
+              </span>
+            </a>
+          </div>
+
+          @if (authService.hasRole('ADMIN')) {
+            <div class="nav-group">
+              <span class="nav-group-label">ADMIN</span>
+                <a class="nav-item" routerLink="/admin/users" routerLinkActive="active"
+                   (mouseenter)="onNavItemEnter($event)">
+                  <span class="nav-inner">
+                    <span class="nav-icon-wrap"><svg [lucideIcon]="LucideUsers" [size]="20" [strokeWidth]="1.5" aria-hidden="true"></svg></span>
+                    <span class="nav-label">Users</span>
+                  </span>
+                </a>
+                <a class="nav-item" routerLink="/admin/audit" routerLinkActive="active"
+                   (mouseenter)="onNavItemEnter($event)">
+                  <span class="nav-inner">
+                    <span class="nav-icon-wrap"><svg [lucideIcon]="LucideShieldCheck" [size]="20" [strokeWidth]="1.5" aria-hidden="true"></svg></span>
+                    <span class="nav-label">Audit Trail</span>
+                  </span>
+                </a>
+            </div>
+          }
+        </nav>
+
+        <div class="sidebar-footer">
+          @if (authService.hasRole(['ADMIN', 'QA_ENGINEER'])) {
+            <a class="nav-item footer-settings" routerLink="/settings" routerLinkActive="active"
+               (mouseenter)="onNavItemEnter($event)">
+              <span class="nav-inner">
+                <span class="nav-icon-wrap"><svg [lucideIcon]="LucideSettings2" [size]="20" [strokeWidth]="1.5" aria-hidden="true"></svg></span>
+                <span class="nav-label">Settings</span>
+              </span>
+            </a>
+          }
+          @if (authService.currentUser(); as user) {
+            <div class="footer-user">
+              <div class="footer-avatar" [class]="avatarClass(user.role)">{{ initials(user.displayName) }}</div>
+              <div class="footer-info">
+                <span class="footer-name">{{ user.displayName }}</span>
+                <span [class]="roleChipClass(user.role)">{{ roleLabel(user.role) }}</span>
+              </div>
+            </div>
+          } @else {
+            <div class="footer-avatar viewer-avatar">?</div>
+          }
+        </div>
+      </nav>
+    }
     @defer (when searchOpen()) {
       @if (searchOpen()) {
         <app-search-modal (closed)="closeSearch()" />
@@ -249,6 +389,7 @@ export class AppLayoutComponent implements AfterViewInit, OnDestroy {
   readonly LucideUsers = LucideUsers;                        readonly LucideSettings2 = LucideSettings2;
   readonly LucideChevronLeft = LucideChevronLeft;            readonly LucideChevronRight = LucideChevronRight;
   readonly LucideBookOpenText = LucideBookOpenText;          readonly LucideSearch = LucideSearch;
+  readonly LucideMenu = LucideMenu;                          readonly LucideX = LucideX;
 
   @ViewChild('sidebarEl') private sidebarEl!: ElementRef<HTMLElement>;
   @ViewChild('ambientBg') private ambientBg?: ElementRef<HTMLElement>;
@@ -259,6 +400,7 @@ export class AppLayoutComponent implements AfterViewInit, OnDestroy {
   readonly breadcrumbs = signal<Crumb[]>([]);
   readonly projectContext = signal<ProjectContext | null>(null);
   readonly searchOpen = signal(false);
+  readonly mobileNavOpen = signal(false);
   private projectContextEffect: EffectRef | null = null;
   private readonly handleDocumentKeydown = (event: KeyboardEvent): void => {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
@@ -273,11 +415,23 @@ export class AppLayoutComponent implements AfterViewInit, OnDestroy {
       const count = this.notificationService.unreadCount();
       this.title.setTitle(count > 0 ? `(${count}) ${this.appTitle}` : this.appTitle);
     });
+    effect(() => {
+      if (!this.mobileNavOpen()) return;
+      queueMicrotask(() => {
+        const panel = document.querySelector('.mobile-nav-panel');
+        const firstNav = document.querySelector('.mobile-nav-panel .nav-item') as HTMLElement | null;
+        firstNav?.focus({ preventScroll: true });
+        if (panel && !this.prefersReducedMotion()) {
+          gsap.from(panel, { x: -280, duration: 0.28, ease: 'power2.out' });
+        }
+      });
+    });
     inject(ActivatedRoute).queryParamMap.subscribe(params => {
       this.accessRestricted.set(params.get('access') === 'restricted');
     });
     this.router.events.pipe(filter(e => e instanceof NavigationEnd))
       .subscribe(() => {
+        this.closeMobileNav();
         this.breadcrumbs.set(this.buildBreadcrumbs());
         if (!this.isProjectScopedUrl()) {
           this.projectContext.set(null);
@@ -343,6 +497,24 @@ export class AppLayoutComponent implements AfterViewInit, OnDestroy {
 
   closeSearch(): void {
     this.searchOpen.set(false);
+  }
+
+  openMobileNav(): void {
+    this.mobileNavOpen.set(true);
+  }
+
+  closeMobileNav(): void {
+    if (!this.mobileNavOpen()) return;
+    this.mobileNavOpen.set(false);
+    queueMicrotask(() => {
+      const btn = document.querySelector('.mobile-nav-btn') as HTMLElement | null;
+      btn?.focus({ preventScroll: true });
+    });
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.mobileNavOpen()) this.closeMobileNav();
   }
 
   onRouteActivate(component: unknown): void {
@@ -423,5 +595,9 @@ export class AppLayoutComponent implements AfterViewInit, OnDestroy {
   private isProjectScopedUrl(): boolean {
     const url = this.router.url.split('?')[0];
     return /^\/projects\/[^/]+$/.test(url) || /^\/stories\/[^/]+$/.test(url);
+  }
+
+  private prefersReducedMotion(): boolean {
+    return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
   }
 }
