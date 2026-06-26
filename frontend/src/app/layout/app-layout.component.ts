@@ -20,6 +20,7 @@ import { AuthService } from '../core/services/auth.service';
 import { NotificationService } from '../core/services/notification.service';
 import { NotificationCenterComponent } from '../shared/notification-center/notification-center.component';
 import { SearchModalComponent } from '../shared/search-modal/search-modal.component';
+import { KeyboardShortcutsComponent } from '../shared/components/keyboard-shortcuts.component';
 
 interface Crumb { label: string; path: string; }
 interface ProjectContext { projectId: string; name: string; storyCount: number; coveragePercent: number; }
@@ -28,7 +29,7 @@ interface ProjectContextSource { projectContext: Signal<ProjectContext | null>; 
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, RouterOutlet, LucideDynamicIcon, NotificationCenterComponent, SearchModalComponent],
+  imports: [RouterLink, RouterLinkActive, RouterOutlet, LucideDynamicIcon, NotificationCenterComponent, SearchModalComponent, KeyboardShortcutsComponent],
   styleUrl: './app-layout.component.css',
   template: `
     <div #ambientBg class="ambient-bg" aria-hidden="true">
@@ -230,6 +231,7 @@ interface ProjectContextSource { projectContext: Signal<ProjectContext | null>; 
         <app-search-modal (closed)="closeSearch()" />
       }
     }
+    <app-keyboard-shortcuts />
   `
 })
 export class AppLayoutComponent implements AfterViewInit, OnDestroy {

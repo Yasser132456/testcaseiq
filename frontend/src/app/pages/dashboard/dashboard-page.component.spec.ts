@@ -196,6 +196,21 @@ describe('DashboardPageComponent', () => {
     expect(element.textContent).toContain('+ New project');
   });
 
+  it('assigns deterministic accent names to project keys', () => {
+    const { fixture } = createComponent('ADMIN');
+    const component = fixture.componentInstance;
+
+    expect(component.projectAccent('CLAIMS')).toBe(component.projectAccent('CLAIMS'));
+    expect(['accent', 'cyan', 'purple', 'green', 'amber']).toContain(component.projectAccent('BILL'));
+  });
+
+  it('binds project card accents as data attributes', () => {
+    const { element } = createComponent('QA_ENGINEER');
+    const cards = Array.from(element.querySelectorAll<HTMLElement>('.project-card'));
+
+    expect(cards.map(card => card.dataset['accent'])).toEqual(['cyan', 'accent']);
+  });
+
   it('hides new project action for VIEWER', () => {
     const { element } = createComponent('VIEWER');
     expect(element.textContent).not.toContain('+ New project');

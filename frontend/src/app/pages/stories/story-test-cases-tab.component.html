@@ -13,8 +13,12 @@
     <app-state-message title="Test generation unavailable" [message]="error()" tone="error" />
   } @else if (!hasTestSuites()) {
     <div class="empty-analysis generated-empty">
-      <h3>No manual test cases exist yet.</h3>
-      <p>Generate mock manual tests from this story. The result will include test objectives, steps, data, BDD text, and requirement links.</p>
+      <app-empty-state
+        [icon]="LucideClipboardList"
+        [showArt]="true"
+        title="No manual test cases exist yet."
+        message="Generate mock manual tests from this story. The result will include test objectives, steps, data, BDD text, and requirement links."
+      />
       @if (canEdit()) {
         <button class="button generate-button" type="button" (click)="generateRequested.emit()" [disabled]="generatingTests()">
           {{ generatingTests() ? 'Generating...' : 'Generate Test Cases' }}
