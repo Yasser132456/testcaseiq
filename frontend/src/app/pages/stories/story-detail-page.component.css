@@ -169,6 +169,31 @@
   gap: var(--space-base);
 }
 
+.test-cases-tab-panel {
+  display: grid;
+  gap: var(--space-base);
+}
+
+.review-board-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-base);
+  padding: var(--space-sm) var(--space-base);
+  border: 1px solid var(--glass-border-hi);
+  border-left: 3px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  background: var(--glass-2);
+  backdrop-filter: var(--glass-blur-sm);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+}
+
+.review-board-banner-copy {
+  color: var(--color-text);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
 .story-summary-panel,
 .analysis-panel {
   display: grid;
@@ -192,6 +217,11 @@
     width: 100%;
     overflow-x: auto;
     border-radius: var(--radius-md);
+  }
+
+  .review-board-banner {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
 
