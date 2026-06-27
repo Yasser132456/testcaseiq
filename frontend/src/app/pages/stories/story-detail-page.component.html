@@ -281,16 +281,27 @@
       }
 
       @if (activeTab() === 'test-cases') {
-        <app-story-test-cases-tab
-          [storyTitle]="story()?.title ?? ''"
-          [testSuites]="testSuites()"
-          [loading]="testSuitesLoading()"
-          [error]="testGenerationError()"
-          [canEdit]="canEdit()"
-          [generatingTests]="generatingTests()"
-          (generateRequested)="generateTestCases()"
-          (testCaseUpdated)="onTestCaseUpdated($event)"
-        />
+        <div class="test-cases-tab-panel">
+          @if (pendingReviewCount() > 0) {
+            <div class="review-board-banner">
+              <span class="review-board-banner-copy">
+                {{ pendingReviewCount() }}
+                {{ pendingReviewCount() === 1 ? 'test case needs review' : 'test cases need review' }}
+              </span>
+              <a class="button secondary small" routerLink="/review-board">Review Board</a>
+            </div>
+          }
+          <app-story-test-cases-tab
+            [storyTitle]="story()?.title ?? ''"
+            [testSuites]="testSuites()"
+            [loading]="testSuitesLoading()"
+            [error]="testGenerationError()"
+            [canEdit]="canEdit()"
+            [generatingTests]="generatingTests()"
+            (generateRequested)="generateTestCases()"
+            (testCaseUpdated)="onTestCaseUpdated($event)"
+          />
+        </div>
       }
 
       @if (activeTab() === 'review') {

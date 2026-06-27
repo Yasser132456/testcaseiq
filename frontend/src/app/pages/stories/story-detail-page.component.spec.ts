@@ -62,8 +62,47 @@ describe('StoryDetailPageComponent tabs and review workflow', () => {
     expect(tabs.map((tab) => tab.textContent?.trim())).toEqual([
       'Story',
       'Test Cases (2)',
-      'Review (1 pending)'
+      'History (1 pending)'
     ]);
+  });
+
+  it('shows a Review Board banner on the test cases tab when one test case needs review', () => {
+    clickTab('Test Cases');
+
+    const banner = reviewBoardBanner();
+    const link = banner?.querySelector('a') as HTMLAnchorElement | null;
+
+    expect(banner?.textContent).toContain('1 test case needs review');
+    expect(link?.textContent?.trim()).toBe('Review Board');
+    expect(link?.getAttribute('href')).toBe('/review-board');
+  });
+
+  it('pluralizes the Review Board banner count and hides it when no test cases need review', () => {
+    fixture.componentInstance.testSuites.set([
+      {
+        ...suiteFixture(),
+        testCases: [
+          testCaseFixture('test-case-1', 'Checkout happy path', 'NEEDS_REVIEW'),
+          testCaseFixture('test-case-2', 'Card declined', 'NEEDS_REVIEW')
+        ]
+      }
+    ]);
+    clickTab('Test Cases');
+
+    expect(reviewBoardBanner()?.textContent).toContain('2 test cases need review');
+
+    fixture.componentInstance.testSuites.set([
+      {
+        ...suiteFixture(),
+        testCases: [
+          testCaseFixture('test-case-1', 'Checkout happy path', 'APPROVED'),
+          testCaseFixture('test-case-2', 'Card declined', 'APPROVED')
+        ]
+      }
+    ]);
+    fixture.detectChanges();
+
+    expect(reviewBoardBanner()).toBeNull();
   });
 
   it('persists manual display status changes through the existing story update service', () => {
@@ -85,7 +124,7 @@ describe('StoryDetailPageComponent tabs and review workflow', () => {
     fixture.detectChanges();
     expect(reviewService.updateReviewStatus).not.toHaveBeenCalled();
 
-    clickTab('Review');
+    clickTab('History');
     const reviewPanel = fixture.nativeElement.querySelector('.story-review-tab') as HTMLElement;
     reviewPanel.focus();
     reviewPanel.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', bubbles: true }));
@@ -95,7 +134,7 @@ describe('StoryDetailPageComponent tabs and review workflow', () => {
       status: 'APPROVED',
       comment: null
     });
-    expect(tabButton('Review')?.textContent).toContain('Review (0 pending)');
+    expect(tabButton('History')?.textContent).toContain('History (0 pending)');
   });
 
   function clickTab(label: string): void {
@@ -109,6 +148,10 @@ describe('StoryDetailPageComponent tabs and review workflow', () => {
 
   function tabButtons(): HTMLButtonElement[] {
     return Array.from(fixture.nativeElement.querySelectorAll('.detail-tabs .tab-btn')) as HTMLButtonElement[];
+  }
+
+  function reviewBoardBanner(): HTMLElement | null {
+    return fixture.nativeElement.querySelector('.review-board-banner') as HTMLElement | null;
   }
 
   function storyFixture(status: StoryStatus): Story {
