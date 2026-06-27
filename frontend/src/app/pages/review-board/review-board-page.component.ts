@@ -64,6 +64,7 @@ interface ReviewCaseItem {
                 (click)="selectCase(item.testCase.id)"
               >
                 <span class="review-case-title">{{ item.testCase.title }}</span>
+                <span class="review-case-story">{{ item.suite.storyTitle }}</span>
                 <span class="review-case-meta">
                   <span class="case-meta-badge">{{ item.testCase.type ?? 'TYPE' }}</span>
                   <span class="case-meta-badge">{{ item.testCase.priority ?? 'PRIORITY' }}</span>
@@ -191,7 +192,7 @@ interface ReviewCaseItem {
     .review-case-item:active:not(:disabled){transform:translateX(2px) scale(.97)}
     .review-case-item:disabled{cursor:not-allowed;opacity:.45}.review-case-item.is-error{color:var(--color-red)}.review-case-item.is-success{color:var(--color-green)}
     .review-case-item.is-active{background:var(--color-accent-bg);color:var(--color-accent);transform:translateX(2px)}
-    .review-case-title{min-width:0;font-weight:500;line-height:1.35}.review-case-meta,.shortcut-group,.review-action-buttons{display:flex;align-items:center;gap:var(--space-xs);flex-wrap:wrap}
+    .review-case-title{min-width:0;font-weight:500;line-height:1.35}.review-case-story{min-width:0;overflow:hidden;color:var(--color-text-2);font-family:var(--font-mono);font-size:.72rem;line-height:1.35;text-overflow:ellipsis;white-space:nowrap}.review-case-meta,.shortcut-group,.review-action-buttons{display:flex;align-items:center;gap:var(--space-xs);flex-wrap:wrap}
     .case-meta-badge,.confidence-badge{display:inline-flex;align-items:center;min-height:1.65rem;padding:0 .55rem;border:var(--b);border-radius:var(--radius-sm);background:var(--glass-1);color:var(--color-text-2);font-family:var(--font-mono);font-size:.72rem;font-weight:500}
     .review-detail-panel{position:relative;display:grid;align-content:start;min-width:0;min-height:34rem;background:var(--glass-1)}
     .review-detail-main{display:grid;gap:var(--space-lg);padding:var(--space-xl);padding-right:8rem}.review-detail-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--space-base)}

@@ -105,6 +105,7 @@ describe('ReviewBoardPageComponent', () => {
     expect(items.length).toBe(3);
     expect(items[0].classList).toContain('is-active');
     expect(items[0].textContent).toContain('Checkout happy path');
+    expect(items[0].querySelector('.review-case-story')?.textContent?.trim()).toBe('Checkout coverage story');
     expect(detail.textContent).toContain('Checkout happy path');
     expect(detail.querySelector('.quality-gauge')).not.toBeNull();
   });
