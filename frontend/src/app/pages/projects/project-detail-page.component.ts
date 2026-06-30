@@ -247,6 +247,7 @@ export class ProjectDetailPageComponent implements OnInit {
 
   readonly storyTypes = STORY_TYPES;
   readonly project = signal<Project | null>(null);
+  readonly pageTitle = computed(() => this.project()?.name ?? 'Project');
   readonly stories = signal<Story[]>([]);
   readonly testSuites = signal<TestSuiteSummary[]>([]);
   readonly recentActivity = signal<AuditEvent[]>([]);
