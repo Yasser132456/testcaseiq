@@ -119,6 +119,21 @@ describe('StoryDetailPageComponent tabs and review workflow', () => {
     expect(statusButton.textContent).toContain('Approved');
   });
 
+  it('shows unsaved edit state only while expanded dirty edits are pending', () => {
+    fixture.componentInstance.editFormExpanded.set(true);
+    fixture.componentInstance.form.controls.title.setValue('Checkout story revised');
+    fixture.componentInstance.form.markAsDirty();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.unsaved-badge')?.textContent).toContain('Unsaved');
+
+    fixture.componentInstance.saveStory();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.form.dirty).toBeFalse();
+    expect(fixture.nativeElement.querySelector('.unsaved-badge')).toBeNull();
+  });
+
   it('approves the selected pending review case only when the review panel receives the shortcut', () => {
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', bubbles: true }));
     fixture.detectChanges();

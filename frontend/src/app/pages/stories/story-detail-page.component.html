@@ -103,7 +103,12 @@
           @if (canEdit()) {
             <section class="panel form-panel wide">
               <div class="section-header">
-                <h3>Edit story</h3>
+                <div class="edit-section-title">
+                  <h3>Edit story</h3>
+                  @if (form.dirty && editFormExpanded()) {
+                    <span class="unsaved-badge">Unsaved</span>
+                  }
+                </div>
                 <button class="button secondary toggle-btn" type="button" (click)="toggleEditForm()" [attr.aria-expanded]="editFormExpanded()">
                   {{ editFormExpanded() ? 'Close' : 'Edit' }}
                 </button>

@@ -219,6 +219,27 @@ a.workflow-step:focus-visible {
   gap: var(--space-base);
 }
 
+.edit-section-title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  min-width: 0;
+}
+
+.unsaved-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.65rem;
+  padding: 0 var(--space-sm);
+  border: 1px solid var(--color-amber-border);
+  border-radius: 9999px;
+  background: var(--color-amber-bg);
+  color: var(--color-amber);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
 .operation-progress {
   display: grid;
   gap: var(--space-xs);
