@@ -1,5 +1,6 @@
 import { DatePipe } from '@angular/common';
-import { Component, inject, input, output, signal } from '@angular/core';
+import { Component, computed, inject, input, output, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { LucideClipboardList } from '@lucide/angular';
 import { Priority, RiskLevel } from '../../core/models/analysis.model';
 import {
@@ -26,7 +27,7 @@ interface ReviewDraft {
 @Component({
   selector: 'app-story-test-cases-tab',
   standalone: true,
-  imports: [DatePipe, StateMessageComponent, EmptyStateComponent, SkeletonComponent],
+  imports: [DatePipe, RouterLink, StateMessageComponent, EmptyStateComponent, SkeletonComponent],
   templateUrl: './story-test-cases-tab.component.html'
 })
 export class StoryTestCasesTabComponent {
@@ -53,6 +54,11 @@ export class StoryTestCasesTabComponent {
   readonly reviewEvents = signal<ReviewEvent[]>([]);
   readonly reviewHistoryLoading = signal(false);
   readonly reviewHistoryError = signal('');
+  readonly allReviewed = computed(() => (
+    this.hasTestSuites() && this.testSuites().every((suite) => (
+      suite.testCases.every((testCase) => testCase.reviewStatus !== 'NEEDS_REVIEW')
+    ))
+  ));
 
   hasTestSuites(): boolean {
     return this.testSuites().some((suite) => suite.testCases.length > 0);

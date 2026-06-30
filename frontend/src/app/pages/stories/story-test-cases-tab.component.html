@@ -251,6 +251,14 @@
           }
         </article>
       }
+      @if (allReviewed()) {
+        <div class="export-panel">
+          <div class="export-copy">
+            <h4>All test cases reviewed &mdash; suite is ready for export</h4>
+          </div>
+          <a class="button approve-button" routerLink="/export">Export &rarr;</a>
+        </div>
+      }
     </div>
   }
 </section>

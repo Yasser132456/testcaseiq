@@ -83,6 +83,26 @@ describe('ExportPageComponent', () => {
     expect(toastService.show).toHaveBeenCalledWith('Playwright export download started.', 'success');
   });
 
+  it('shows the last export success state and deselects the suite after download starts', () => {
+    exportButtonByText('CSV').click();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.lastExportedFormat()).toBe('csv');
+    expect(fixture.componentInstance.lastExportedSuiteName()).toBe('Checkout export suite');
+    expect(fixture.componentInstance.selectedSuiteId()).toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Checkout export suite exported as CSV');
+    expect(fixture.nativeElement.textContent).toContain('Export another');
+    expect(fixture.nativeElement.textContent).toContain('Back to Review Board');
+
+    const resetLink = Array.from(fixture.nativeElement.querySelectorAll('.export-success-actions button'))
+      .find((button) => (button as HTMLButtonElement).textContent?.includes('Export another')) as HTMLButtonElement;
+    resetLink.click();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.lastExportedFormat()).toBeNull();
+    expect(fixture.nativeElement.textContent).not.toContain('Checkout export suite exported as CSV');
+  });
+
   it('shows an error toast when an export fails', () => {
     exportService.exportApprovedTestCases.and.returnValue(throwError(() => new Error('backend unavailable')));
 
@@ -98,7 +118,7 @@ describe('ExportPageComponent', () => {
 
   function exportButtonByText(text: string): HTMLButtonElement {
     const button = Array.from(fixture.nativeElement.querySelectorAll('.export-card'))
-      .find((candidate) => (candidate as HTMLButtonElement).textContent?.includes(text)) as HTMLButtonElement | undefined;
+      .find((candidate) => (candidate as HTMLButtonElement).querySelector('strong')?.textContent?.trim() === text) as HTMLButtonElement | undefined;
     if (!button) {
       throw new Error(`Export button not found: ${text}`);
     }
