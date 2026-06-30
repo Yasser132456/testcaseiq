@@ -27,6 +27,8 @@ interface ProjectContext { projectId: string; name: string; storyCount: number; 
 interface ProjectContextSource { projectContext: Signal<ProjectContext | null>; }
 interface PageTitleSource { pageTitle: Signal<string>; }
 
+const PROJECT_CONTEXT_STORAGE_KEY = 'tciq_project_ctx';
+
 @Component({
   selector: 'app-layout',
   standalone: true,
@@ -441,6 +443,7 @@ export class AppLayoutComponent implements AfterViewInit, OnDestroy {
         this.breadcrumbs.set(this.buildBreadcrumbs(this.activePage()?.pageTitle()));
         if (!this.isProjectScopedUrl()) {
           this.projectContext.set(null);
+          sessionStorage.removeItem(PROJECT_CONTEXT_STORAGE_KEY);
         }
       });
     this.breadcrumbs.set(this.buildBreadcrumbs());
@@ -529,7 +532,13 @@ export class AppLayoutComponent implements AfterViewInit, OnDestroy {
     this.activePage.set(this.hasPageTitle(component) ? component : null);
     if (this.hasProjectContext(component)) {
       this.projectContextEffect = effect(
-        () => this.projectContext.set(component.projectContext()),
+        () => {
+          const context = component.projectContext();
+          this.projectContext.set(context);
+          if (context) {
+            sessionStorage.setItem(PROJECT_CONTEXT_STORAGE_KEY, JSON.stringify(context));
+          }
+        },
         { injector: this.injector }
       );
       return;
@@ -609,8 +618,15 @@ export class AppLayoutComponent implements AfterViewInit, OnDestroy {
 
   private contextFromNavigationState(): ProjectContext | null {
     const context = window.history.state?.projectContext as ProjectContext | undefined;
-    if (!context || !this.isProjectScopedUrl()) return null;
-    return context;
+    if (context) return context;
+    if (!this.isProjectScopedUrl()) return null;
+    const storedContext = sessionStorage.getItem(PROJECT_CONTEXT_STORAGE_KEY);
+    if (!storedContext) return null;
+    try {
+      return JSON.parse(storedContext) as ProjectContext;
+    } catch {
+      return null;
+    }
   }
 
   private isProjectScopedUrl(): boolean {
