@@ -30,6 +30,7 @@ type StoryDisplayStatus = 'DRAFT' | 'ANALYZED' | 'TESTS_GENERATED' | 'ALL_REVIEW
         <app-skeleton [rows]="4" [cols]="3" />
       } @else if (error()) {
         <app-state-message title="Project unavailable" [message]="error()" tone="error" />
+        <button class="button secondary" type="button" (click)="loadProject()">Try again</button>
       } @else if (project()) {
         <div class="detail-hero">
           <div>
@@ -339,7 +340,9 @@ export class ProjectDetailPageComponent implements OnInit {
     return value.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase());
   }
 
-  private loadProject(): void {
+  loadProject(): void {
+    this.loading.set(true);
+    this.error.set('');
     this.projectService.get(this.projectId).subscribe({
       next: (project) => {
         this.project.set(project);

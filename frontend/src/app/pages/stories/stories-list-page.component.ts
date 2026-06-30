@@ -105,7 +105,7 @@ export class StoriesListPageComponent implements OnInit {
     return value.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase());
   }
 
-  private load(): void {
+  load(): void {
     this.loading.set(true);
     this.loadError.set('');
     this.projectService.list().pipe(

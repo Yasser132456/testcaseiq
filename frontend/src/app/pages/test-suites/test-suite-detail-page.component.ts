@@ -19,6 +19,7 @@ import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
         <app-skeleton [rows]="4" [cols]="3" />
       } @else if (loadError()) {
         <app-state-message title="Could not load test suite" [message]="loadError()" tone="error" />
+        <button class="button secondary" type="button" (click)="load()">Try again</button>
       } @else if (suite()) {
         <div class="section-header">
           <div>
@@ -185,10 +186,11 @@ export class TestSuiteDetailPageComponent implements OnInit {
   readonly saveError = signal('');
 
   editDescription = '';
+  private suiteId = '';
 
   ngOnInit(): void {
-    const id = this.route.snapshot.paramMap.get('id');
-    if (id) this.load(id);
+    this.suiteId = this.route.snapshot.paramMap.get('id') ?? '';
+    this.load();
   }
 
   canEdit(): boolean {
@@ -214,7 +216,7 @@ export class TestSuiteDetailPageComponent implements OnInit {
     this.saveError.set('');
     this.testSuiteService.updateSuite(id, { description: this.editDescription }).subscribe({
       next: () => {
-        this.load(id);
+        this.load();
         this.editing.set(false);
         this.saving.set(false);
       },
@@ -249,10 +251,11 @@ export class TestSuiteDetailPageComponent implements OnInit {
     return 'var(--text-muted)';
   }
 
-  private load(id: string): void {
+  load(): void {
+    if (!this.suiteId) return;
     this.loading.set(true);
     this.loadError.set('');
-    this.testSuiteService.getSuite(id).subscribe({
+    this.testSuiteService.getSuite(this.suiteId).subscribe({
       next: (s) => {
         this.suite.set(s);
         this.loading.set(false);

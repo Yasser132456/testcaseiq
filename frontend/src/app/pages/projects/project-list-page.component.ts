@@ -86,6 +86,7 @@ const TILT_OPTIONS: TiltOptions = { max: 4, speed: 400, glare: true, 'max-glare'
             <app-skeleton [rows]="5" [cols]="3" />
           } @else if (loadError()) {
             <app-state-message title="Projects unavailable" [message]="loadError()" tone="error" />
+            <button class="button secondary" type="button" (click)="loadProjects()">Try again</button>
           } @else if (projects().length === 0) {
             <app-empty-state
               [icon]="LucideFolderKanban"
@@ -215,8 +216,9 @@ export class ProjectListPageComponent implements OnInit, AfterViewInit, OnDestro
     return `${Math.floor(diffMs / day)}d ago`;
   }
 
-  private loadProjects(): void {
+  loadProjects(): void {
     this.loading.set(true);
+    this.loadError.set('');
     this.projectService.list().subscribe({
       next: (projects) => {
         this.projects.set(projects);
