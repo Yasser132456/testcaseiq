@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/auth/auth.guard';
+import { unsavedChangesGuard } from './core/guards/unsaved-changes.guard';
 import { AppLayoutComponent } from './layout/app-layout.component';
 import { AdminUsersPageComponent } from './pages/admin/admin-users-page.component';
 import { AuditLogPageComponent } from './pages/admin/audit-log-page.component';
@@ -34,7 +35,7 @@ export const routes: Routes = [
           .then((m) => m.StoriesListPageComponent),
         data: { requiresAuth: true }
       },
-      { path: 'stories/:storyId', component: StoryDetailPageComponent, data: { requiresAuth: true } },
+      { path: 'stories/:storyId', component: StoryDetailPageComponent, canDeactivate: [unsavedChangesGuard], data: { requiresAuth: true } },
       { path: 'test-suites', component: TestSuitesListPageComponent, data: { requiresAuth: true } },
       { path: 'test-suites/:id', component: TestSuiteDetailPageComponent, data: { requiresAuth: true } },
       { path: 'review-board', component: ReviewBoardPageComponent, data: { requiresAuth: true } },

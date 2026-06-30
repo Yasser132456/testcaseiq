@@ -163,6 +163,7 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
     this.storyService.update(this.storyId, this.form.getRawValue()).subscribe({
       next: (story) => {
         this.story.set(story);
+        this.form.markAsPristine();
         this.saveMessage.set('The story details were updated.');
         this.toastService.show('The story details were updated.', 'success');
         this.saving.set(false);
