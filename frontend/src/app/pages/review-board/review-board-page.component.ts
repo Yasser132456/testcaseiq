@@ -2,7 +2,7 @@ import { DatePipe } from '@angular/common';
 import { Component, ElementRef, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { gsap } from 'gsap';
-import { LucideCheckSquare2 } from '@lucide/angular';
+import { LucideCheckSquare2, LucideDynamicIcon } from '@lucide/angular';
 import { Subscription, forkJoin, fromEvent } from 'rxjs';
 import { TestCaseSummary, TestSuiteDetail, TestSuitePage } from '../../core/models/test-suite.model';
 import { ReviewService } from '../../core/services/review.service';
@@ -25,6 +25,7 @@ interface ReviewCaseItem {
   imports: [
     DatePipe,
     RouterLink,
+    LucideDynamicIcon,
     BadgeComponent,
     ButtonComponent,
     StateMessageComponent,
@@ -43,11 +44,24 @@ interface ReviewCaseItem {
         <app-state-message title="Could not load review board" [message]="loadError()" tone="error" />
       } @else if (reviewCases().length === 0) {
         <div class="panel">
-          <app-empty-state
-            [icon]="LucideCheckSquare2"
-            title="Queue cleared"
-            message="No test cases are waiting in the review queue. Generate new suites from stories to continue coverage."
-          />
+          @if (sessionReviewCount() > 0) {
+            <div class="session-complete-state">
+              <span class="session-complete-icon" aria-hidden="true">
+                <svg [lucideIcon]="LucideCheckSquare2" [size]="24" [strokeWidth]="1.8"></svg>
+              </span>
+              <div>
+                <h3>All done — {{ sessionReviewCount() }} cases reviewed this session</h3>
+                <p>Suite is ready for export</p>
+              </div>
+              <a class="button approve-button" routerLink="/export">Go to Export Hub</a>
+            </div>
+          } @else {
+            <app-empty-state
+              [icon]="LucideCheckSquare2"
+              title="Queue cleared"
+              message="No test cases are waiting in the review queue. Generate new suites from stories to continue coverage."
+            />
+          }
         </div>
       } @else {
         <div class="review-master-detail">
@@ -204,6 +218,10 @@ interface ReviewCaseItem {
     .quality-gauge text{fill:var(--color-text);font-family:var(--font-mono);font-size:1rem;font-weight:700;text-anchor:middle}.confidence-badge{min-height:auto;padding:.2rem .45rem;font-size:.7rem}
     .review-sticky-actions{position:sticky;bottom:0;display:flex;align-items:center;justify-content:space-between;gap:var(--space-base);padding:var(--space-md) var(--space-lg);border-top:var(--b);background:var(--glass-2);z-index:var(--z-sticky)}
     .shortcut-group{color:var(--color-text-2);font-size:.8rem}
+    .session-complete-state{display:grid;justify-items:center;gap:var(--space-base);padding:var(--space-xl);text-align:center}
+    .session-complete-icon{display:grid;width:3rem;height:3rem;place-items:center;border:1px solid var(--color-green-border);border-radius:8px;background:var(--color-green-bg);color:var(--color-green)}
+    .session-complete-state h3{margin:0;color:var(--color-green);font-size:1.25rem}
+    .session-complete-state p{margin:.35rem 0 0;color:var(--color-text-2)}
     @media (max-width:900px){.review-master-detail{grid-template-columns:1fr}.review-case-list{max-height:22rem;border-right:0;border-bottom:var(--b)}.review-detail-main{padding-right:var(--space-xl)}.review-detail-grid{grid-template-columns:1fr}.quality-readout{position:static;justify-self:start;padding:var(--space-lg) var(--space-lg) 0}.review-sticky-actions{align-items:flex-start;flex-direction:column}}
   `]
 })
@@ -229,6 +247,7 @@ export class ReviewBoardPageComponent implements OnInit, OnDestroy {
   readonly reviewMessage = signal('');
   readonly reviewError = signal('');
   readonly liveAnnouncement = signal('');
+  readonly sessionReviewCount = signal(0);
 
   readonly reviewCases = computed<ReviewCaseItem[]>(() => this.suites().flatMap((suite) => (
     suite.testCases.map((testCase) => ({ suite, testCase }))
@@ -376,19 +395,11 @@ export class ReviewBoardPageComponent implements OnInit, OnDestroy {
       next: (updated) => {
         this.suites.update((suites) => suites.map((suite) => ({
           ...suite,
-          testCases: suite.testCases.map((testCase) => (
-            testCase.id === updated.id
-              ? {
-                  ...testCase,
-                  title: updated.title,
-                  type: updated.type,
-                  priority: updated.priority,
-                  reviewStatus: updated.reviewStatus,
-                  automationCandidate: updated.automationCandidate
-                }
-              : testCase
-          ))
+          testCases: suite.testCases
+            .filter((testCase) => testCase.id !== updated.id)
+            .map((testCase) => ({ ...testCase }))
         })));
+        this.sessionReviewCount.update((count) => count + 1);
         const message = status === 'APPROVED' ? 'Test case approved.' : 'Test case rejected.';
         this.reviewMessage.set(message);
         this.liveAnnouncement.set(status === 'APPROVED' ? 'Approved' : 'Rejected');

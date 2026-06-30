@@ -7,10 +7,11 @@ import { ReviewBoardPageComponent } from './review-board-page.component';
 
 describe('ReviewBoardPageComponent', () => {
   let fixture: ComponentFixture<ReviewBoardPageComponent>;
+  let testSuiteService: jasmine.SpyObj<TestSuiteService>;
   let reviewService: jasmine.SpyObj<ReviewService>;
 
   beforeEach(async () => {
-    const testSuiteService = jasmine.createSpyObj<TestSuiteService>('TestSuiteService', ['listSuites', 'getSuite']);
+    testSuiteService = jasmine.createSpyObj<TestSuiteService>('TestSuiteService', ['listSuites', 'getSuite']);
     reviewService = jasmine.createSpyObj<ReviewService>('ReviewService', ['updateReviewStatus']);
 
     testSuiteService.listSuites.and.returnValue(of({
@@ -139,6 +140,48 @@ describe('ReviewBoardPageComponent', () => {
       status: 'APPROVED',
       comment: null
     });
+  });
+
+  it('shows a session-complete empty state after the last review action succeeds', () => {
+    testSuiteService.listSuites.and.returnValue(of({
+      content: [suiteSummary('suite-1', 'Checkout coverage')],
+      totalElements: 1,
+      totalPages: 1,
+      number: 0,
+      size: 20,
+      first: true,
+      last: true
+    }));
+    testSuiteService.getSuite.and.returnValue(of({
+      ...suiteSummary('suite-1', 'Checkout coverage'),
+      explainabilitySummary: null,
+      testCases: [
+        {
+          id: 'tc-1',
+          title: 'Checkout happy path',
+          type: 'FUNCTIONAL',
+          priority: 'HIGH',
+          reviewStatus: 'NEEDS_REVIEW',
+          automationCandidate: true,
+          qualityScore: 86,
+          confidenceLevel: 'HIGH'
+        }
+      ]
+    }));
+
+    const singleCaseFixture = TestBed.createComponent(ReviewBoardPageComponent);
+    singleCaseFixture.detectChanges();
+
+    const approveButton = Array.from(singleCaseFixture.nativeElement.querySelectorAll('.review-sticky-actions button'))
+      .find((button) => (button as HTMLButtonElement).textContent?.includes('Approve')) as HTMLButtonElement;
+    approveButton.click();
+    singleCaseFixture.detectChanges();
+
+    expect(singleCaseFixture.componentInstance.sessionReviewCount()).toBe(1);
+    expect(singleCaseFixture.nativeElement.textContent).toContain('All done');
+    expect(singleCaseFixture.nativeElement.textContent).toContain('1 cases reviewed this session');
+    expect(singleCaseFixture.nativeElement.textContent).toContain('Suite is ready for export');
+    expect(singleCaseFixture.nativeElement.textContent).toContain('Go to Export Hub');
   });
 
   function testCaseItems(): HTMLButtonElement[] {

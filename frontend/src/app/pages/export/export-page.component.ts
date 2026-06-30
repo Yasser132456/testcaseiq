@@ -149,6 +149,23 @@ const TILT_OPTIONS: TiltOptions = { max: 4, speed: 400, glare: true, 'max-glare'
             }
           </div>
         </section>
+
+        @if (lastExportedFormat()) {
+          <section class="export-success-panel" aria-live="polite">
+            <div>
+              <strong>
+                {{ lastExportedSuiteName() }} exported as {{ exportLabel(lastExportedFormat()!) }}
+              </strong>
+              @if (lastExportedAt()) {
+                <span>&mdash; {{ lastExportedAt() | date:'medium' }}</span>
+              }
+            </div>
+            <div class="export-success-actions">
+              <button class="success-link" type="button" (click)="resetLastExport()">Export another</button>
+              <a class="success-link" routerLink="/review-board">&larr; Back to Review Board</a>
+            </div>
+          </section>
+        }
       }
     </section>
   `,
@@ -263,6 +280,53 @@ const TILT_OPTIONS: TiltOptions = { max: 4, speed: 400, glare: true, 'max-glare'
       line-height: 1.5;
     }
 
+    .export-success-panel {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 1rem 1.1rem;
+      border: 1px solid var(--color-green-border);
+      border-left: 4px solid var(--color-green);
+      border-radius: 8px;
+      background: var(--color-green-bg);
+      color: var(--color-text);
+      font-size: 0.9rem;
+    }
+
+    .export-success-panel strong {
+      color: var(--color-green);
+      font-weight: 700;
+    }
+
+    .export-success-panel span {
+      color: var(--color-text-2);
+      margin-left: 0.35rem;
+    }
+
+    .export-success-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      flex: 0 0 auto;
+    }
+
+    .success-link {
+      border: 0;
+      background: transparent;
+      color: var(--color-green);
+      cursor: pointer;
+      font: inherit;
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .success-link:hover {
+      text-decoration: underline;
+    }
+
     @media (max-width: 900px) {
       .hub-export-panel {
         grid-template-columns: 1fr;
@@ -270,6 +334,11 @@ const TILT_OPTIONS: TiltOptions = { max: 4, speed: 400, glare: true, 'max-glare'
 
       .pagination-bar {
         flex-wrap: wrap;
+      }
+
+      .export-success-panel {
+        align-items: flex-start;
+        flex-direction: column;
       }
     }
   `]
@@ -289,6 +358,9 @@ export class ExportPageComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly currentPage = signal(0);
   readonly selectedSuiteId = signal<string | null>(null);
   readonly exportingFormat = signal<ExportFormat | null>(null);
+  readonly lastExportedFormat = signal<ExportFormat | null>(null);
+  readonly lastExportedSuiteName = signal<string | null>(null);
+  readonly lastExportedAt = signal<Date | null>(null);
 
   readonly approvedSuites = computed(() => this.page()?.content ?? []);
   readonly selectedSuite = computed(() => (
@@ -360,6 +432,12 @@ export class ExportPageComponent implements OnInit, AfterViewInit, OnDestroy {
     this.load();
   }
 
+  resetLastExport(): void {
+    this.lastExportedFormat.set(null);
+    this.lastExportedSuiteName.set(null);
+    this.lastExportedAt.set(null);
+  }
+
   exportSelectedSuite(format: ExportFormat): void {
     const suite = this.selectedSuite();
     if (!suite || this.isExporting()) {
@@ -378,6 +456,10 @@ export class ExportPageComponent implements OnInit, AfterViewInit, OnDestroy {
         const fallbackName = this.fallbackExportFilename(suite.storyId, format);
         const filename = this.exportFilename(response.headers.get('Content-Disposition'), fallbackName);
         this.downloadBlob(blob, filename);
+        this.lastExportedFormat.set(format);
+        this.lastExportedSuiteName.set(suite.name);
+        this.lastExportedAt.set(new Date());
+        this.selectedSuiteId.set(null);
         this.toastService.show(`${this.exportLabel(format)} export download started.`, 'success');
         this.exportingFormat.set(null);
       },
@@ -446,7 +528,7 @@ export class ExportPageComponent implements OnInit, AfterViewInit, OnDestroy {
     return plainMatch?.[1]?.trim() || fallbackName;
   }
 
-  private exportLabel(format: ExportFormat): string {
+  exportLabel(format: ExportFormat): string {
     return this.exportOptions.find((option) => option.format === format)?.label ?? format.toUpperCase();
   }
 
