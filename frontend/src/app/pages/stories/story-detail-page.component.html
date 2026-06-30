@@ -174,6 +174,12 @@
                   <button class="button analysis-button" type="button" (click)="analyzeStory()" [disabled]="analyzing()">
                     {{ analyzing() ? 'Analyzing...' : 'Analyze Story' }}
                   </button>
+                  @if (analyzing()) {
+                    <div class="operation-progress" aria-live="polite">
+                      <div class="shimmer-bar" aria-hidden="true"></div>
+                      <p class="muted-text">Analyzing story... {{ analyzeElapsed() }}s — extracting requirements and coverage plan.</p>
+                    </div>
+                  }
                 }
               </div>
             } @else if (analysisExpanded()) {
@@ -322,6 +328,12 @@
             (generateRequested)="generateTestCases()"
             (testCaseUpdated)="onTestCaseUpdated($event)"
           />
+          @if (generatingTests()) {
+            <div class="operation-progress" aria-live="polite">
+              <div class="shimmer-bar" aria-hidden="true"></div>
+              <p class="muted-text">Generating test suite... {{ generateElapsed() }}s — this usually takes 10–20 seconds.</p>
+            </div>
+          }
         </div>
       }
 

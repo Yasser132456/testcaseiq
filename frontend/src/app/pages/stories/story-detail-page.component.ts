@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { AfterViewInit, Component, ElementRef, OnDestroy, computed, inject, signal } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, WritableSignal, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { LucideCheck, LucideDynamicIcon } from '@lucide/angular';
@@ -61,6 +61,8 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
   private storyId = '';
   private tiltElements: HTMLVanillaTiltElement[] = [];
   private stickyObserver?: IntersectionObserver;
+  private analyzeTimer: ReturnType<typeof setInterval> | null = null;
+  private generateTimer: ReturnType<typeof setInterval> | null = null;
 
   readonly LucideCheck = LucideCheck;
   readonly storyTypes = STORY_TYPES;
@@ -85,6 +87,8 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
   readonly testSuitesLoading = signal(false);
   readonly analyzing = signal(false);
   readonly generatingTests = signal(false);
+  readonly analyzeElapsed = signal(0);
+  readonly generateElapsed = signal(0);
   readonly saving = signal(false);
   readonly statusSaving = signal(false);
   readonly statusMenuOpen = signal(false);
@@ -129,6 +133,8 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.analyzeTimer = this.stopTimer(this.analyzeTimer);
+    this.generateTimer = this.stopTimer(this.generateTimer);
     this.stickyObserver?.disconnect();
     this.destroyTilt();
   }
@@ -190,10 +196,12 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
 
   analyzeStory(): void {
     if (!this.storyId) return;
+    this.analyzeTimer = this.startTimer(this.analyzeElapsed);
     this.analyzing.set(true);
     this.analysisError.set('');
     this.analysisService.analyzeStory(this.storyId).subscribe({
       next: (analysis) => {
+        this.analyzeTimer = this.stopTimer(this.analyzeTimer);
         this.analysis.set(analysis);
         this.updateStoryStatus('ANALYZED');
         this.analyzing.set(false);
@@ -201,6 +209,7 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
         queueMicrotask(() => this.initTilt());
       },
       error: () => {
+        this.analyzeTimer = this.stopTimer(this.analyzeTimer);
         this.analysisError.set('The story could not be analyzed. Confirm the backend is running and try again.');
         this.analyzing.set(false);
       }
@@ -209,10 +218,12 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
 
   generateTestCases(): void {
     if (!this.storyId || this.generatingTests()) return;
+    this.generateTimer = this.startTimer(this.generateElapsed);
     this.generatingTests.set(true);
     this.testGenerationError.set('');
     this.testGenerationService.generateTestCases(this.storyId).subscribe({
       next: (suite) => {
+        this.generateTimer = this.stopTimer(this.generateTimer);
         this.testSuites.set([suite, ...this.testSuites()]);
         this.updateStoryStatus('TESTS_GENERATED');
         this.generatingTests.set(false);
@@ -220,6 +231,7 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
         this.animateWorkflowStep();
       },
       error: () => {
+        this.generateTimer = this.stopTimer(this.generateTimer);
         this.testGenerationError.set('The test cases could not be generated. Confirm the backend is running and try again.');
         this.generatingTests.set(false);
       }
@@ -316,6 +328,18 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
     if (!currentStory) return;
     this.story.set({ ...currentStory, status });
     this.form.patchValue({ status });
+  }
+
+  private startTimer(elapsed: WritableSignal<number>): ReturnType<typeof setInterval> {
+    elapsed.set(0);
+    return setInterval(() => elapsed.update((value) => value + 1), 1000);
+  }
+
+  private stopTimer(timer: ReturnType<typeof setInterval> | null): null {
+    if (timer) {
+      clearInterval(timer);
+    }
+    return null;
   }
 
   private displayStoryStatus(story: Story): StoryDisplayStatus {
