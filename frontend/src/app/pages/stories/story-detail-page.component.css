@@ -194,6 +194,25 @@
   font-weight: 600;
 }
 
+a.workflow-step {
+  cursor: pointer;
+  text-decoration: none;
+}
+
+a.workflow-step .workflow-circle {
+  transition: box-shadow var(--dur) var(--ease), transform var(--dur) var(--ease);
+}
+
+a.workflow-step:hover .workflow-circle,
+a.workflow-step:focus-visible .workflow-circle {
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--step-color) 28%, transparent);
+  transform: translateY(-1px);
+}
+
+a.workflow-step:focus-visible {
+  outline: none;
+}
+
 .story-summary-panel,
 .analysis-panel {
   display: grid;
