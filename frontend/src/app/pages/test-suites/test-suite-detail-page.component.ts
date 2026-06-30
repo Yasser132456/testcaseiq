@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TestCaseSummary, TestSuiteDetail } from '../../core/models/test-suite.model';
@@ -177,6 +177,7 @@ export class TestSuiteDetailPageComponent implements OnInit {
   readonly authService = inject(AuthService);
 
   readonly suite = signal<TestSuiteDetail | null>(null);
+  readonly pageTitle = computed(() => this.suite()?.name ?? 'Test Suite');
   readonly loading = signal(true);
   readonly loadError = signal('');
   readonly editing = signal(false);

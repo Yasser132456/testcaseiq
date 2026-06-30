@@ -76,6 +76,7 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
   ];
 
   readonly story = signal<Story | null>(null);
+  readonly pageTitle = computed(() => this.story()?.title ?? 'Story');
   readonly analysis = signal<StoryAnalysisResult | null>(null);
   readonly testSuites = signal<GeneratedTestSuiteResult[]>([]);
   readonly activeTab = signal<StoryDetailTab>('story');

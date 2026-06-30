@@ -25,6 +25,7 @@ import { KeyboardShortcutsComponent } from '../shared/components/keyboard-shortc
 interface Crumb { label: string; path: string; }
 interface ProjectContext { projectId: string; name: string; storyCount: number; coveragePercent: number; }
 interface ProjectContextSource { projectContext: Signal<ProjectContext | null>; }
+interface PageTitleSource { pageTitle: Signal<string>; }
 
 @Component({
   selector: 'app-layout',
@@ -399,6 +400,7 @@ export class AppLayoutComponent implements AfterViewInit, OnDestroy {
   readonly accessRestricted = signal(false);
   readonly breadcrumbs = signal<Crumb[]>([]);
   readonly projectContext = signal<ProjectContext | null>(null);
+  readonly activePage = signal<PageTitleSource | null>(null);
   readonly searchOpen = signal(false);
   readonly mobileNavOpen = signal(false);
   private projectContextEffect: EffectRef | null = null;
@@ -426,13 +428,17 @@ export class AppLayoutComponent implements AfterViewInit, OnDestroy {
         }
       });
     });
+    effect(() => {
+      const entityName = this.activePage()?.pageTitle();
+      this.breadcrumbs.set(this.buildBreadcrumbs(entityName));
+    });
     inject(ActivatedRoute).queryParamMap.subscribe(params => {
       this.accessRestricted.set(params.get('access') === 'restricted');
     });
     this.router.events.pipe(filter(e => e instanceof NavigationEnd))
       .subscribe(() => {
         this.closeMobileNav();
-        this.breadcrumbs.set(this.buildBreadcrumbs());
+        this.breadcrumbs.set(this.buildBreadcrumbs(this.activePage()?.pageTitle()));
         if (!this.isProjectScopedUrl()) {
           this.projectContext.set(null);
         }
@@ -520,6 +526,7 @@ export class AppLayoutComponent implements AfterViewInit, OnDestroy {
   onRouteActivate(component: unknown): void {
     this.projectContextEffect?.destroy();
     this.projectContextEffect = null;
+    this.activePage.set(this.hasPageTitle(component) ? component : null);
     if (this.hasProjectContext(component)) {
       this.projectContextEffect = effect(
         () => this.projectContext.set(component.projectContext()),
@@ -560,7 +567,7 @@ export class AppLayoutComponent implements AfterViewInit, OnDestroy {
     void this.router.navigateByUrl('/login');
   }
 
-  private buildBreadcrumbs(): Crumb[] {
+  private buildBreadcrumbs(entityName?: string): Crumb[] {
     const url = this.router.url.split('?')[0];
     if (!url || url === '/') return [{ label: 'Dashboard', path: '/' }];
     if (url === '/dashboard') return [{ label: 'Dashboard', path: '/dashboard' }];
@@ -572,11 +579,25 @@ export class AppLayoutComponent implements AfterViewInit, OnDestroy {
     const isId = (s: string) => /^[\da-f-]{8,}$|^\d+$/.test(s);
     const crumbs: Crumb[] = [{ label: 'Dashboard', path: '/' }];
     let path = '';
-    for (const seg of url.split('/').filter(Boolean)) {
+    const segments = url.split('/').filter(Boolean);
+    for (const [index, seg] of segments.entries()) {
       path += `/${seg}`;
-      if (!isId(seg)) crumbs.push({ label: labelMap[seg] ?? seg, path });
+      if (isId(seg)) {
+        if (index === segments.length - 1 && entityName) {
+          crumbs.push({ label: entityName, path });
+        }
+        continue;
+      }
+      crumbs.push({ label: labelMap[seg] ?? seg, path });
     }
     return crumbs;
+  }
+
+  private hasPageTitle(component: unknown): component is PageTitleSource {
+    return typeof component === 'object'
+      && component !== null
+      && 'pageTitle' in component
+      && typeof (component as PageTitleSource).pageTitle === 'function';
   }
 
   private hasProjectContext(component: unknown): component is ProjectContextSource {
