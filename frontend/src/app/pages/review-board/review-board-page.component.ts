@@ -42,6 +42,7 @@ interface ReviewCaseItem {
         <app-skeleton [rows]="5" [cols]="5" />
       } @else if (loadError()) {
         <app-state-message title="Could not load review board" [message]="loadError()" tone="error" />
+        <button class="button secondary" type="button" (click)="load()">Try again</button>
       } @else if (reviewCases().length === 0) {
         <div class="panel">
           @if (sessionReviewCount() > 0) {
@@ -342,7 +343,7 @@ export class ReviewBoardPageComponent implements OnInit, OnDestroy {
     }
   }
 
-  private load(): void {
+  load(): void {
     this.loading.set(true);
     this.loadError.set('');
     this.reviewMessage.set('');

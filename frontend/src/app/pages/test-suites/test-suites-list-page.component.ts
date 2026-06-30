@@ -39,6 +39,7 @@ import { TableStaggerDirective } from '../../shared/directives/table-stagger.dir
         <app-skeleton [rows]="5" [cols]="6" />
       } @else if (loadError()) {
         <app-state-message title="Could not load test suites" [message]="loadError()" tone="error" />
+        <button class="button secondary" type="button" (click)="load()">Try again</button>
       } @else if (page()?.content?.length === 0) {
         <div class="panel">
           <app-empty-state
@@ -180,7 +181,7 @@ export class TestSuitesListPageComponent implements OnInit {
     return filters;
   }
 
-  private load(): void {
+  load(): void {
     this.loading.set(true);
     this.loadError.set('');
     this.testSuiteService.listSuites(this.buildFilters(), this.currentPage()).subscribe({

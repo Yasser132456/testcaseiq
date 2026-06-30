@@ -3,6 +3,7 @@
     <app-skeleton [rows]="5" [cols]="3" />
   } @else if (error()) {
     <app-state-message title="Story unavailable" [message]="error()" tone="error" />
+    <button class="button secondary" type="button" (click)="loadStory()">Try again</button>
   } @else if (story()) {
     <header class="story-sticky-header">
       <div class="story-header-row breadcrumb-row">
@@ -166,6 +167,7 @@
               <app-skeleton [rows]="3" [cols]="3" />
             } @else if (analysisError()) {
               <app-state-message title="Analysis unavailable" [message]="analysisError()" tone="error" />
+              <button class="button secondary" type="button" (click)="analyzeStory()">Try again</button>
             } @else if (!hasAnalysis()) {
               <div class="empty-analysis">
                 <h3>No analysis has been generated yet.</h3>
@@ -328,6 +330,9 @@
             (generateRequested)="generateTestCases()"
             (testCaseUpdated)="onTestCaseUpdated($event)"
           />
+          @if (testGenerationError()) {
+            <button class="button secondary" type="button" (click)="generateTestCases()">Try again</button>
+          }
           @if (generatingTests()) {
             <div class="operation-progress" aria-live="polite">
               <div class="shimmer-bar" aria-hidden="true"></div>

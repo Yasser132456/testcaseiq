@@ -22,6 +22,7 @@ import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
         <app-skeleton [rows]="3" [cols]="4" />
       } @else if (error()) {
         <app-state-message title="Dashboard unavailable" [message]="error()" tone="error" />
+        <button class="button secondary" type="button" (click)="loadMetrics()">Try again</button>
       } @else if (metrics()) {
         <section class="next-action-card">
           <span class="section-kicker">NEXT ACTION</span>
@@ -206,6 +207,12 @@ export class DashboardPageComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.loadMetrics();
+  }
+
+  loadMetrics(): void {
+    this.loading.set(true);
+    this.error.set('');
     this.dashboardService.getMetrics().subscribe({
       next: (m) => {
         this.metrics.set(m);

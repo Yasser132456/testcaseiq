@@ -269,7 +269,9 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
     this.animateWorkflowStep();
   }
 
-  private loadStory(): void {
+  loadStory(): void {
+    this.loading.set(true);
+    this.error.set('');
     this.storyService.get(this.storyId).subscribe({
       next: (story) => {
         this.story.set(story);

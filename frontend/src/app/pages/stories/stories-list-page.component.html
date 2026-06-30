@@ -43,6 +43,7 @@
     <app-skeleton [rows]="5" [cols]="5" />
   } @else if (loadError()) {
     <app-state-message title="Could not load stories" [message]="loadError()" tone="error" />
+    <button class="button secondary" type="button" (click)="load()">Try again</button>
   } @else if (filteredStories().length === 0) {
     <div class="panel">
       <app-empty-state

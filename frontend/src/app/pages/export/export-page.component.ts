@@ -7,6 +7,7 @@ import { ExportFormat, ExportService } from '../../core/services/export.service'
 import { TestSuitePage, TestSuiteSummary } from '../../core/models/test-suite.model';
 import { TestSuiteService } from '../../core/services/test-suite.service';
 import { ToastService } from '../../core/services/toast.service';
+import { StateMessageComponent } from '../../shared/components/state-message.component';
 import { TableStaggerDirective } from '../../shared/directives/table-stagger.directive';
 import { EmptyStateComponent } from '../../shared/empty-state/empty-state.component';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
@@ -28,6 +29,7 @@ const TILT_OPTIONS: TiltOptions = { max: 4, speed: 400, glare: true, 'max-glare'
     DatePipe,
     RouterLink,
     LucideDynamicIcon,
+    StateMessageComponent,
     SkeletonComponent,
     EmptyStateComponent,
     TableStaggerDirective
@@ -47,7 +49,8 @@ const TILT_OPTIONS: TiltOptions = { max: 4, speed: 400, glare: true, 'max-glare'
       @if (loading()) {
         <app-skeleton [rows]="5" [cols]="6" />
       } @else if (loadError()) {
-        <div class="export-error" role="alert">{{ loadError() }}</div>
+        <app-state-message title="Could not load export hub" [message]="loadError()" tone="error" />
+        <button class="button secondary" type="button" (click)="load()">Try again</button>
       } @else if (approvedSuites().length === 0) {
         <div class="panel">
           <app-empty-state
@@ -473,7 +476,7 @@ export class ExportPageComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  private load(): void {
+  load(): void {
     this.loading.set(true);
     this.loadError.set('');
     this.testSuiteService.listSuites({ approvedOnly: true }, this.currentPage()).subscribe({
