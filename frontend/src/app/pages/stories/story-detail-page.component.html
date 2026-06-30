@@ -33,22 +33,43 @@
       </div>
       <nav class="workflow-progress" aria-label="Story workflow progress">
         @for (step of workflowSteps; track step.key) {
-          <div
-            class="workflow-step"
-            [class.is-complete]="step.index < currentWorkflowStep()"
-            [class.is-current]="step.index === currentWorkflowStep()"
-            [class.is-pending]="step.index > currentWorkflowStep()"
-            [style.--step-color]="step.color"
-          >
-            <span class="workflow-circle">
-              @if (step.index < currentWorkflowStep()) {
-                <svg [lucideIcon]="LucideCheck" [size]="14" [strokeWidth]="2.4" aria-hidden="true"></svg>
-              } @else {
-                {{ step.index }}
-              }
-            </span>
-            <span class="workflow-label">{{ step.label }}</span>
-          </div>
+          @if ((step.key === 'review' || step.key === 'export') && currentWorkflowStep() >= step.index) {
+            <a
+              class="workflow-step"
+              [class.is-complete]="step.index < currentWorkflowStep()"
+              [class.is-current]="step.index === currentWorkflowStep()"
+              [class.is-pending]="step.index > currentWorkflowStep()"
+              [style.--step-color]="step.color"
+              [routerLink]="step.key === 'review' ? '/review-board' : '/export'"
+              [attr.title]="step.key === 'review' ? 'Open Review Board' : 'Open Export Hub'"
+            >
+              <span class="workflow-circle">
+                @if (step.index < currentWorkflowStep()) {
+                  <svg [lucideIcon]="LucideCheck" [size]="14" [strokeWidth]="2.4" aria-hidden="true"></svg>
+                } @else {
+                  {{ step.index }}
+                }
+              </span>
+              <span class="workflow-label">{{ step.label }}</span>
+            </a>
+          } @else {
+            <div
+              class="workflow-step"
+              [class.is-complete]="step.index < currentWorkflowStep()"
+              [class.is-current]="step.index === currentWorkflowStep()"
+              [class.is-pending]="step.index > currentWorkflowStep()"
+              [style.--step-color]="step.color"
+            >
+              <span class="workflow-circle">
+                @if (step.index < currentWorkflowStep()) {
+                  <svg [lucideIcon]="LucideCheck" [size]="14" [strokeWidth]="2.4" aria-hidden="true"></svg>
+                } @else {
+                  {{ step.index }}
+                }
+              </span>
+              <span class="workflow-label">{{ step.label }}</span>
+            </div>
+          }
         }
       </nav>
     </header>
