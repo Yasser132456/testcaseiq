@@ -1,224 +1,148 @@
-<div class="wl-atmosphere" aria-hidden="true">
-  <div class="wl-orb wl-orb-1"></div>
-  <div class="wl-orb wl-orb-2"></div>
-  <div class="wl-orb wl-orb-3"></div>
-  <div class="wl-orb wl-orb-4"></div>
-</div>
-<div class="wl-grain" aria-hidden="true"></div>
-
-<!-- Nav -->
-<nav class="wl-nav" aria-label="Main navigation">
+<nav class="wl-nav glass-surface glass-surface--1 glass-surface--flat" aria-label="Main navigation">
   <a class="wl-brand" routerLink="/">
     <span class="wl-brand-mark">TQ</span>
     <span class="wl-brand-name">TestCaseIQ</span>
   </a>
   <div class="wl-nav-links">
-    <a class="wl-nav-link" href="#workflow">How it works</a>
-    <a class="wl-nav-link" href="#formats">Formats</a>
+    <a class="wl-nav-link" href="#workflow">Workflow</a>
+    <a class="wl-nav-link" href="#formats">Exports</a>
     <a class="wl-btn-ghost-sm" routerLink="/login">Sign in</a>
   </div>
 </nav>
 
-<!-- Hero -->
-<section class="wl-hero">
-  <div class="wl-hero-body">
-    <div class="wl-hero-left">
-
-      <div class="wl-eyebrow">
-        <span class="wl-eyebrow-dot" aria-hidden="true"></span>
-        AI-powered QA · Built for engineers
+<main class="wl-page">
+  <section class="wl-hero" aria-labelledby="welcome-title">
+    <div class="wl-hero-grid">
+      <div class="wl-hero-copy">
+        <p class="wl-system-line">Human-reviewed test generation</p>
+        <h1 id="welcome-title">AI drafts. Humans approve.</h1>
+        <p class="wl-sub">
+          TestCaseIQ turns user stories into traceable QA assets without hiding the craft.
+          The system analyzes requirements, drafts BDD cases, and keeps approval in the hands
+          of the people accountable for quality.
+        </p>
+        <div class="wl-ctas">
+          <a class="wl-btn-primary" routerLink="/register">Create account</a>
+          <a class="wl-btn-secondary" routerLink="/login">Open workspace</a>
+        </div>
       </div>
 
-      <h1 class="wl-headline">
-        <span class="wl-word">AI&nbsp;writes</span>
-        <span class="wl-word">the</span>
-        <span class="wl-word wl-accent">tests.</span><br>
-        <span class="wl-word">You</span>
-        <span class="wl-word">approve</span>
-        <span class="wl-word">the</span>
-        <span class="wl-word">quality.</span>
-      </h1>
+      <aside
+        class="wl-product-panel glass-surface glass-surface--3 glass-scrim glass-scrim--3"
+        aria-label="Workflow preview"
+        glassTilt
+        [glassTiltGlare]="true"
+        [glassTiltMaxDeg]="4"
+        [glassTiltMaxGlare]="0.05"
+      >
+        <div class="wl-panel-topline">
+          <span class="wl-panel-status wl-pulse"></span>
+          <strong>Review gate active</strong>
+          <span>US-014</span>
+        </div>
 
-      <p class="wl-sub">
-        Paste a user story. TestCaseIQ analyzes requirements, generates structured
-        test cases in BDD format, and routes them through a human review gate —
-        so every test asset is traceable and team-approved before it ships.
+        <div class="wl-story-block">
+          <span>Story intake</span>
+          <p>As a customer, I need failed payments to explain the next step.</p>
+        </div>
+
+        <div class="wl-analysis-grid">
+          <div class="wl-chip wl-chip-purple">intent mapped</div>
+          <div class="wl-chip wl-chip-cyan">edge cases found</div>
+          <div class="wl-chip wl-chip-amber">clarify copy</div>
+        </div>
+
+        <div class="wl-bdd-panel">
+          <div><span>Given</span><p>a saved card is declined</p></div>
+          <div><span>When</span><p>the payment is submitted</p></div>
+          <div><span>Then</span><p>the customer sees a recoverable action</p></div>
+        </div>
+
+        <div class="wl-decision-row">
+          <span>Human decision</span>
+          <strong>Approved for export</strong>
+        </div>
+      </aside>
+    </div>
+
+    <div class="wl-flow-row" aria-label="TestCaseIQ workflow overview">
+      <article class="wl-flow-card glass-surface glass-surface--2 glass-surface--flat">
+        <span>01</span>
+        <strong>Analyze</strong>
+        <p>Requirements, risks, and acceptance criteria become reviewable structure.</p>
+      </article>
+      <article class="wl-flow-card glass-surface glass-surface--2 glass-surface--flat">
+        <span>02</span>
+        <strong>Generate</strong>
+        <p>Draft BDD cases arrive in a format QA engineers can inspect and edit.</p>
+      </article>
+      <article class="wl-flow-card glass-surface glass-surface--2 glass-surface--flat">
+        <span>03</span>
+        <strong>Approve</strong>
+        <p>The human review gate decides what can become part of the suite.</p>
+      </article>
+      <article class="wl-flow-card glass-surface glass-surface--2 glass-surface--flat">
+        <span>04</span>
+        <strong>Export</strong>
+        <p>Approved assets leave as Markdown, CSV, JSON, Playwright, or Postman.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="wl-section wl-reveal" id="workflow" aria-labelledby="workflow-title">
+    <div class="wl-section-copy">
+      <h2 id="workflow-title">The review gate is the product.</h2>
+      <p>
+        AI helps with draft coverage, not final judgment. TestCaseIQ keeps the workflow explicit:
+        every generated case is readable, editable, and tied back to the story it came from.
       </p>
-
-      <div class="wl-ctas">
-        <a class="wl-btn-primary" routerLink="/login">Get started free</a>
-        <a class="wl-btn-secondary" href="#workflow">
-          See it in action <span class="wl-arr" aria-hidden="true">→</span>
-        </a>
-      </div>
     </div>
 
-    <!-- 3D product cards -->
-    <div class="wl-cards" aria-hidden="true">
-
-      <div class="wl-card wl-card-a">
-        <div class="wl-chip wl-chip-purple">01 · Analyze</div>
-        <div class="wl-card-title">Payment gateway — US-001</div>
-        <div class="wl-sk wl-w100"></div>
-        <div class="wl-sk wl-w85"></div>
-        <div class="wl-sk wl-w70"></div>
-        <div class="wl-sep"></div>
-        <div class="wl-sk wl-w100 wl-sk-purple"></div>
-        <div class="wl-sk wl-w75 wl-sk-accent"></div>
-        <div class="wl-sk wl-w85 wl-sk-purple-dim"></div>
-        <div class="wl-sk wl-w55"></div>
-      </div>
-
-      <div class="wl-card wl-card-b">
-        <div class="wl-chip wl-chip-cyan">02 · Generate</div>
-        <div class="wl-card-title">12 test cases drafted</div>
-        <div class="wl-bdd"><span class="wl-kw">Given</span><div class="wl-bdd-line wl-bdd-cyan"></div></div>
-        <div class="wl-bdd"><span class="wl-kw">When</span><div class="wl-bdd-line wl-bdd-purple"></div></div>
-        <div class="wl-bdd"><span class="wl-kw">Then</span><div class="wl-bdd-line wl-bdd-green"></div></div>
-        <div class="wl-sep"></div>
-        <div class="wl-chk">
-          <div class="wl-chk-icon wl-chk-done">
-            <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.9"><polyline points="1.5,5 3.8,7.5 8.5,2.5"/></svg>
-          </div>
-          <div class="wl-chk-bar wl-bar-green"></div>
-        </div>
-        <div class="wl-chk">
-          <div class="wl-chk-icon wl-chk-done">
-            <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.9"><polyline points="1.5,5 3.8,7.5 8.5,2.5"/></svg>
-          </div>
-          <div class="wl-chk-bar"></div>
-        </div>
-        <div class="wl-chk">
-          <div class="wl-chk-icon wl-chk-pend">
-            <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="5" cy="5" r="1.6" fill="currentColor"/></svg>
-          </div>
-          <div class="wl-chk-bar"></div>
-        </div>
-      </div>
-
-      <div class="wl-card wl-card-c">
-        <div class="wl-chip wl-chip-green">03 · Export</div>
-        <div class="wl-card-title">playwright.spec.ts</div>
-        <div class="wl-sk wl-w100 wl-sk-green"></div>
-        <div class="wl-sk wl-w65"></div>
-        <div class="wl-code-block">
-          <span class="wl-code-dim">// generated by TestCaseIQ</span><br>
-          test('should process payment', ...)<br>
-          <span class="wl-code-dim">// 24 cases · approved ✓</span>
-        </div>
-      </div>
+    <div class="wl-proof-grid">
+      <article class="wl-proof-card glass-surface glass-surface--2 glass-surface--flat">
+        <strong>Traceability first</strong>
+        <p>Stories, generated cases, review decisions, and export formats stay connected.</p>
+      </article>
+      <article class="wl-proof-card glass-surface glass-surface--2 glass-surface--flat">
+        <strong>Readable test language</strong>
+        <p>BDD steps make the draft understandable before anyone approves it.</p>
+      </article>
+      <article class="wl-proof-card glass-surface glass-surface--2 glass-surface--flat">
+        <strong>Built for handoff</strong>
+        <p>Approved suites are ready for QA, engineering, and automation workflows.</p>
+      </article>
     </div>
-  </div>
+  </section>
 
-  <div class="wl-scroll-cue" aria-hidden="true">
-    <div class="wl-scroll-track"><div class="wl-scroll-runner"></div></div>
-    scroll to explore
-  </div>
-
-  <div class="wl-stats" aria-label="Product statistics">
-    <div class="wl-stat">
-      <div class="wl-stat-val"><span class="wl-hi" data-count="3">0</span>&thinsp;min</div>
-      <div class="wl-stat-lbl">story to first test suite</div>
-    </div>
-    <div class="wl-stat">
-      <div class="wl-stat-val"><span class="wl-hi" data-count="5">0</span></div>
-      <div class="wl-stat-lbl">export formats supported</div>
-    </div>
-    <div class="wl-stat">
-      <div class="wl-stat-val"><span class="wl-hi" data-count="100">0</span>%</div>
-      <div class="wl-stat-lbl">human-reviewed before export</div>
-    </div>
-    <div class="wl-stat">
-      <div class="wl-stat-val"><span class="wl-hi">&#x221e;</span></div>
-      <div class="wl-stat-lbl">stories, projects, teams</div>
-    </div>
-  </div>
-</section>
-
-<!-- Workflow -->
-<section class="wl-workflow" id="workflow">
-  <div class="wl-section-head wl-reveal">
-    <h2>From requirement to test suite in three steps.</h2>
-    <p>No manual test writing. No copy-paste from Confluence. The AI drafts; you control what ships.</p>
-  </div>
-
-  <div class="wl-steps">
-    <div class="wl-step wl-reveal">
-      <div class="wl-step-num">01</div>
-      <div class="wl-step-icon wl-icon-purple">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
-          <circle cx="11" cy="11" r="7.5"/><path d="m21 21-4.5-4.5"/><path d="M8.5 11h5M11 8.5v5"/>
-        </svg>
-      </div>
-      <div class="wl-step-title">Analyze the story</div>
-      <div class="wl-step-desc">Paste any user story, bug report, or API spec. AI extracts intent, edge cases, and acceptance criteria — no prompts to write.</div>
+  <section class="wl-section wl-section--formats wl-reveal" id="formats" aria-labelledby="formats-title">
+    <div class="wl-section-copy">
+      <h2 id="formats-title">One suite, several exits.</h2>
+      <p>Keep the review workflow in TestCaseIQ, then export only what your team has accepted.</p>
     </div>
 
-    <div class="wl-step wl-reveal">
-      <div class="wl-step-num">02</div>
-      <div class="wl-step-icon wl-icon-cyan">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
-          <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>
-        </svg>
-      </div>
-      <div class="wl-step-title">Generate test cases</div>
-      <div class="wl-step-desc">Draft test cases arrive in BDD Given/When/Then format. You review, edit, or reject each one before anything leaves the gate.</div>
+    <div class="wl-format-strip" aria-label="Supported export formats">
+      <span class="wl-format wl-format--cyan">Playwright</span>
+      <span class="wl-format wl-format--cyan">Postman</span>
+      <span class="wl-format wl-format--green">CSV</span>
+      <span class="wl-format wl-format--green">JSON</span>
+      <span class="wl-format wl-format--purple">Markdown</span>
     </div>
+  </section>
 
-    <div class="wl-step wl-reveal">
-      <div class="wl-step-num">03</div>
-      <div class="wl-step-icon wl-icon-green">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-          <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
-        </svg>
-      </div>
-      <div class="wl-step-title">Approve and export</div>
-      <div class="wl-step-desc">One click exports approved suites to Playwright, Postman, XRay, Azure DevOps, or CSV. Traceable. Structured. Ready to run.</div>
+  <section class="wl-cta glass-surface glass-surface--2 glass-scrim glass-scrim--2 wl-reveal" aria-labelledby="cta-title">
+    <h2 id="cta-title">Make QA assets feel inspectable again.</h2>
+    <p>Start in the glass instrument, then move from story to reviewed suite with the same visual language throughout.</p>
+    <div class="wl-cta-actions">
+      <a class="wl-btn-primary" routerLink="/register">Create account</a>
+      <a class="wl-btn-secondary" routerLink="/login">Sign in</a>
     </div>
-  </div>
-</section>
+  </section>
+</main>
 
-<!-- Export formats -->
-<section class="wl-formats" id="formats">
-  <div class="wl-formats-head wl-reveal">
-    <h2>Structured output for every tool in your stack.</h2>
-    <p>Export once. Run anywhere. Every format is team-approved before it leaves.</p>
-  </div>
-  <div class="wl-badge-grid wl-reveal">
-    <div class="wl-fmt-badge"><div class="wl-dot wl-dot-cyan"></div>Playwright</div>
-    <div class="wl-fmt-badge"><div class="wl-dot wl-dot-cyan"></div>Postman</div>
-    <div class="wl-fmt-badge"><div class="wl-dot wl-dot-accent"></div>XRay CSV</div>
-    <div class="wl-fmt-badge"><div class="wl-dot wl-dot-accent"></div>Azure DevOps</div>
-    <div class="wl-fmt-badge"><div class="wl-dot wl-dot-green"></div>CSV</div>
-    <div class="wl-fmt-badge"><div class="wl-dot wl-dot-green"></div>JSON</div>
-    <div class="wl-fmt-badge"><div class="wl-dot wl-dot-purple"></div>Markdown</div>
-  </div>
-</section>
-
-<!-- CTA -->
-<section class="wl-cta">
-  <div class="wl-cta-inner wl-reveal">
-    <span class="wl-cta-pre">// ready to close the loop?</span>
-    <h2>Stop writing test cases by hand.</h2>
-    <p>Join QA engineers who moved from story to approved test suite in under five minutes.</p>
-    <div class="wl-cta-btns">
-      <a class="wl-btn-ink" routerLink="/login">Sign in to your workspace</a>
-      <a class="wl-btn-ink-ghost" routerLink="/register">Register free →</a>
-    </div>
-  </div>
-</section>
-
-<!-- Footer -->
 <footer class="wl-footer">
   <a class="wl-footer-brand" routerLink="/">
     <span class="wl-brand-mark">TQ</span>
     <span class="wl-brand-name">TestCaseIQ</span>
   </a>
-  <span class="wl-footer-copy">© 2026 TestCaseIQ · Built for engineers who care about quality.</span>
-  <nav class="wl-footer-links" aria-label="Footer navigation">
-    <a href="#">Docs</a>
-    <a href="#">GitHub</a>
-    <a href="#">Privacy</a>
-  </nav>
+  <span>Built for teams that review before they ship.</span>
 </footer>

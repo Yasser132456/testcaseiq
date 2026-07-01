@@ -4,57 +4,103 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import { StateMessageComponent } from '../../shared/components/state-message.component';
+import { TiltDirective } from '../../shared/directives/tilt.directive';
 
 @Component({
   selector: 'app-login-page',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, StateMessageComponent],
+  imports: [ReactiveFormsModule, RouterLink, StateMessageComponent, TiltDirective],
   template: `
     <main class="auth-shell">
-      <section class="auth-panel">
-        <a class="brand auth-brand" routerLink="/">
-          <span class="brand-mark">TQ</span>
-          <span>
-            <strong>TestCaseIQ</strong>
-            <small>QA workspace</small>
-          </span>
-        </a>
+      <section class="auth-frame" aria-labelledby="login-title">
+        <div class="auth-hero-panel glass-surface glass-surface--1 glass-surface--flat glass-readable-scrim glass-scrim--1">
+          <a class="brand auth-brand" routerLink="/">
+            <span class="brand-mark">TQ</span>
+            <span>
+              <strong>TestCaseIQ</strong>
+              <small>Black Glass Instrument</small>
+            </span>
+          </a>
 
-        <div class="auth-copy">
-          <h1>Sign in to continue</h1>
-          <p>Access traceable AI-assisted QA assets, review workflows, and export tooling.</p>
+          <div class="auth-copy auth-copy--hero">
+            <h1 id="login-title">Open the review cockpit.</h1>
+            <p>Return to traceable QA work: story analysis, generated BDD drafts, human approval, and clean exports from one calibrated surface.</p>
+          </div>
+
+          <div class="auth-instrument" aria-hidden="true">
+            <div class="auth-instrument__rail">
+              <span>Analyze</span>
+              <strong>Requirements mapped</strong>
+            </div>
+            <div class="auth-instrument__rail auth-instrument__rail--cyan">
+              <span>Generate</span>
+              <strong>BDD draft ready</strong>
+            </div>
+            <div class="auth-instrument__rail auth-instrument__rail--green">
+              <span>Review</span>
+              <strong>Human gate active</strong>
+            </div>
+          </div>
         </div>
 
-        @if (error()) {
-          <app-state-message title="Sign in failed" [message]="error()!" tone="error" />
-        }
+        <div
+          class="auth-panel glass-surface glass-surface--3 glass-scrim glass-scrim--3"
+          glassTilt
+          [glassTiltGlare]="true"
+          [glassTiltMaxDeg]="3"
+          [glassTiltMaxGlare]="0.05"
+        >
+          <div class="auth-copy">
+            <p class="auth-kicker">Workspace access</p>
+            <h2>Sign in</h2>
+            <p>Use your TestCaseIQ credentials to continue.</p>
+          </div>
 
-        <form class="form-panel" [formGroup]="form" (ngSubmit)="submit()" novalidate>
-          <label>
-            <span>Email</span>
-            <input type="email" autocomplete="email" formControlName="email" />
-            @if (showError('email')) {
-              <small class="field-error">Enter a valid email address.</small>
-            }
-          </label>
+          @if (error()) {
+            <app-state-message title="Sign in failed" [message]="error()!" tone="error" />
+          }
 
-          <label>
-            <span>Password</span>
-            <input type="password" autocomplete="current-password" formControlName="password" />
-            @if (showError('password')) {
-              <small class="field-error">Password is required.</small>
-            }
-          </label>
+          <form class="form-panel auth-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+            <label for="login-email">
+              <span>Email</span>
+              <input
+                id="login-email"
+                type="email"
+                autocomplete="email"
+                formControlName="email"
+                [attr.aria-invalid]="showError('email')"
+                [attr.aria-describedby]="showError('email') ? 'login-email-error' : null"
+              />
+              @if (showError('email')) {
+                <small id="login-email-error" class="field-error">Enter a valid email address.</small>
+              }
+            </label>
 
-          <button class="button" type="submit" [disabled]="form.invalid || loading()">
-            {{ loading() ? 'Signing in...' : 'Sign in' }}
-          </button>
-        </form>
+            <label for="login-password">
+              <span>Password</span>
+              <input
+                id="login-password"
+                type="password"
+                autocomplete="current-password"
+                formControlName="password"
+                [attr.aria-invalid]="showError('password')"
+                [attr.aria-describedby]="showError('password') ? 'login-password-error' : null"
+              />
+              @if (showError('password')) {
+                <small id="login-password-error" class="field-error">Please enter your password.</small>
+              }
+            </label>
 
-        <p class="auth-switch">
-          New to this workspace?
-          <a routerLink="/register">Create an account</a>
-        </p>
+            <button class="button auth-submit" type="submit" [disabled]="form.invalid || loading()" [attr.aria-busy]="loading()">
+              {{ loading() ? 'Opening workspace...' : 'Sign in' }}
+            </button>
+          </form>
+
+          <p class="auth-switch">
+            New to this workspace?
+            <a routerLink="/register">Create an account</a>
+          </p>
+        </div>
       </section>
     </main>
   `
