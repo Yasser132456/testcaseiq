@@ -22,6 +22,11 @@ export const routes: Routes = [
   { path: 'login', component: LoginPageComponent },
   { path: 'register', component: RegisterPageComponent },
   {
+    path: '__dev/glass-primitives',
+    loadComponent: () => import('./pages/dev/glass-primitives-demo.component')
+      .then((m) => m.GlassPrimitivesDemoComponent)
+  },
+  {
     path: '',
     component: AppLayoutComponent,
     canActivateChild: [authGuard],
