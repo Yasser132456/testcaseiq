@@ -3,9 +3,9 @@
 :root {
   /* ── Colors: Structural Neutrals ────────────────────── */
   --color-bg:        #0a0a0a;
-  --color-surface-1: #121212;
-  --color-surface-2: #18181b;
-  --color-border:    #27272a;
+  --color-surface-1: #121212; /* DEPRECATED: removed in 23F */
+  --color-surface-2: #18181b; /* DEPRECATED: removed in 23F */
+  --color-border:    #27272a; /* DEPRECATED: removed in 23F */
   --color-text:      #f5f5f5;
   --color-text-2:    #a1a1aa;
   --color-text-3:    #71717a;
@@ -52,16 +52,28 @@
   --color-clarify-glow:   rgba(251, 191, 36, 0.12);
 
   /* ── Glass Material ──────────────────────────────────── */
-  --glass-1:          rgba(18, 18, 18, 0.55);
-  --glass-2:          rgba(12, 12, 12, 0.70);
-  --glass-3:          rgba(8,  8,  8,  0.80);
+  --glass-1:          rgba(18, 18, 18, 0.55); /* DEPRECATED: removed in 23F */
+  --glass-2:          rgba(12, 12, 12, 0.70); /* DEPRECATED: removed in 23F */
+  --glass-3:          rgba(8,  8,  8,  0.80); /* DEPRECATED: removed in 23F */
   --glass-blur-sm:    blur(8px);
   --glass-blur-md:    blur(16px);
   --glass-blur-lg:    blur(28px);
-  --glass-border:     rgba(255, 255, 255, 0.055);
-  --glass-border-hi:  rgba(255, 255, 255, 0.095);
-  --glass-shimmer:    rgba(255, 255, 255, 0.035);
+  --glass-border:     rgba(255, 255, 255, 0.055); /* DEPRECATED: removed in 23F */
+  --glass-border-hi:  rgba(255, 255, 255, 0.095); /* DEPRECATED: removed in 23F */
+  --glass-shimmer:    rgba(255, 255, 255, 0.035); /* DEPRECATED: removed in 23F */
+  --glass-bg-1:       rgba(18, 18, 18, 0.56);
+  --glass-bg-2:       rgba(12, 14, 16, 0.68);
+  --glass-bg-3:       rgba(6, 8, 10, 0.82);
+  --glass-border-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.12), inset 1px 0 0 rgba(255, 255, 255, 0.045);
+  --glass-noise:      linear-gradient(135deg, rgba(255,255,255,0.035), rgba(255,255,255,0) 38%, rgba(184,255,90,0.018) 100%);
   --glass-shadow:     0 8px 40px rgba(0,0,0,0.55), 0 1px 0 rgba(255,255,255,0.04) inset;
+
+  /* ── Depth / 3D ─────────────────────────────────────── */
+  --tilt-max-deg: 6deg;
+  --perspective: 1200px;
+  --depth-1: translateZ(12px);
+  --depth-2: translateZ(28px);
+  --depth-3: translateZ(48px);
 
   /* ── Typography ──────────────────────────────────────── */
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
@@ -90,6 +102,10 @@
   --dur-slow: 250ms;
   --ease:     cubic-bezier(0.0, 0.0, 0.2, 1);
   --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-tilt: 180ms;
+  --dur-parallax: 420ms;
 
   /* ── Z-index scale ───────────────────────────────────── */
   --z-dropdown:       100;
