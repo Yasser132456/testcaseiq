@@ -1,7 +1,6 @@
-import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, ElementRef, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { gsap } from 'gsap';
-import VanillaTilt, { HTMLVanillaTiltElement, TiltOptions } from 'vanilla-tilt';
 import { AuthService } from '../../core/services/auth.service';
 import { SettingsService } from '../../core/services/settings.service';
 import { AppSettings, AppSettingsUpdate, AiProvider, GenerationMode } from '../../core/models/settings.model';
@@ -10,7 +9,6 @@ import { StateMessageComponent } from '../../shared/components/state-message.com
 import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
 
 type SettingsTab = 'ai' | 'security' | 'system';
-const TILT_OPTIONS: TiltOptions = { max: 4, speed: 400, glare: true, 'max-glare': 0.05 };
 
 @Component({
   selector: 'app-settings-page',
@@ -258,7 +256,7 @@ const TILT_OPTIONS: TiltOptions = { max: 4, speed: 400, glare: true, 'max-glare'
   `,
   styles: [`
     .page-header { margin-bottom: 1.5rem; }
-    .settings-tabs { display: inline-flex; gap: 0.25rem; padding: 0.25rem; border: 1px solid var(--glass-border); border-radius: 9999px; background: var(--glass-1); margin-bottom: 1.5rem; }
+    .settings-tabs { display: inline-flex; gap: 0.25rem; padding: 0.25rem; border: 1px solid var(--glass-edge); border-radius: 9999px; background: var(--glass-bg-2); backdrop-filter: var(--glass-blur-sm); -webkit-backdrop-filter: var(--glass-blur-sm); box-shadow: var(--glass-border-highlight); margin-bottom: 1.5rem; }
     .tab-btn { background: transparent; border: 1px solid transparent; border-radius: 9999px; color: var(--color-text-2); cursor: pointer; font-size: 0.875rem; font-weight: 500; padding: 0.45rem 0.9rem; transition: background var(--dur) var(--ease), color var(--dur) var(--ease); }
     .tab-btn:hover { color: var(--color-text); }
     .tab-btn:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
@@ -267,11 +265,11 @@ const TILT_OPTIONS: TiltOptions = { max: 4, speed: 400, glare: true, 'max-glare'
     .tab-btn[aria-busy="true"], .tab-btn.loading { opacity: 0.7; cursor: progress; }
     .tab-btn.error { color: var(--color-red); border-color: var(--color-red-border); background: var(--color-red-bg); }
     .tab-btn.success { color: var(--color-green); border-color: var(--color-green-border); background: var(--color-green-bg); }
-    .tab-btn.active { background: var(--glass-2); color: var(--color-text); border-color: var(--glass-border-hi); }
+    .tab-btn.active { background: var(--glass-bg-2); color: var(--color-text); border-color: var(--glass-edge-strong); }
     .settings-panel h3 { margin-bottom: 0.25rem; }
     .provider-card-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.85rem; margin-top: 1.25rem; }
-    .provider-card { display: grid; gap: 0.4rem; min-height: 8rem; padding: 1rem; border: 1px solid var(--glass-border); border-radius: var(--radius-lg); background: var(--glass-1); color: var(--color-text); text-align: left; cursor: pointer; transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease), transform var(--dur) var(--ease); }
-    .provider-card:hover:not(:disabled) { transform: translateY(-2px); border-color: var(--color-accent-border); }
+    .provider-card { display: grid; gap: 0.4rem; min-height: 8rem; padding: 1rem; border: 1px solid var(--glass-edge); border-radius: var(--radius-lg); background: var(--glass-bg-2); backdrop-filter: var(--glass-blur-md); -webkit-backdrop-filter: var(--glass-blur-md); box-shadow: var(--glass-border-highlight); color: var(--color-text); text-align: left; cursor: pointer; transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease), transform var(--dur) var(--ease), box-shadow var(--dur-slow) var(--ease); }
+    .provider-card:hover:not(:disabled) { transform: translateY(-2px); border-color: var(--color-accent-border); box-shadow: var(--glass-border-highlight), var(--glass-shadow); }
     .provider-card:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
     .provider-card:active:not(:disabled) { transform: scale(0.97); }
     .provider-card:disabled { opacity: 0.45; cursor: not-allowed; }
@@ -282,7 +280,7 @@ const TILT_OPTIONS: TiltOptions = { max: 4, speed: 400, glare: true, 'max-glare'
     .provider-card span { color: var(--color-text-2); font-size: 0.82rem; line-height: 1.5; }
     .openai-key-field { display: grid; gap: 0.4rem; margin-top: 1rem; overflow: hidden; }
     .settings-grid { display: flex; flex-direction: column; gap: 1.25rem; margin-top: 1.25rem; }
-    .setting-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 1.5rem; padding: 0.875rem 0; border-bottom: 1px solid var(--color-border); }
+    .setting-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 1.5rem; padding: 0.875rem 0; border-bottom: 1px solid var(--color-border-subtle); }
     .setting-row:last-child { border-bottom: none; }
     .setting-label { flex: 1; }
     .setting-label strong { display: block; font-size: 0.9rem; margin-bottom: 0.2rem; }
@@ -290,7 +288,7 @@ const TILT_OPTIONS: TiltOptions = { max: 4, speed: 400, glare: true, 'max-glare'
     .toggle-label { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; white-space: nowrap; }
     .toggle-label input[disabled] { cursor: not-allowed; }
     .number-input { width: 80px; text-align: right; }
-    select { background: var(--glass-1); color: var(--color-text); border: 1px solid var(--glass-border); border-radius: 4px; padding: 0.35rem 0.5rem; font-size: 0.875rem; }
+    select { background: var(--glass-bg-1); color: var(--color-text); border: 1px solid var(--glass-edge); border-radius: 4px; padding: 0.35rem 0.5rem; font-size: 0.875rem; }
     select[disabled] { opacity: 0.6; cursor: not-allowed; }
     .save-row { display: flex; align-items: center; gap: 1rem; margin-top: 1.25rem; }
     .field-error { color: var(--color-red); font-size: 0.8rem; }
@@ -300,7 +298,7 @@ const TILT_OPTIONS: TiltOptions = { max: 4, speed: 400, glare: true, 'max-glare'
     }
   `]
 })
-export class SettingsPageComponent implements OnInit, AfterViewInit, OnDestroy {
+export class SettingsPageComponent implements OnInit {
   private readonly host = inject(ElementRef<HTMLElement>);
   private readonly settingsService = inject(SettingsService);
   private readonly toastService = inject(ToastService);
@@ -314,7 +312,6 @@ export class SettingsPageComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly saveError = signal('');
   readonly activeTab = signal<SettingsTab>('ai');
   openAiApiKey = '';
-  private tiltElements: HTMLVanillaTiltElement[] = [];
 
   draft: AppSettingsUpdate & { maxTestCasesPerStory: number } = {
     activeProvider: 'MOCK',
@@ -350,23 +347,10 @@ export class SettingsPageComponent implements OnInit, AfterViewInit, OnDestroy {
     this.load();
   }
 
-  ngAfterViewInit(): void {
-    this.initTilt();
-  }
-
-  ngOnDestroy(): void {
-    this.destroyTilt();
-  }
-
   setTab(tab: SettingsTab): void {
     this.activeTab.set(tab);
     this.saveSuccess.set(false);
     this.saveError.set('');
-    if (tab === 'ai') {
-      queueMicrotask(() => this.initTilt());
-    } else {
-      this.destroyTilt();
-    }
   }
 
   setProvider(provider: AiProvider): void {
@@ -413,7 +397,6 @@ export class SettingsPageComponent implements OnInit, AfterViewInit, OnDestroy {
         this.settings.set(s);
         this.applyToDraft(s);
         this.loading.set(false);
-        queueMicrotask(() => this.initTilt());
       },
       error: () => {
         this.loadError.set('Settings could not be loaded. The backend may be unavailable.');
@@ -450,17 +433,4 @@ export class SettingsPageComponent implements OnInit, AfterViewInit, OnDestroy {
     return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
   }
 
-  private initTilt(): void {
-    if (this.prefersReducedMotion()) return;
-    this.destroyTilt();
-    const cards = Array.from((this.host.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('.provider-card'));
-    if (cards.length === 0) return;
-    VanillaTilt.init(cards, TILT_OPTIONS);
-    this.tiltElements = cards as HTMLVanillaTiltElement[];
-  }
-
-  private destroyTilt(): void {
-    this.tiltElements.forEach((el) => el.vanillaTilt?.destroy());
-    this.tiltElements = [];
-  }
 }

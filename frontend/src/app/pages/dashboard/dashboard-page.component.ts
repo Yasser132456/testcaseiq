@@ -9,12 +9,13 @@ import { DashboardMetrics } from '../../core/models/dashboard.model';
 import { AuthService } from '../../core/services/auth.service';
 import { DashboardService } from '../../core/services/dashboard.service';
 import { StateMessageComponent } from '../../shared/components/state-message.component';
+import { TiltDirective } from '../../shared/directives/tilt.directive';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
 
 @Component({
   selector: 'app-dashboard-page',
   standalone: true,
-  imports: [RouterLink, StateMessageComponent, SkeletonComponent],
+  imports: [RouterLink, StateMessageComponent, SkeletonComponent, TiltDirective],
   styleUrl: './dashboard-page.component.css',
   template: `
     <section class="page-stack dashboard-page">
@@ -46,19 +47,19 @@ import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
         </section>
 
         <nav class="kpi-chip-row" aria-label="Dashboard totals">
-          <a class="kpi-chip" routerLink="/projects">
+          <a class="kpi-chip glass-surface glass-surface--2 glass-surface--interactive" routerLink="/projects" glassTilt [glassTiltGlare]="true" [glassTiltMaxDeg]="4" [glassTiltMaxGlare]="0.08">
             <span>Projects</span>
             <strong data-count="totalProjects">{{ metrics()!.totalProjects.toLocaleString() }}</strong>
           </a>
-          <a class="kpi-chip" routerLink="/stories">
+          <a class="kpi-chip glass-surface glass-surface--2 glass-surface--interactive" routerLink="/stories" glassTilt [glassTiltGlare]="true" [glassTiltMaxDeg]="4" [glassTiltMaxGlare]="0.08">
             <span>Stories</span>
             <strong data-count="totalStories">{{ metrics()!.totalStories.toLocaleString() }}</strong>
           </a>
-          <a class="kpi-chip" routerLink="/test-suites">
+          <a class="kpi-chip glass-surface glass-surface--2 glass-surface--interactive" routerLink="/test-suites" glassTilt [glassTiltGlare]="true" [glassTiltMaxDeg]="4" [glassTiltMaxGlare]="0.08">
             <span>Test Suites</span>
             <strong data-count="totalTestSuites">{{ metrics()!.totalTestSuites.toLocaleString() }}</strong>
           </a>
-          <a class="kpi-chip" routerLink="/review-board">
+          <a class="kpi-chip glass-surface glass-surface--2 glass-surface--interactive" routerLink="/review-board" glassTilt [glassTiltGlare]="true" [glassTiltMaxDeg]="4" [glassTiltMaxGlare]="0.08">
             <span>Test Cases</span>
             <strong data-count="totalTestCases">{{ metrics()!.totalTestCases.toLocaleString() }}</strong>
           </a>
@@ -134,7 +135,7 @@ import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
           } @else {
             <div class="project-card-row">
               @for (project of recentProjects(); track project.id) {
-                <a class="project-card" [routerLink]="['/projects', project.id]" [attr.data-accent]="projectAccent(project.key)">
+                <a class="project-card glass-surface glass-surface--2 glass-surface--interactive" [routerLink]="['/projects', project.id]" [attr.data-accent]="projectAccent(project.key)" glassTilt [glassTiltGlare]="true" [glassTiltMaxDeg]="4" [glassTiltMaxGlare]="0.06">
                   <span class="project-key">{{ project.key }}</span>
                   <strong>{{ project.name }}</strong>
                   @if (project.description) {

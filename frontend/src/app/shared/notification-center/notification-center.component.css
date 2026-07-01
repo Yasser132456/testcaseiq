@@ -8,9 +8,9 @@
   width: 2rem;
   height: 2rem;
   place-items: center;
-  border: 1px solid var(--glass-border-hi);
+  border: 1px solid var(--glass-edge-strong);
   border-radius: 8px;
-  background: var(--glass-1);
+  background: var(--glass-bg-1);
   color: var(--color-text-2);
   cursor: pointer;
   transition: background var(--dur) var(--ease), color var(--dur) var(--ease), border-color var(--dur) var(--ease);
@@ -53,9 +53,9 @@
   margin: 0;
   padding: 1rem;
   width: min(22rem, calc(100vw - 2rem));
-  border: 1px solid var(--glass-border-hi);
+  border: 1px solid var(--glass-edge-strong);
   border-radius: var(--radius-xl);
-  background: var(--glass-3);
+  background: var(--glass-bg-3);
   backdrop-filter: var(--glass-blur-lg);
   -webkit-backdrop-filter: var(--glass-blur-lg);
   color: var(--color-text);
@@ -69,7 +69,7 @@
   justify-content: space-between;
   gap: 0.75rem;
   padding-bottom: 0.75rem;
-  border-bottom: 1px solid var(--glass-border);
+  border-bottom: 1px solid var(--glass-edge);
   background: transparent;
 }
 
@@ -81,9 +81,9 @@
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  border: 1px solid var(--glass-border);
+  border: 1px solid var(--glass-edge);
   border-radius: 8px;
-  background: var(--glass-1);
+  background: var(--glass-bg-1);
   color: var(--color-text-2);
   padding: 0.35rem 0.55rem;
   font-size: 0.75rem;
@@ -96,8 +96,8 @@
 }
 
 .mark-read-button:hover:not(:disabled) {
-  background: var(--glass-2);
-  border-color: var(--glass-border-hi);
+  background: var(--glass-bg-2);
+  border-color: var(--glass-edge-strong);
   color: var(--color-text);
 }
 
@@ -112,15 +112,15 @@
   display: flex;
   gap: 0.65rem;
   padding: 0.7rem;
-  border: 1px solid var(--glass-border);
+  border: 1px solid var(--glass-edge);
   border-radius: 8px;
-  background: var(--glass-1);
+  background: var(--glass-bg-1);
   color: var(--color-text-2);
 }
 
 .notification-row.unread {
   border-color: var(--color-cyan-border);
-  background: var(--glass-1);
+  background: var(--glass-bg-1);
   color: var(--color-text);
 }
 
@@ -155,5 +155,5 @@
 }
 
 @supports not (backdrop-filter: blur(1px)) {
-  .notification-popover { background: var(--color-surface-2); }
+  .notification-popover { background: var(--glass-bg-2); }
 }

@@ -1,14 +1,14 @@
-import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { LucideFolderKanban } from '@lucide/angular';
-import VanillaTilt, { HTMLVanillaTiltElement, TiltOptions } from 'vanilla-tilt';
 import { Project } from '../../core/models/project.model';
 import { AuthService } from '../../core/services/auth.service';
 import { ProjectService } from '../../core/services/project.service';
 import { ToastService } from '../../core/services/toast.service';
 import { StateMessageComponent } from '../../shared/components/state-message.component';
 import { DrawerComponent } from '../../shared/components/drawer.component';
+import { TiltDirective } from '../../shared/directives/tilt.directive';
 import { EmptyStateComponent } from '../../shared/empty-state/empty-state.component';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
 
@@ -19,20 +19,18 @@ type ProjectCard = Project & {
   lastActivityAt?: string;
 };
 
-const TILT_OPTIONS: TiltOptions = { max: 4, speed: 400, glare: true, 'max-glare': 0.05 };
-
 @Component({
   selector: 'app-project-list-page',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, DrawerComponent, StateMessageComponent, SkeletonComponent, EmptyStateComponent],
+  imports: [ReactiveFormsModule, RouterLink, DrawerComponent, StateMessageComponent, SkeletonComponent, EmptyStateComponent, TiltDirective],
   styles: [`
     .project-card-grid { display: grid; grid-template-columns: minmax(18rem, 1.2fr) minmax(15rem, 0.8fr); gap: var(--space-base); align-items: stretch; }
-    .project-card { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 1rem; align-items: start; min-height: 10rem; padding: 1rem; border: 1px solid var(--glass-border); border-radius: var(--radius-lg); background: var(--glass-1); transform-style: preserve-3d; transition: border-color var(--dur) var(--ease), transform var(--dur-slow) var(--ease); }
+    .project-card { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 1rem; align-items: start; min-height: 10rem; padding: 1rem; border: 1px solid var(--glass-edge); border-radius: var(--radius-lg); background: var(--glass-bg-2); backdrop-filter: var(--glass-blur-md); -webkit-backdrop-filter: var(--glass-blur-md); box-shadow: var(--glass-border-highlight); transform-style: preserve-3d; transition: border-color var(--dur) var(--ease), transform var(--dur-slow) var(--ease), box-shadow var(--dur-slow) var(--ease); }
     .project-card:nth-child(3n + 1) { grid-row: span 2; align-content: start; min-height: 14rem; }
-    .project-card:hover { border-color: var(--color-accent-border); transform: translateY(-2px); }
+    .project-card:hover { border-color: var(--color-accent-border); box-shadow: var(--glass-border-highlight), var(--glass-shadow); }
     .coverage-ring { width: 56px; height: 56px; overflow: visible; }
     .coverage-ring-bg, .coverage-ring-arc { fill: none; stroke-width: 6; }
-    .coverage-ring-bg { stroke: var(--color-surface-1); }
+    .coverage-ring-bg { stroke: var(--glass-bg-1); }
     .coverage-ring-arc { stroke: var(--color-accent); stroke-linecap: round; transform: rotate(-90deg); transform-origin: 28px 28px; }
     .coverage-ring text { fill: var(--color-text); font-family: var(--font-mono); font-size: 0.68rem; font-weight: 700; text-anchor: middle; dominant-baseline: middle; }
     .project-card-body { display: grid; gap: 0.45rem; min-width: 0; }
@@ -101,7 +99,7 @@ const TILT_OPTIONS: TiltOptions = { max: 4, speed: 400, glare: true, 'max-glare'
           } @else {
             <div class="project-card-grid">
               @for (project of projects(); track project.id) {
-                <article class="project-card">
+                <article class="project-card glass-surface glass-surface--2 glass-surface--interactive" glassTilt [glassTiltGlare]="true" [glassTiltMaxDeg]="4" [glassTiltMaxGlare]="0.06">
                   <svg class="coverage-ring" viewBox="0 0 56 56" role="img" [attr.aria-label]="'Coverage ' + coveragePercent(project) + '%'">
                     <circle class="coverage-ring-bg" cx="28" cy="28" r="22"></circle>
                     <circle
@@ -129,17 +127,15 @@ const TILT_OPTIONS: TiltOptions = { max: 4, speed: 400, glare: true, 'max-glare'
     </section>
   `
 })
-export class ProjectListPageComponent implements OnInit, AfterViewInit, OnDestroy {
+export class ProjectListPageComponent implements OnInit {
   readonly LucideFolderKanban = LucideFolderKanban;
   readonly coverageCircumference = 2 * Math.PI * 22;
 
-  private readonly host = inject(ElementRef<HTMLElement>);
   private readonly fb = inject(FormBuilder);
   private readonly projectService = inject(ProjectService);
   private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
   private readonly toastService = inject(ToastService);
-  private tiltElements: HTMLVanillaTiltElement[] = [];
 
   readonly canEdit = computed(() => {
     if (!this.authService.isAuthenticated()) return true;
@@ -164,14 +160,6 @@ export class ProjectListPageComponent implements OnInit, AfterViewInit, OnDestro
 
   ngOnInit(): void {
     this.loadProjects();
-  }
-
-  ngAfterViewInit(): void {
-    this.initProjectTilt();
-  }
-
-  ngOnDestroy(): void {
-    this.destroyProjectTilt();
   }
 
   createProject(): void {
@@ -228,7 +216,6 @@ export class ProjectListPageComponent implements OnInit, AfterViewInit, OnDestro
       next: (projects) => {
         this.projects.set(projects);
         this.loading.set(false);
-        queueMicrotask(() => this.initProjectTilt());
       },
       error: () => {
         this.loadError.set('Unable to load projects. Confirm the backend is running.');
@@ -237,21 +224,4 @@ export class ProjectListPageComponent implements OnInit, AfterViewInit, OnDestro
     });
   }
 
-  private initProjectTilt(): void {
-    if (this.prefersReducedMotion()) return;
-    this.destroyProjectTilt();
-    const cards = Array.from((this.host.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('.project-card'));
-    if (cards.length === 0) return;
-    VanillaTilt.init(cards, TILT_OPTIONS);
-    this.tiltElements = cards as HTMLVanillaTiltElement[];
-  }
-
-  private destroyProjectTilt(): void {
-    this.tiltElements.forEach((el) => el.vanillaTilt?.destroy());
-    this.tiltElements = [];
-  }
-
-  private prefersReducedMotion(): boolean {
-    return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
-  }
 }

@@ -48,9 +48,9 @@ import { LucideDynamicIcon, LucideX } from '@lucide/angular';
     .ks-panel {
       position: relative; z-index: 1;
       width: min(32rem, 100%);
-      border: 1px solid var(--glass-border-hi);
+      border: 1px solid var(--glass-edge-strong);
       border-radius: var(--radius-xl);
-      background: var(--glass-3);
+      background: var(--glass-bg-3);
       backdrop-filter: var(--glass-blur-lg); -webkit-backdrop-filter: var(--glass-blur-lg);
       box-shadow: var(--glass-shadow);
       overflow: hidden;
@@ -59,23 +59,23 @@ import { LucideDynamicIcon, LucideX } from '@lucide/angular';
     .ks-header {
       display: flex; align-items: center; justify-content: space-between;
       padding: 1rem 1.25rem;
-      border-bottom: 1px solid var(--glass-border);
+      border-bottom: 1px solid var(--glass-edge);
     }
     .ks-header h3 { margin: 0; font-size: 0.95rem; }
     .ks-close {
       display: grid; width: 2rem; height: 2rem; place-items: center;
-      border: 1px solid var(--glass-border); border-radius: var(--radius-md);
-      background: var(--glass-1); color: var(--color-text-2); cursor: pointer;
+      border: 1px solid var(--glass-edge); border-radius: var(--radius-md);
+      background: var(--glass-bg-1); color: var(--color-text-2); cursor: pointer;
       transition: background var(--dur) var(--ease);
     }
-    .ks-close:hover { background: var(--glass-2); color: var(--color-text); }
+    .ks-close:hover { background: var(--glass-bg-2); color: var(--color-text); }
     .ks-close:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
     .ks-body { display: grid; gap: 1.25rem; padding: 1.25rem; }
     .ks-group { display: grid; gap: 0.35rem; }
     .ks-group-label {
       font-family: var(--font-mono); font-size: 0.62rem; font-weight: 700;
       letter-spacing: 0.08em; color: var(--color-text-3); padding-bottom: 0.35rem;
-      border-bottom: 1px solid var(--glass-border);
+      border-bottom: 1px solid var(--glass-edge);
     }
     .ks-row {
       display: flex; align-items: center; justify-content: space-between;
@@ -85,16 +85,16 @@ import { LucideDynamicIcon, LucideX } from '@lucide/angular';
     kbd {
       min-width: 1.55rem;
       padding: 0.12rem 0.38rem;
-      border: 1px solid var(--glass-border-hi);
+      border: 1px solid var(--glass-edge-strong);
       border-radius: var(--radius-xs);
-      background: var(--glass-1);
+      background: var(--glass-bg-1);
       color: var(--color-text);
       font-family: var(--font-mono);
       font-size: 0.72rem;
       text-align: center;
     }
     @supports not (backdrop-filter: blur(1px)) {
-      .ks-panel { background: var(--color-surface-2); }
+      .ks-panel { background: var(--glass-bg-2); }
     }
   `]
 })

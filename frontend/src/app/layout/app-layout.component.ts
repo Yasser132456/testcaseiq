@@ -43,7 +43,7 @@ const PROJECT_CONTEXT_STORAGE_KEY = 'tciq_project_ctx';
     <div class="grain" aria-hidden="true"></div>
     <div class="layout-shell">
 
-      <aside #sidebarEl class="sidebar">
+      <aside #sidebarEl class="sidebar glass-surface glass-surface--1 glass-surface--flat">
         <a class="brand" routerLink="/">
           <span class="brand-mark">TQ</span>
           <span class="brand-text">
@@ -60,7 +60,7 @@ const PROJECT_CONTEXT_STORAGE_KEY = 'tciq_project_ctx';
         </button>
 
         @if (projectContext() && !collapsed()) {
-          <div class="project-context-panel">
+          <div class="project-context-panel glass-surface glass-surface--2 glass-surface--flat">
             <a routerLink="/projects">← Projects</a>
             <strong>{{ projectContext()?.name }}</strong>
             <span>{{ projectContext()?.storyCount }} stories · {{ projectContext()?.coveragePercent }}%</span>
@@ -183,7 +183,7 @@ const PROJECT_CONTEXT_STORAGE_KEY = 'tciq_project_ctx';
       </aside>
 
       <section class="workspace">
-        <header class="topbar">
+        <header class="topbar glass-surface glass-surface--2 glass-surface--flat">
           <nav aria-label="breadcrumb" class="breadcrumb">
             @for (crumb of breadcrumbs(); track crumb.path; let last = $last) {
               @if (last) {
@@ -213,7 +213,7 @@ const PROJECT_CONTEXT_STORAGE_KEY = 'tciq_project_ctx';
                       [attr.aria-label]="'User menu for ' + user.displayName">
                 <span [class]="avatarClass(user.role)">{{ initials(user.displayName) }}</span>
               </button>
-              <div id="user-menu" [attr.popover]="'auto'" class="user-popover">
+              <div id="user-menu" [attr.popover]="'auto'" class="user-popover glass-surface glass-surface--3 glass-scrim glass-scrim--3">
                 <div class="popover-info">
                   <strong class="popover-name">{{ user.displayName }}</strong>
                   <span class="popover-role">{{ user.role }}</span>
@@ -239,7 +239,7 @@ const PROJECT_CONTEXT_STORAGE_KEY = 'tciq_project_ctx';
     </div>
     @if (mobileNavOpen()) {
       <div class="mobile-nav-backdrop" aria-hidden="true" (click)="closeMobileNav()"></div>
-      <nav class="mobile-nav-panel" role="dialog" aria-modal="true" aria-label="Navigation">
+      <nav class="mobile-nav-panel glass-surface glass-surface--3 glass-scrim glass-scrim--3" role="dialog" aria-modal="true" aria-label="Navigation">
         <button
           class="mobile-nav-close"
           type="button"
@@ -257,7 +257,7 @@ const PROJECT_CONTEXT_STORAGE_KEY = 'tciq_project_ctx';
         </a>
 
         @if (projectContext()) {
-          <div class="project-context-panel">
+          <div class="project-context-panel glass-surface glass-surface--2 glass-surface--flat">
             <a routerLink="/projects">â† Projects</a>
             <strong>{{ projectContext()?.name }}</strong>
             <span>{{ projectContext()?.storyCount }} stories Â· {{ projectContext()?.coveragePercent }}%</span>

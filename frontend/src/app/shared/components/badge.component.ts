@@ -40,8 +40,12 @@ const LABEL_MAP: Record<BadgeStatus, string> = {
       gap: 0.35rem;
       min-height: 1.65rem;
       padding: 0 0.55rem;
-      border: 1px solid var(--color-border);
+      border: 1px solid var(--glass-edge);
       border-radius: var(--radius-sm);
+      background: var(--glass-bg-1);
+      backdrop-filter: var(--glass-blur-sm);
+      -webkit-backdrop-filter: var(--glass-blur-sm);
+      box-shadow: var(--glass-border-highlight);
       font-family: var(--font-sans);
       font-size: 0.75rem;
       font-weight: 500;
@@ -105,7 +109,7 @@ export class BadgeComponent implements OnChanges, OnDestroy {
 
   readonly icon = computed(() => ICON_MAP[this.status()]);
   readonly label = computed(() => LABEL_MAP[this.status()]);
-  readonly cls = computed(() => `badge--${this.status().toLowerCase().replaceAll('_', '-')}`);
+  readonly cls = computed(() => `glass-surface glass-surface--flat badge--${this.status().toLowerCase().replaceAll('_', '-')}`);
 
   ngOnChanges(changes: SimpleChanges): void {
     if (!changes['status'] || changes['status'].firstChange || this.prefersReducedMotion()) {

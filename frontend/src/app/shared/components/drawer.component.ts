@@ -9,10 +9,10 @@ import { LucideX, LucideDynamicIcon } from '@lucide/angular';
   template: `
     @if (isVisible()) {
       <div class="drawer-backdrop" aria-hidden="true" (click)="requestClose()"></div>
-      <aside class="drawer-panel" role="dialog" aria-modal="true" [attr.aria-label]="title()">
+      <aside class="drawer-panel glass-surface glass-surface--3 glass-scrim glass-scrim--3" role="dialog" aria-modal="true" [attr.aria-label]="title()">
         <header class="drawer-header">
           <h3>{{ title() }}</h3>
-          <button class="drawer-close" type="button" (click)="requestClose()" aria-label="Close drawer">
+          <button class="drawer-close glass-surface glass-surface--interactive" type="button" (click)="requestClose()" aria-label="Close drawer">
             <svg [lucideIcon]="LucideX" [size]="16" [strokeWidth]="2" aria-hidden="true"></svg>
           </button>
         </header>
@@ -39,8 +39,8 @@ import { LucideX, LucideDynamicIcon } from '@lucide/angular';
       grid-template-rows: auto minmax(0, 1fr);
       width: min(480px, 100vw);
       height: 100dvh;
-      border-left: 1px solid var(--glass-border-hi);
-      background: var(--glass-2);
+      border-left: 1px solid var(--glass-edge-strong);
+      background: var(--glass-bg-3);
       backdrop-filter: var(--glass-blur-lg);
       -webkit-backdrop-filter: var(--glass-blur-lg);
     }
@@ -51,7 +51,7 @@ import { LucideX, LucideDynamicIcon } from '@lucide/angular';
       justify-content: space-between;
       gap: var(--space-base);
       padding: var(--space-lg);
-      border-bottom: 1px solid var(--color-border);
+      border-bottom: 1px solid var(--glass-edge);
     }
 
     .drawer-header h3 {
@@ -69,17 +69,19 @@ import { LucideX, LucideDynamicIcon } from '@lucide/angular';
       width: 2.25rem;
       height: 2.25rem;
       place-items: center;
-      border: 1px solid var(--color-border);
+      border: 1px solid var(--glass-edge-strong);
       border-radius: var(--radius-md);
-      background: var(--color-surface-2);
+      background: var(--glass-bg-2);
       color: var(--color-text-2);
       cursor: pointer;
-      transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+      box-shadow: var(--glass-border-highlight);
+      transition: background var(--dur) var(--ease), color var(--dur) var(--ease), transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
     }
 
     .drawer-close:hover:not(:disabled) {
       color: var(--color-text);
-      background: var(--color-secondary-hover);
+      background: var(--glass-bg-3);
+      box-shadow: var(--glass-border-highlight), 0 0 0 3px var(--color-secondary-glow);
     }
 
     .drawer-close:focus-visible {
@@ -115,7 +117,7 @@ import { LucideX, LucideDynamicIcon } from '@lucide/angular';
     }
 
     @supports not (backdrop-filter: blur(1px)) {
-      .drawer-panel { background: var(--color-surface-1); }
+      .drawer-panel { background: var(--glass-bg-3); }
     }
   `]
 })

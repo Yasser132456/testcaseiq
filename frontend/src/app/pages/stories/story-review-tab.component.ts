@@ -26,7 +26,7 @@ import { StateMessageComponent } from '../../shared/components/state-message.com
       @if (pendingCases().length === 0) {
         <app-state-message title="Review queue cleared" message="No generated test cases are waiting for review on this story." tone="success" />
       } @else {
-        <div class="story-review-layout">
+        <div class="story-review-layout glass-surface glass-surface--2 glass-surface--flat">
           <aside class="review-case-list" aria-label="Pending story test cases">
             @for (testCase of pendingCases(); track testCase.id) {
               <button
@@ -46,7 +46,7 @@ import { StateMessageComponent } from '../../shared/components/state-message.com
           </aside>
 
           @if (selectedCase(); as testCase) {
-            <section class="review-detail-panel">
+            <section class="review-detail-panel glass-readable-scrim glass-scrim--2">
               <div class="review-detail-heading">
                 <div>
                   <p class="review-suite-name">Story queue</p>
@@ -85,21 +85,21 @@ import { StateMessageComponent } from '../../shared/components/state-message.com
     .review-tab-header p{color:var(--color-text-2);font-size:.88rem}
     .shortcut-group,.review-action-buttons,.review-case-meta{display:flex;align-items:center;gap:var(--space-xs);flex-wrap:wrap}
     .shortcut-group{color:var(--color-text-2);font-size:.8rem}
-    .story-review-layout{--b:1px solid var(--glass-border);display:grid;grid-template-columns:320px 1fr;min-height:30rem;border:var(--b);border-radius:var(--radius-lg);background:var(--glass-1);overflow:hidden}
-    .review-case-list{display:grid;align-content:start;max-height:calc(100vh - 20rem);overflow-y:auto;border-right:var(--b);background:var(--color-bg)}
+    .story-review-layout{--b:1px solid var(--glass-edge);display:grid;grid-template-columns:320px 1fr;min-height:30rem;border:var(--b);border-radius:var(--radius-lg);background:var(--glass-bg-2);backdrop-filter:var(--glass-blur-md);-webkit-backdrop-filter:var(--glass-blur-md);box-shadow:var(--glass-border-highlight);overflow:hidden}
+    .review-case-list{display:grid;align-content:start;max-height:calc(100vh - 20rem);overflow-y:auto;border-right:var(--b);background:var(--glass-bg-1)}
     .review-case-item{display:grid;gap:var(--space-sm);width:100%;min-height:5.5rem;padding:var(--space-md) var(--space-base);border:0;border-bottom:var(--b);background:transparent;color:var(--color-text);text-align:left;cursor:pointer;transition:background var(--dur) var(--ease),color var(--dur) var(--ease),transform var(--dur) var(--ease)}
-    .review-case-item:hover{background:var(--glass-1);transform:translateX(2px)}
+    .review-case-item:hover{background:var(--glass-bg-1);transform:translateX(2px)}
     .review-case-item:focus-visible{outline:2px solid var(--color-accent);outline-offset:-2px}
     .review-case-item.is-active{background:var(--color-accent-bg);color:var(--color-accent);transform:translateX(2px)}
     .review-case-title{min-width:0;font-weight:500;line-height:1.35}
-    .case-meta-badge{display:inline-flex;align-items:center;min-height:1.65rem;padding:0 .55rem;border:var(--b);border-radius:var(--radius-sm);background:var(--glass-1);color:var(--color-text-2);font-family:var(--font-mono);font-size:.72rem;font-weight:500}
-    .review-detail-panel{position:relative;display:grid;align-content:start;gap:var(--space-lg);min-width:0;min-height:30rem;padding:var(--space-xl);background:var(--glass-1)}
+    .case-meta-badge{display:inline-flex;align-items:center;min-height:1.65rem;padding:0 .55rem;border:var(--b);border-radius:var(--radius-sm);background:var(--glass-bg-1);color:var(--color-text-2);font-family:var(--font-mono);font-size:.72rem;font-weight:500}
+    .review-detail-panel{position:relative;display:grid;align-content:start;gap:var(--space-lg);min-width:0;min-height:30rem;padding:var(--space-xl);background:var(--glass-bg-2)}
     .review-detail-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--space-base)}
     .review-suite-name{color:var(--color-cyan);font-family:var(--font-mono);font-size:.75rem}
     .review-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-base);margin:0}
-    .review-detail-grid div{display:grid;gap:.25rem;padding:var(--space-md);border:1px solid var(--color-border);border-radius:var(--radius-md)}
-    .review-detail-grid dt{color:var(--color-text-3);font-family:var(--font-mono);font-size:.7rem}.review-detail-grid dd{margin:0;overflow-wrap:anywhere}
-    .review-sticky-actions{position:sticky;bottom:0;display:flex;align-items:center;justify-content:space-between;gap:var(--space-base);margin:var(--space-lg) calc(var(--space-xl) * -1) calc(var(--space-xl) * -1);padding:var(--space-md) var(--space-lg);border-top:1px solid var(--glass-border);background:var(--glass-2);z-index:var(--z-sticky)}
+    .review-detail-grid div{display:grid;gap:.25rem;padding:var(--space-md);border:1px solid var(--glass-edge);border-radius:var(--radius-md);background:var(--glass-bg-1);box-shadow:var(--glass-border-highlight)}
+    .review-detail-grid dt{color:var(--color-text-2);font-family:var(--font-mono);font-size:.7rem}.review-detail-grid dd{margin:0;overflow-wrap:anywhere}
+    .review-sticky-actions{position:sticky;bottom:0;display:flex;align-items:center;justify-content:space-between;gap:var(--space-base);margin:var(--space-lg) calc(var(--space-xl) * -1) calc(var(--space-xl) * -1);padding:var(--space-md) var(--space-lg);border-top:1px solid var(--glass-edge);background:var(--glass-bg-2);z-index:var(--z-sticky)}
     @media (max-width:900px){.review-tab-header,.review-sticky-actions{align-items:flex-start;flex-direction:column}.story-review-layout{grid-template-columns:1fr}.review-case-list{max-height:18rem;border-right:0;border-bottom:var(--b)}.review-detail-grid{grid-template-columns:1fr}}
   `]
 })
