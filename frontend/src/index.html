@@ -11,6 +11,18 @@
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
   </head>
   <body>
+    <div class="boot-loader" aria-live="polite" aria-label="Loading TestCaseIQ">
+      <div class="boot-loader__mark">TC</div>
+      <div class="boot-loader__copy">
+        <strong>TestCaseIQ</strong>
+        <span>Calibrating test instrument</span>
+      </div>
+    </div>
     <app-root></app-root>
+    <script>
+      window.setTimeout(function () {
+        document.documentElement.classList.add('app-boot-ready');
+      }, 3000);
+    </script>
   </body>
 </html>
