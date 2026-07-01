@@ -47,7 +47,7 @@ export class WelcomePageComponent implements OnInit, OnDestroy {
   }
 
   private runEntrance(): void {
-    const selector = '.wl-nav, .wl-hero-copy, .wl-product-panel, .wl-flow-card, .wl-pulse';
+    const selector = '.wl-nav, .wl-hero-copy, .wl-flow-card, .wl-pulse';
 
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       gsap.set(selector, { opacity: 1, y: 0, x: 0, scale: 1 });
@@ -58,7 +58,6 @@ export class WelcomePageComponent implements OnInit, OnDestroy {
 
     tl.from('.wl-nav', { opacity: 0, y: -12, duration: 0.45 }, 0)
       .from('.wl-hero-copy', { opacity: 0, y: 18, duration: 0.62 }, 0.12)
-      .from('.wl-product-panel', { opacity: 0, y: 22, duration: 0.66 }, 0.24)
       .from('.wl-flow-card', { opacity: 0, y: 12, stagger: 0.07, duration: 0.42 }, 0.5)
       .from('.wl-pulse', { opacity: 0, scale: 0.92, duration: 0.35 }, 0.7);
   }
