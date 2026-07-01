@@ -4,65 +4,118 @@ import { Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import { StateMessageComponent } from '../../shared/components/state-message.component';
+import { TiltDirective } from '../../shared/directives/tilt.directive';
 
 @Component({
   selector: 'app-register-page',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, StateMessageComponent],
+  imports: [ReactiveFormsModule, RouterLink, StateMessageComponent, TiltDirective],
   template: `
     <main class="auth-shell">
-      <section class="auth-panel">
-        <a class="brand auth-brand" routerLink="/">
-          <span class="brand-mark">TQ</span>
-          <span>
-            <strong>TestCaseIQ</strong>
-            <small>QA workspace</small>
-          </span>
-        </a>
+      <section class="auth-frame auth-frame--register" aria-labelledby="register-title">
+        <div class="auth-hero-panel glass-surface glass-surface--1 glass-surface--flat glass-readable-scrim glass-scrim--1">
+          <a class="brand auth-brand" routerLink="/">
+            <span class="brand-mark">TQ</span>
+            <span>
+              <strong>TestCaseIQ</strong>
+              <small>Black Glass Instrument</small>
+            </span>
+          </a>
 
-        <div class="auth-copy">
-          <h1>Register for TestCaseIQ</h1>
-          <p>New accounts are created as QA engineers by the backend and can use the review workspace immediately.</p>
+          <div class="auth-copy auth-copy--hero">
+            <h1 id="register-title">Start with the review gate intact.</h1>
+            <p>Create a QA engineer workspace and move from raw requirements to approved, exportable test assets without losing traceability.</p>
+          </div>
+
+          <div class="auth-sequence" aria-hidden="true">
+            <div>
+              <span>01</span>
+              <strong>Paste story</strong>
+            </div>
+            <div>
+              <span>02</span>
+              <strong>Inspect draft</strong>
+            </div>
+            <div>
+              <span>03</span>
+              <strong>Approve suite</strong>
+            </div>
+          </div>
         </div>
 
-        @if (error()) {
-          <app-state-message title="Registration failed" [message]="error()!" tone="error" />
-        }
+        <div
+          class="auth-panel glass-surface glass-surface--3 glass-scrim glass-scrim--3"
+          glassTilt
+          [glassTiltGlare]="true"
+          [glassTiltMaxDeg]="3"
+          [glassTiltMaxGlare]="0.05"
+        >
+          <div class="auth-copy">
+            <p class="auth-kicker">New workspace</p>
+            <h2>Create account</h2>
+            <p>New accounts start as QA engineers and can use the review workspace immediately.</p>
+          </div>
 
-        <form class="form-panel" [formGroup]="form" (ngSubmit)="submit()" novalidate>
-          <label>
-            <span>Display name</span>
-            <input type="text" autocomplete="name" formControlName="displayName" />
-            @if (showError('displayName')) {
-              <small class="field-error">Display name is required.</small>
-            }
-          </label>
+          @if (error()) {
+            <app-state-message title="Registration failed" [message]="error()!" tone="error" />
+          }
 
-          <label>
-            <span>Email</span>
-            <input type="email" autocomplete="email" formControlName="email" />
-            @if (showError('email')) {
-              <small class="field-error">Enter a valid email address.</small>
-            }
-          </label>
+          <form class="form-panel auth-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+            <label for="register-display-name">
+              <span>Display name</span>
+              <input
+                id="register-display-name"
+                type="text"
+                autocomplete="name"
+                formControlName="displayName"
+                [attr.aria-invalid]="showError('displayName')"
+                [attr.aria-describedby]="showError('displayName') ? 'register-display-name-error' : null"
+              />
+              @if (showError('displayName')) {
+                <small id="register-display-name-error" class="field-error">Please enter your display name.</small>
+              }
+            </label>
 
-          <label>
-            <span>Password</span>
-            <input type="password" autocomplete="new-password" formControlName="password" />
-            @if (showError('password')) {
-              <small class="field-error">Use at least 8 characters.</small>
-            }
-          </label>
+            <label for="register-email">
+              <span>Email</span>
+              <input
+                id="register-email"
+                type="email"
+                autocomplete="email"
+                formControlName="email"
+                [attr.aria-invalid]="showError('email')"
+                [attr.aria-describedby]="showError('email') ? 'register-email-error' : null"
+              />
+              @if (showError('email')) {
+                <small id="register-email-error" class="field-error">Enter a valid email address.</small>
+              }
+            </label>
 
-          <button class="button" type="submit" [disabled]="form.invalid || loading()">
-            {{ loading() ? 'Creating account...' : 'Create account' }}
-          </button>
-        </form>
+            <label for="register-password">
+              <span>Password</span>
+              <input
+                id="register-password"
+                type="password"
+                autocomplete="new-password"
+                formControlName="password"
+                [attr.aria-invalid]="showError('password')"
+                [attr.aria-describedby]="showError('password') ? 'register-password-error' : null"
+              />
+              @if (showError('password')) {
+                <small id="register-password-error" class="field-error">Use at least 8 characters.</small>
+              }
+            </label>
 
-        <p class="auth-switch">
-          Already have an account?
-          <a routerLink="/login">Sign in</a>
-        </p>
+            <button class="button auth-submit" type="submit" [disabled]="form.invalid || loading()" [attr.aria-busy]="loading()">
+              {{ loading() ? 'Creating account...' : 'Create account' }}
+            </button>
+          </form>
+
+          <p class="auth-switch">
+            Already have an account?
+            <a routerLink="/login">Sign in</a>
+          </p>
+        </div>
       </section>
     </main>
   `
