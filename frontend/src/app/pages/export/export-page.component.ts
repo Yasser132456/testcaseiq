@@ -290,7 +290,6 @@ const TILT_OPTIONS: TiltOptions = { max: 4, speed: 400, glare: true, 'max-glare'
       gap: 1rem;
       padding: 1rem 1.1rem;
       border: 1px solid var(--color-green-border);
-      border-left: 4px solid var(--color-green);
       border-radius: 8px;
       background: var(--color-green-bg);
       color: var(--color-text);

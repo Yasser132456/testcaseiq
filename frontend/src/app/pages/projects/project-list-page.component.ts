@@ -26,8 +26,9 @@ const TILT_OPTIONS: TiltOptions = { max: 4, speed: 400, glare: true, 'max-glare'
   standalone: true,
   imports: [ReactiveFormsModule, RouterLink, DrawerComponent, StateMessageComponent, SkeletonComponent, EmptyStateComponent],
   styles: [`
-    .project-card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--space-4, 1rem); }
-    .project-card { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 1rem; align-items: start; min-height: 12rem; padding: 1rem; border: 1px solid var(--glass-border); border-radius: var(--radius-lg); background: var(--glass-1); transform-style: preserve-3d; transition: border-color var(--dur) var(--ease), transform var(--dur-slow) var(--ease); }
+    .project-card-grid { display: grid; grid-template-columns: minmax(18rem, 1.2fr) minmax(15rem, 0.8fr); gap: var(--space-base); align-items: stretch; }
+    .project-card { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 1rem; align-items: start; min-height: 10rem; padding: 1rem; border: 1px solid var(--glass-border); border-radius: var(--radius-lg); background: var(--glass-1); transform-style: preserve-3d; transition: border-color var(--dur) var(--ease), transform var(--dur-slow) var(--ease); }
+    .project-card:nth-child(3n + 1) { grid-row: span 2; align-content: start; min-height: 14rem; }
     .project-card:hover { border-color: var(--color-accent-border); transform: translateY(-2px); }
     .coverage-ring { width: 56px; height: 56px; overflow: visible; }
     .coverage-ring-bg, .coverage-ring-arc { fill: none; stroke-width: 6; }
@@ -38,6 +39,10 @@ const TILT_OPTIONS: TiltOptions = { max: 4, speed: 400, glare: true, 'max-glare'
     .project-card h4 { margin: 0; color: var(--color-text); overflow-wrap: anywhere; }
     .project-card .secondary-text, .project-card .meta-text { color: var(--color-text-2); }
     .project-open-link { justify-self: start; margin-top: 0.35rem; }
+    @media (max-width: 900px) {
+      .project-card-grid { grid-template-columns: 1fr; }
+      .project-card:nth-child(3n + 1) { grid-row: auto; min-height: 10rem; }
+    }
   `],
   template: `
     <section class="page-stack">
