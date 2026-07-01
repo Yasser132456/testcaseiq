@@ -199,17 +199,17 @@ type StoryDisplayStatus = 'DRAFT' | 'ANALYZED' | 'TESTS_GENERATED' | 'ALL_REVIEW
     </section>
   `,
   styles: [`
-    .detail-tabs { display: inline-flex; gap: 0.25rem; width: fit-content; padding: 0.25rem; border: 1px solid var(--glass-border); border-radius: 9999px; background: var(--glass-1); }
+    .detail-tabs { display: inline-flex; gap: 0.25rem; width: fit-content; padding: 0.25rem; border: 1px solid var(--glass-edge); border-radius: 9999px; background: var(--glass-bg-1); }
     .tab-btn { background: transparent; border: 1px solid transparent; border-radius: 9999px; color: var(--color-text-2); cursor: pointer; font-size: 0.875rem; font-weight: 500; padding: 0.45rem 0.9rem; }
     .tab-btn:hover { color: var(--color-text); }
     .tab-btn:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
-    .tab-btn.active { background: var(--glass-2); color: var(--color-text); border-color: var(--glass-border-hi); }
+    .tab-btn.active { background: var(--glass-bg-2); color: var(--color-text); border-color: var(--glass-edge-strong); }
     .metadata-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.85rem; margin: 0; }
-    .metadata-grid div, .coverage-summary-grid article, .coverage-row { padding: 0.85rem; border: 1px solid var(--glass-border); border-radius: 8px; background: var(--glass-1); }
+    .metadata-grid div, .coverage-summary-grid article, .coverage-row { padding: 0.85rem; border: 1px solid var(--glass-edge); border-radius: 8px; background: var(--glass-bg-1); }
     .metadata-grid dt, .coverage-summary-grid span, .coverage-row span { color: var(--color-text-2); font-size: 0.8rem; }
     .metadata-grid dd { margin: 0.25rem 0 0; overflow-wrap: anywhere; }
     .health-badge, .suite-count { display: inline-flex; min-height: 1.55rem; align-items: center; padding: 0 0.5rem; border: 1px solid var(--color-green-border); border-radius: 6px; background: var(--color-green-bg); color: var(--color-green); font-size: 0.73rem; font-weight: 600; white-space: nowrap; }
-    .activity-row { display: flex; justify-content: space-between; gap: 1rem; padding: 0.75rem; border: 1px solid var(--glass-border); border-radius: 8px; background: var(--glass-1); }
+    .activity-row { display: flex; justify-content: space-between; gap: 1rem; padding: 0.75rem; border: 1px solid var(--glass-edge); border-radius: 8px; background: var(--glass-bg-1); }
     .activity-row span { color: var(--color-text-2); white-space: nowrap; }
     .coverage-summary-grid { display: grid; grid-template-columns: minmax(14rem, 1.2fr) repeat(2, minmax(9rem, 0.8fr)); gap: 0.85rem; margin-bottom: 1rem; }
     .coverage-summary-grid article:first-child { min-height: 6.5rem; }

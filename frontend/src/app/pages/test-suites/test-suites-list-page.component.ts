@@ -123,12 +123,12 @@ import { TableStaggerDirective } from '../../shared/directives/table-stagger.dir
     .section-subtitle { color: var(--color-text-2); margin-top: 0.25rem; font-size: 0.875rem; }
     .filter-panel { padding: 0.75rem 1rem; margin-bottom: 0; border-radius: 6px 6px 0 0; }
     .filter-row { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; }
-    .filter-input { background: var(--glass-1); color: var(--color-text); border: 1px solid var(--glass-border); border-radius: 4px; padding: 0.3rem 0.5rem; font-size: 0.85rem; min-width: 200px; }
+    .filter-input { background: var(--glass-bg-1); color: var(--color-text); border: 1px solid var(--glass-edge); border-radius: 4px; padding: 0.3rem 0.5rem; font-size: 0.85rem; min-width: 200px; }
     .check-label { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: var(--color-text); cursor: pointer; }
     .suite-name { font-weight: 500; }
     .row-link { color: var(--color-text-2); text-decoration: none; transition: color var(--dur) var(--ease); }
     .row-link:hover { color: var(--color-accent); }
-    .layer-badge { font-family: var(--font-mono); font-size: 0.72rem; background: var(--glass-1); border: 1px solid var(--glass-border); color: var(--color-text-2); padding: 0.15rem 0.45rem; border-radius: 4px; }
+    .layer-badge { font-family: var(--font-mono); font-size: 0.72rem; background: var(--glass-bg-1); border: 1px solid var(--glass-edge); color: var(--color-text-2); padding: 0.15rem 0.45rem; border-radius: 4px; }
     .td-muted { color: var(--color-text-2); white-space: nowrap; }
     .count-total { font-weight: 600; }
     .count-approved { color: var(--color-green); font-size: 0.82rem; }

@@ -11,7 +11,7 @@ import { ToastItem, ToastService, ToastType } from '../../core/services/toast.se
     <section class="toast-container" aria-live="polite" aria-label="Notifications">
       @for (toast of toastService.toasts(); track toast.id) {
         <article
-          class="toast"
+          class="toast glass-surface glass-surface--3 glass-surface--flat glass-scrim glass-scrim--3"
           [class.toast--success]="toast.type === 'success'"
           [class.toast--error]="toast.type === 'error'"
           [class.toast--warning]="toast.type === 'warning'"
@@ -42,9 +42,9 @@ import { ToastItem, ToastService, ToastType } from '../../core/services/toast.se
       align-items: center;
       gap: var(--space-sm);
       padding: var(--space-md) var(--space-base);
-      border: 1px solid var(--glass-border-hi);
+      border: 1px solid var(--glass-edge-strong);
       border-radius: var(--radius-xl);
-      background: var(--glass-3);
+      background: var(--glass-bg-3);
       backdrop-filter: var(--glass-blur-md);
       -webkit-backdrop-filter: var(--glass-blur-md);
       color: var(--color-text);
@@ -58,21 +58,29 @@ import { ToastItem, ToastService, ToastType } from '../../core/services/toast.se
 
     .toast--success {
       border-color: var(--color-green-border);
-      box-shadow: var(--glass-shadow), inset 3px 0 0 var(--color-accent);
+      background: linear-gradient(var(--color-green-bg), var(--color-green-bg)), var(--glass-bg-3);
+      box-shadow: var(--glass-border-highlight), var(--glass-shadow);
     }
     .toast--error {
       border-color: var(--color-red-border);
-      box-shadow: var(--glass-shadow), inset 3px 0 0 var(--color-red);
+      background: linear-gradient(var(--color-red-bg), var(--color-red-bg)), var(--glass-bg-3);
+      box-shadow: var(--glass-border-highlight), var(--glass-shadow);
     }
-    .toast--warning { border-color: var(--color-amber-border); }
-    .toast--info { border-color: var(--color-purple-border); }
+    .toast--warning {
+      border-color: var(--color-amber-border);
+      background: linear-gradient(var(--color-amber-bg), var(--color-amber-bg)), var(--glass-bg-3);
+    }
+    .toast--info {
+      border-color: var(--color-purple-border);
+      background: linear-gradient(var(--color-purple-bg), var(--color-purple-bg)), var(--glass-bg-3);
+    }
     .toast--success svg { color: var(--color-accent); }
     .toast--error svg { color: var(--color-red); }
     .toast--warning svg { color: var(--color-amber); }
     .toast--info svg { color: var(--color-accent); }
 
     @supports not (backdrop-filter: blur(1px)) {
-      .toast { background: var(--color-surface-2); }
+      .toast { background: var(--glass-bg-3); }
     }
   `]
 })

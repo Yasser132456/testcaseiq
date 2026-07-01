@@ -49,8 +49,12 @@ export type ButtonState = 'default' | 'loading' | 'error' | 'success';
       font-weight: 600;
       cursor: pointer;
       white-space: nowrap;
+      box-shadow: var(--glass-border-highlight);
       transition:
         background var(--dur) var(--ease),
+        border-color var(--dur) var(--ease),
+        color var(--dur) var(--ease),
+        transform var(--dur) var(--ease),
         box-shadow  var(--dur) var(--ease);
     }
 
@@ -79,13 +83,15 @@ export type ButtonState = 'default' | 'loading' | 'error' | 'success';
     }
 
     .btn--secondary {
-      background: var(--color-surface-2);
+      background: var(--glass-bg-2);
       color: var(--color-text);
-      border-color: var(--color-border);
+      border-color: var(--glass-edge-strong);
+      backdrop-filter: var(--glass-blur-sm);
+      -webkit-backdrop-filter: var(--glass-blur-sm);
     }
     .btn--secondary:hover:not(:disabled) {
-      background: var(--color-secondary-hover);
-      box-shadow: 0 0 0 4px var(--color-secondary-glow);
+      background: var(--glass-bg-3);
+      box-shadow: var(--glass-border-highlight), 0 0 0 3px var(--color-secondary-glow);
     }
     .btn--secondary:focus-visible {
       outline-color: var(--color-text);
@@ -193,7 +199,7 @@ export class ButtonComponent {
   readonly isDisabled = computed(() => this.disabled() || this.loading());
 
   readonly cls = computed(() => {
-    const parts = ['btn', `btn--${this.variant()}`];
+    const parts = ['btn', 'glass-surface', 'glass-surface--interactive', `btn--${this.variant()}`];
     if (this.loading()) {
       parts.push('btn--loading');
     } else if (this.state() !== 'default') {

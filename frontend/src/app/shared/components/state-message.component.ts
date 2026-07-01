@@ -5,7 +5,7 @@ import { Component, Input } from '@angular/core';
   standalone: true,
   template: `
     <div
-      class="state-message"
+      class="state-message glass-surface glass-surface--2 glass-surface--flat"
       [class.error]="tone === 'error'"
       [class.success]="tone === 'success'"
       [class.warning]="tone === 'warning'"

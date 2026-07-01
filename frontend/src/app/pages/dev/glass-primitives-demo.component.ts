@@ -149,7 +149,7 @@ import { TiltDirective } from '../../shared/directives/tilt.directive';
 
     .state-chip--disabled,
     .state-chip:disabled {
-      border-color: var(--color-border);
+      border-color: var(--color-border-subtle);
       background: rgba(255, 255, 255, 0.035);
       color: var(--color-text-3);
       cursor: not-allowed;
@@ -256,7 +256,7 @@ import { TiltDirective } from '../../shared/directives/tilt.directive';
       align-content: center;
       min-height: 9rem;
       padding: var(--space-lg);
-      border: 1px solid var(--glass-border-hi);
+      border: 1px solid var(--glass-edge-strong);
       border-radius: var(--radius-md);
       color: var(--color-text-3);
     }

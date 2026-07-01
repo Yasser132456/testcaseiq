@@ -3,7 +3,7 @@
 .glass-surface {
   --glass-surface-bg: var(--glass-bg-2);
   --glass-surface-blur: var(--glass-blur-md);
-  --glass-surface-border: var(--glass-border-hi);
+  --glass-surface-border: var(--glass-edge-strong);
   --glass-surface-hover-bg: var(--glass-bg-3);
   --glass-surface-disabled-opacity: 0.58;
   --glass-surface-focus: var(--color-accent-border);
@@ -39,7 +39,7 @@
 }
 
 .glass-surface:hover {
-  border-color: var(--glass-border-hi);
+  border-color: var(--glass-edge-strong);
   background: var(--glass-surface-hover-bg);
   box-shadow: var(--glass-border-highlight), var(--glass-shadow);
 }
@@ -146,12 +146,12 @@
 
 @supports not (backdrop-filter: blur(1px)) {
   .glass-surface {
-    background: var(--color-surface-2);
+    background: var(--glass-bg-2);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
 
-  .glass-surface--1 { background: var(--color-surface-1); }
+  .glass-surface--1 { background: var(--glass-bg-1); }
   .glass-surface--2,
-  .glass-surface--3 { background: var(--color-surface-2); }
+  .glass-surface--3 { background: var(--glass-bg-2); }
 }

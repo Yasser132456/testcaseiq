@@ -1,14 +1,14 @@
 import { DatePipe } from '@angular/common';
-import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { LucideDownload, LucideDynamicIcon } from '@lucide/angular';
-import VanillaTilt, { HTMLVanillaTiltElement, TiltOptions } from 'vanilla-tilt';
 import { ExportFormat, ExportService } from '../../core/services/export.service';
 import { TestSuitePage, TestSuiteSummary } from '../../core/models/test-suite.model';
 import { TestSuiteService } from '../../core/services/test-suite.service';
 import { ToastService } from '../../core/services/toast.service';
 import { StateMessageComponent } from '../../shared/components/state-message.component';
 import { TableStaggerDirective } from '../../shared/directives/table-stagger.directive';
+import { TiltDirective } from '../../shared/directives/tilt.directive';
 import { EmptyStateComponent } from '../../shared/empty-state/empty-state.component';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
 
@@ -20,8 +20,6 @@ interface ExportOption {
   cardClass?: string;
 }
 
-const TILT_OPTIONS: TiltOptions = { max: 4, speed: 400, glare: true, 'max-glare': 0.05 };
-
 @Component({
   selector: 'app-export-page',
   standalone: true,
@@ -32,7 +30,8 @@ const TILT_OPTIONS: TiltOptions = { max: 4, speed: 400, glare: true, 'max-glare'
     StateMessageComponent,
     SkeletonComponent,
     EmptyStateComponent,
-    TableStaggerDirective
+    TableStaggerDirective,
+    TiltDirective
   ],
   template: `
     <section class="page-stack export-hub">
@@ -136,11 +135,15 @@ const TILT_OPTIONS: TiltOptions = { max: 4, speed: 400, glare: true, 'max-glare'
           <div class="export-action-grid">
             @for (option of exportOptions; track option.format) {
               <button
-                class="export-card"
+                class="export-card glass-surface glass-surface--2 glass-surface--interactive"
                 [class.playwright-card]="option.cardClass === 'playwright-card'"
                 [class.postman-card]="option.cardClass === 'postman-card'"
                 [class.xray-card]="option.cardClass === 'xray-card'"
                 [class.azure-card]="option.cardClass === 'azure-card'"
+                glassTilt
+                [glassTiltGlare]="true"
+                [glassTiltMaxDeg]="4"
+                [glassTiltMaxGlare]="0.06"
                 type="button"
                 (click)="exportSelectedSuite(option.format)"
                 [disabled]="isExporting()"
@@ -243,9 +246,9 @@ const TILT_OPTIONS: TiltOptions = { max: 4, speed: 400, glare: true, 'max-glare'
 
     .layer-badge {
       padding: 0.15rem 0.45rem;
-      border: 1px solid var(--glass-border);
+      border: 1px solid var(--glass-edge);
       border-radius: 4px;
-      background: var(--glass-1);
+      background: var(--glass-bg-1);
       color: var(--color-text-2);
       font-family: var(--font-mono);
       font-size: 0.72rem;
@@ -345,14 +348,12 @@ const TILT_OPTIONS: TiltOptions = { max: 4, speed: 400, glare: true, 'max-glare'
     }
   `]
 })
-export class ExportPageComponent implements OnInit, AfterViewInit, OnDestroy {
+export class ExportPageComponent implements OnInit {
   readonly LucideDownload = LucideDownload;
 
-  private readonly host = inject(ElementRef<HTMLElement>);
   private readonly testSuiteService = inject(TestSuiteService);
   private readonly exportService = inject(ExportService);
   private readonly toastService = inject(ToastService);
-  private tiltElements: HTMLVanillaTiltElement[] = [];
 
   readonly page = signal<TestSuitePage | null>(null);
   readonly loading = signal(true);
@@ -417,14 +418,6 @@ export class ExportPageComponent implements OnInit, AfterViewInit, OnDestroy {
     this.load();
   }
 
-  ngAfterViewInit(): void {
-    this.initTilt();
-  }
-
-  ngOnDestroy(): void {
-    this.destroyTilt();
-  }
-
   selectSuite(suite: TestSuiteSummary): void {
     this.selectedSuiteId.set(suite.id);
   }
@@ -484,7 +477,6 @@ export class ExportPageComponent implements OnInit, AfterViewInit, OnDestroy {
         const selectedStillVisible = p.content.some((suite) => suite.id === this.selectedSuiteId());
         this.selectedSuiteId.set(selectedStillVisible ? this.selectedSuiteId() : p.content[0]?.id ?? null);
         this.loading.set(false);
-        queueMicrotask(() => this.initTilt());
       },
       error: () => {
         this.loadError.set('Unable to load approved test suites. Confirm the backend is running.');
@@ -543,21 +535,4 @@ export class ExportPageComponent implements OnInit, AfterViewInit, OnDestroy {
     URL.revokeObjectURL(objectUrl);
   }
 
-  private initTilt(): void {
-    if (this.prefersReducedMotion()) return;
-    this.destroyTilt();
-    const cards = Array.from((this.host.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('.export-card'));
-    if (cards.length === 0) return;
-    VanillaTilt.init(cards, TILT_OPTIONS);
-    this.tiltElements = cards as HTMLVanillaTiltElement[];
-  }
-
-  private destroyTilt(): void {
-    this.tiltElements.forEach((el) => el.vanillaTilt?.destroy());
-    this.tiltElements = [];
-  }
-
-  private prefersReducedMotion(): boolean {
-    return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
-  }
 }

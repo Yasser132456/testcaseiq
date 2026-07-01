@@ -19,7 +19,7 @@ const STATUS_LABELS: Record<StoryStatusPillState, string> = {
       [class.status-pill-shell--needs-review]="displayStatus === 'NEEDS_REVIEW'"
     >
       <span
-        class="status-pill"
+        class="status-pill glass-surface glass-surface--flat"
         [class.status-pill--draft]="displayStatus === 'DRAFT'"
         [class.status-pill--in-review]="displayStatus === 'IN_REVIEW'"
         [class.status-pill--needs-review]="displayStatus === 'NEEDS_REVIEW'"

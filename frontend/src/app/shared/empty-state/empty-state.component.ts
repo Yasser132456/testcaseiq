@@ -6,7 +6,7 @@ import { LucideDynamicIcon } from '@lucide/angular';
   standalone: true,
   imports: [LucideDynamicIcon],
   template: `
-    <div class="empty-state">
+    <div class="empty-state glass-surface glass-surface--2 glass-surface--flat glass-readable-scrim glass-scrim--2">
       @if (showArt()) {
         <div class="es-art" aria-hidden="true">
           <div class="es-ring es-ring-1"></div>
@@ -36,7 +36,22 @@ import { LucideDynamicIcon } from '@lucide/angular';
       align-items: center;
       gap: 0.75rem;
       padding: 3rem 2rem;
+      border: 1px solid var(--glass-edge-strong);
+      border-radius: var(--radius-lg);
+      background: var(--glass-bg-2);
+      backdrop-filter: var(--glass-blur-md);
+      -webkit-backdrop-filter: var(--glass-blur-md);
+      box-shadow: var(--glass-border-highlight);
       text-align: center;
+    }
+
+    :host-context(.panel) .empty-state,
+    :host-context(.glass-surface) .empty-state {
+      border-color: transparent;
+      background: transparent;
+      box-shadow: none;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
     }
 
     .empty-icon {
@@ -72,12 +87,12 @@ import { LucideDynamicIcon } from '@lucide/angular';
       position: absolute;
       inset: 0;
       border-radius: 50%;
-      border: 1px solid var(--glass-border-hi);
+      border: 1px solid var(--glass-edge-strong);
     }
 
     .es-ring-2 {
       inset: 10px;
-      border-color: var(--glass-border);
+      border-color: var(--glass-edge);
       opacity: 0.6;
     }
 

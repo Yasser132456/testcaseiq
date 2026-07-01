@@ -2,13 +2,11 @@
 
 :root {
   /* ── Colors: Structural Neutrals ────────────────────── */
-  --color-bg:        oklch(13% 0.018 195);
-  --color-surface-1: oklch(16% 0.018 195); /* DEPRECATED: removed in 23F */
-  --color-surface-2: oklch(20% 0.018 195); /* DEPRECATED: removed in 23F */
-  --color-border:    oklch(28% 0.018 195); /* DEPRECATED: removed in 23F */
-  --color-text:      oklch(97% 0.004 195);
-  --color-text-2:    oklch(72% 0.012 195);
-  --color-text-3:    oklch(56% 0.012 195);
+  --color-bg:            oklch(13% 0.018 195);
+  --color-border-subtle: oklch(28% 0.018 195 / 0.72);
+  --color-text:          oklch(97% 0.004 195);
+  --color-text-2:        oklch(72% 0.012 195);
+  --color-text-3:        oklch(56% 0.012 195);
 
   /* ── Colors: Semantic Signals ────────────────────────── */
   --color-phosphor:          oklch(88% 0.19 130);
@@ -77,18 +75,15 @@
   --color-clarify-glow:   rgba(251, 191, 36, 0.12);
 
   /* ── Glass Material ──────────────────────────────────── */
-  --glass-1:          oklch(16% 0.018 195 / 0.58); /* DEPRECATED: removed in 23F */
-  --glass-2:          oklch(20% 0.018 195 / 0.70); /* DEPRECATED: removed in 23F */
-  --glass-3:          oklch(24% 0.018 195 / 0.82); /* DEPRECATED: removed in 23F */
   --glass-blur-sm:    blur(8px);
   --glass-blur-md:    blur(16px);
   --glass-blur-lg:    blur(28px);
-  --glass-border:     rgba(255, 255, 255, 0.055); /* DEPRECATED: removed in 23F */
-  --glass-border-hi:  rgba(255, 255, 255, 0.095); /* DEPRECATED: removed in 23F */
-  --glass-shimmer:    rgba(255, 255, 255, 0.035); /* DEPRECATED: removed in 23F */
   --glass-bg-1:       oklch(16% 0.018 195 / 0.62);
   --glass-bg-2:       oklch(20% 0.018 195 / 0.72);
   --glass-bg-3:       oklch(24% 0.018 195 / 0.84);
+  --glass-edge:       rgba(255, 255, 255, 0.055);
+  --glass-edge-strong: rgba(255, 255, 255, 0.095);
+  --glass-sheen:      rgba(255, 255, 255, 0.035);
   --glass-border-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.12), inset 1px 0 0 rgba(255, 255, 255, 0.045);
   --glass-noise:      linear-gradient(135deg, rgba(255,255,255,0.035), rgba(255,255,255,0) 38%, var(--color-phosphor-glass) 100%);
   --glass-shadow:     0 8px 40px rgba(0,0,0,0.55), 0 1px 0 rgba(255,255,255,0.04) inset;

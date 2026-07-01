@@ -105,7 +105,7 @@ const ROLE_LABELS: Record<UserRole, string> = {
     .status-active { color: var(--color-green); font-size: 0.8rem; }
     .status-disabled { color: var(--color-text-2); font-size: 0.8rem; }
     .action-cell { display: flex; gap: 0.5rem; align-items: center; }
-    .role-select { background: var(--glass-1); color: var(--color-text); border: 1px solid var(--glass-border); border-radius: 4px; padding: 0.25rem 0.4rem; font-size: 0.85rem; cursor: pointer; }
+    .role-select { background: var(--glass-bg-1); color: var(--color-text); border: 1px solid var(--glass-edge); border-radius: 4px; padding: 0.25rem 0.4rem; font-size: 0.85rem; cursor: pointer; }
     .role-select:disabled { opacity: 0.5; cursor: not-allowed; }
   `]
 })

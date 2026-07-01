@@ -4,7 +4,6 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { LucideCheck, LucideDynamicIcon } from '@lucide/angular';
 import { gsap } from 'gsap';
-import VanillaTilt, { HTMLVanillaTiltElement, TiltOptions } from 'vanilla-tilt';
 import {
   AmbiguitySeverity,
   CoverageCategory,
@@ -28,7 +27,6 @@ import { StoryTestCasesTabComponent } from './story-test-cases-tab.component';
 
 type StoryDetailTab = 'story' | 'test-cases' | 'review';
 type StoryDisplayStatus = 'DRAFT' | 'ANALYZED' | 'TESTS_GENERATED' | 'NEEDS_REVIEW' | 'ALL_REVIEWED';
-const TILT_OPTIONS: TiltOptions = { max: 4, speed: 400, glare: true, 'max-glare': 0.05 };
 
 @Component({
   selector: 'app-story-detail-page',
@@ -59,7 +57,6 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
   private readonly authService = inject(AuthService);
   private readonly projectContext = (this.router.getCurrentNavigation()?.extras.state?.['projectContext'] ?? window.history.state?.projectContext) as { name?: string } | null;
   private storyId = '';
-  private tiltElements: HTMLVanillaTiltElement[] = [];
   private stickyObserver?: IntersectionObserver;
   private analyzeTimer: ReturnType<typeof setInterval> | null = null;
   private generateTimer: ReturnType<typeof setInterval> | null = null;
@@ -128,7 +125,6 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
     queueMicrotask(() => {
       this.initStickyHeaderObserver();
       this.animateWorkflowStep();
-      this.initTilt();
     });
   }
 
@@ -136,7 +132,6 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
     this.analyzeTimer = this.stopTimer(this.analyzeTimer);
     this.generateTimer = this.stopTimer(this.generateTimer);
     this.stickyObserver?.disconnect();
-    this.destroyTilt();
   }
 
   setTab(tab: StoryDetailTab): void {
@@ -145,9 +140,6 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
 
   toggleAnalysis(): void {
     this.analysisExpanded.update((value) => !value);
-    if (this.analysisExpanded()) {
-      queueMicrotask(() => this.initTilt());
-    }
   }
   toggleStorySummary(): void { this.storySummaryExpanded.update((value) => !value); }
   toggleEditForm(): void { this.editFormExpanded.update((value) => !value); }
@@ -207,7 +199,6 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
         this.updateStoryStatus('ANALYZED');
         this.analyzing.set(false);
         this.animateWorkflowStep();
-        queueMicrotask(() => this.initTilt());
       },
       error: () => {
         this.analyzeTimer = this.stopTimer(this.analyzeTimer);
@@ -297,7 +288,6 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
         this.analysis.set(analysis);
         this.analysisLoading.set(false);
         this.animateWorkflowStep();
-        queueMicrotask(() => this.initTilt());
       },
       error: () => {
         this.analysis.set(null);
@@ -404,15 +394,6 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
     return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
   }
 
-  private initTilt(): void {
-    if (this.prefersReducedMotion()) return;
-    this.destroyTilt();
-    const elements = Array.from((this.host.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('.score-card, .coverage-tile'));
-    if (elements.length === 0) return;
-    VanillaTilt.init(elements, TILT_OPTIONS);
-    this.tiltElements = elements as HTMLVanillaTiltElement[];
-  }
-
   private initStickyHeaderObserver(): void {
     if (typeof IntersectionObserver === 'undefined') return;
     this.stickyObserver?.disconnect();
@@ -426,8 +407,4 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
     this.stickyObserver.observe(sentinel);
   }
 
-  private destroyTilt(): void {
-    this.tiltElements.forEach((el) => el.vanillaTilt?.destroy());
-    this.tiltElements = [];
-  }
 }

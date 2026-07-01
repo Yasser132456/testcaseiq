@@ -93,7 +93,7 @@ import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
         </div>
 
         @if (suite()!.explainabilitySummary) {
-          <div class="panel">
+          <div class="panel table-panel">
             <p class="suite-description">{{ suite()!.explainabilitySummary }}</p>
           </div>
         }
@@ -140,30 +140,31 @@ import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
     </section>
   `,
   styles: [`
-    .breadcrumb { color: var(--text-muted); font-size: 0.875rem; margin-top: 0.25rem; }
+    .breadcrumb { color: var(--text-2); font-size: 0.875rem; margin-top: 0.25rem; }
     .section-header { display: flex; justify-content: space-between; align-items: flex-start; }
     .link { color: var(--accent); text-decoration: none; }
     .link:hover { text-decoration: underline; }
     .meta-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.75rem 1.5rem; }
     .meta-item { display: flex; flex-direction: column; gap: 0.2rem; }
-    .meta-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); font-weight: 600; }
+    .meta-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-2); font-weight: 600; }
     .meta-value { font-size: 0.875rem; }
-    .text-muted { color: var(--text-muted); }
-    .layer-tag { font-family: monospace; font-size: 0.78rem; background: var(--chip-bg); color: var(--accent); padding: 0.15rem 0.4rem; border-radius: 3px; }
+    .text-muted { color: var(--text-2); }
+    .layer-tag { font-family: var(--font-mono); font-size: 0.78rem; background: var(--accent-bg); color: var(--accent); padding: 0.15rem 0.4rem; border: 1px solid var(--accent-border); border-radius: var(--radius-sm); }
     .count-total { font-weight: 700; }
     .count-approved, .count-rejected { font-weight: 600; }
     .count-approved { color: var(--green); }
     .count-rejected { color: var(--red); }
-    .suite-description { color: var(--text-muted); font-size: 0.875rem; margin: 0.5rem 0 0; }
-    .form-label { display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.875rem; color: var(--text-muted); }
-    .form-textarea { background: var(--input-bg); color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 0.4rem 0.5rem; font-size: 0.875rem; resize: vertical; width: 100%; }
+    .suite-description { color: var(--text-2); font-size: 0.875rem; margin: 0.5rem 0 0; }
+    .form-label { display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.875rem; color: var(--text-2); }
+    .form-textarea { background: var(--glass-bg-2); color: var(--text); border: 1px solid var(--glass-edge); border-radius: var(--radius-md); padding: 0.4rem 0.5rem; font-size: 0.875rem; resize: vertical; width: 100%; }
     .form-actions { display: flex; gap: 0.75rem; align-items: center; margin-top: 0.5rem; }
     .save-error { color: var(--red); }
-    .data-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
-    .data-table th { text-align: left; padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--border); color: var(--text-muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; }
-    .data-table td { padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--border-subtle); vertical-align: middle; }
+    .table-panel { overflow-x: auto; }
+    .data-table { width: 100%; min-width: 760px; border-collapse: collapse; font-size: 0.875rem; }
+    .data-table th { text-align: left; padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--glass-edge); color: var(--text-2); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; }
+    .data-table td { padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--glass-edge); vertical-align: middle; }
     .type-tag, .priority-tag { font-size: 0.8rem; }
-    .status-other { color: var(--text-muted); }
+    .status-other { color: var(--text-2); }
     .status-approved { color: var(--green); font-weight: 600; }
     .status-rejected { color: var(--red); font-weight: 600; }
     .button.small { padding: 0.25rem 0.6rem; font-size: 0.8rem; }
@@ -248,7 +249,7 @@ export class TestSuiteDetailPageComponent implements OnInit {
     if (tc.confidenceLevel === 'HIGH') return 'var(--green)';
     if (tc.confidenceLevel === 'MEDIUM') return 'var(--amber)';
     if (tc.confidenceLevel === 'LOW') return 'var(--red)';
-    return 'var(--text-muted)';
+    return 'var(--text-2)';
   }
 
   load(): void {

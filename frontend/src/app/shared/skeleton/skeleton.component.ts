@@ -4,7 +4,7 @@ import { Component, computed, input } from '@angular/core';
   selector: 'app-skeleton',
   standalone: true,
   template: `
-    <div class="skel-wrap" role="status" aria-label="Loading">
+    <div class="skel-wrap glass-surface glass-surface--1 glass-surface--flat" role="status" aria-label="Loading">
       @for (_ of rowArr(); track $index) {
         <div class="skel-row">
           @for (__ of colArr(); track $index) {
@@ -25,6 +25,12 @@ import { Component, computed, input } from '@angular/core';
       flex-direction: column;
       gap: 2px;
       padding: 0.25rem 0;
+      border: 1px solid var(--glass-edge);
+      border-radius: var(--radius-lg);
+      background: var(--glass-bg-1);
+      backdrop-filter: var(--glass-blur-sm);
+      -webkit-backdrop-filter: var(--glass-blur-sm);
+      overflow: hidden;
     }
 
     .skel-row {
@@ -33,7 +39,7 @@ import { Component, computed, input } from '@angular/core';
       gap: 1rem;
       height: 48px;
       padding: 0 0.85rem;
-      border-bottom: 1px solid var(--color-border);
+      border-bottom: 1px solid var(--glass-edge);
     }
 
     .skel-cell { flex: 1; min-width: 0; }
@@ -43,9 +49,9 @@ import { Component, computed, input } from '@angular/core';
       border-radius: 4px;
       background: linear-gradient(
         90deg,
-        var(--color-surface-1) 25%,
-        var(--color-surface-2) 50%,
-        var(--color-surface-1) 75%
+        var(--glass-bg-1) 25%,
+        var(--glass-sheen) 50%,
+        var(--glass-bg-2) 75%
       );
       background-size: 400% 100%;
       animation: skel-sweep 1.6s ease-in-out infinite;
@@ -53,7 +59,7 @@ import { Component, computed, input } from '@angular/core';
 
     @media (prefers-reduced-motion: reduce) {
       .skel-shimmer {
-        background: var(--color-surface-2);
+        background: var(--glass-bg-2);
         animation: none;
       }
     }
