@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="TestCaseIQ">
+  <rect width="64" height="64" rx="10" fill="#071112"/>
+  <rect x="4" y="4" width="56" height="56" rx="8" fill="#0b1819" stroke="#b8ff5a" stroke-opacity=".5"/>
+  <path d="M17 19h30M32 19v26M20 45h24" fill="none" stroke="#b8ff5a" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="32" cy="32" r="6" fill="#b8ff5a" fill-opacity=".18" stroke="#9be7ff" stroke-width="2"/>
+  <path d="M13 13l8 8M51 13l-8 8M13 51l8-8M51 51l-8-8" stroke="#9be7ff" stroke-opacity=".55" stroke-width="2" stroke-linecap="round"/>
+</svg>

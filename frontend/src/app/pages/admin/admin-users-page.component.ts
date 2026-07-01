@@ -29,8 +29,9 @@ const ROLE_LABELS: Record<UserRole, string> = {
         <app-skeleton [rows]="5" [cols]="6" />
       } @else if (loadError()) {
         <app-state-message title="Could not load users" [message]="loadError()" tone="error" />
+        <button class="button secondary" type="button" (click)="loadUsers()">Try again</button>
       } @else if (users().length === 0) {
-        <app-state-message title="No users found" message="No user accounts exist yet." />
+        <app-state-message title="No users found" message="Accounts created through registration will appear here for role and access review." />
       } @else {
         <div class="panel">
           <table class="data-table">
@@ -184,7 +185,7 @@ export class AdminUsersPageComponent implements OnInit {
     return ROLE_LABELS[role] ?? role;
   }
 
-  private loadUsers(): void {
+  loadUsers(): void {
     this.loading.set(true);
     this.adminUserService.listUsers().subscribe({
       next: (users) => {

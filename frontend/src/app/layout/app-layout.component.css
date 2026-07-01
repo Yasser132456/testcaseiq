@@ -5,45 +5,6 @@
   isolation: isolate;
 }
 
-.ambient-bg {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.ambient-orb {
-  position: absolute;
-  border-radius: 50%;
-}
-
-.ambient-orb--phosphor {
-  bottom: -200px;
-  left: -150px;
-  width: 750px;
-  height: 750px;
-  background: rgba(184, 255, 90, 0.075);
-  filter: blur(80px);
-}
-
-.ambient-orb--cyan {
-  top: -150px;
-  right: -100px;
-  width: 600px;
-  height: 600px;
-  background: rgba(34, 211, 238, 0.06);
-  filter: blur(70px);
-}
-
-.ambient-orb--violet {
-  top: -80px;
-  left: 35%;
-  width: 380px;
-  height: 380px;
-  background: rgba(167, 139, 250, 0.028);
-  filter: blur(90px);
-}
-
 .layout-shell {
   position: relative;
   z-index: 2;

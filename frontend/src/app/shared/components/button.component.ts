@@ -17,7 +17,7 @@ export type ButtonState = 'default' | 'loading' | 'error' | 'success';
       [attr.aria-busy]="loading() ? 'true' : null"
     >
       @if (loading()) {
-        <span class="btn-spinner" aria-hidden="true"></span>
+        <span class="btn-loading-skeleton" aria-hidden="true"></span>
       } @else if (state() === 'success') {
         <svg class="btn-icon" aria-hidden="true" viewBox="0 0 16 16" fill="none" width="14" height="14">
           <path d="M3 8l3.5 3.5L13 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -31,7 +31,10 @@ export type ButtonState = 'default' | 'loading' | 'error' | 'success';
     </button>
   `,
   styles: [`
-    @keyframes btn-spin { to { transform: rotate(360deg); } }
+    @keyframes btn-skeleton-sweep {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
 
     :host { display: inline-flex; }
 
@@ -177,16 +180,23 @@ export type ButtonState = 'default' | 'loading' | 'error' | 'success';
 
     /* ── Spinner ── */
 
-    .btn-spinner {
-      width: 14px;
-      height: 14px;
-      border: 2px solid currentColor;
-      border-top-color: transparent;
-      border-radius: 50%;
-      animation: btn-spin 0.6s linear infinite;
+    .btn-loading-skeleton {
+      width: 2.4rem;
+      height: 0.65rem;
+      border-radius: 9999px;
+      background: linear-gradient(90deg, currentColor 25%, color-mix(in srgb, currentColor 45%, transparent) 50%, currentColor 75%);
+      background-size: 200% 100%;
+      opacity: 0.45;
+      animation: btn-skeleton-sweep 1.2s ease-in-out infinite;
     }
 
     .btn-icon { flex-shrink: 0; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .btn-loading-skeleton {
+        animation: none;
+      }
+    }
   `]
 })
 export class ButtonComponent {

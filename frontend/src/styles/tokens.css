@@ -6,7 +6,7 @@
   --color-border-subtle: oklch(28% 0.018 195 / 0.72);
   --color-text:          oklch(97% 0.004 195);
   --color-text-2:        oklch(72% 0.012 195);
-  --color-text-3:        oklch(56% 0.012 195);
+  --color-text-3:        oklch(62% 0.012 195);
 
   /* ── Colors: Semantic Signals ────────────────────────── */
   --color-phosphor:          oklch(88% 0.19 130);
@@ -97,7 +97,6 @@
 
   /* ── Typography ──────────────────────────────────────── */
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  --font-display: 'Syne', var(--font-sans);
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
   /* ── Spacing ─────────────────────────────────────────── */

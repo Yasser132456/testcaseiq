@@ -47,6 +47,7 @@ type SettingsTab = 'ai' | 'security' | 'system';
 
         @if (loadError()) {
           <app-state-message title="Could not load settings" [message]="loadError()" tone="error" />
+          <button class="button secondary" type="button" (click)="load()">Try again</button>
         } @else if (loading()) {
           <app-skeleton [rows]="4" [cols]="2" />
         } @else {
@@ -391,7 +392,7 @@ export class SettingsPageComponent implements OnInit {
     });
   }
 
-  private load(): void {
+  load(): void {
     this.settingsService.getSettings().subscribe({
       next: (s) => {
         this.settings.set(s);

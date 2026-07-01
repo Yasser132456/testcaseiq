@@ -102,9 +102,9 @@ type StoryDisplayStatus = 'DRAFT' | 'ANALYZED' | 'TESTS_GENERATED' | 'ALL_REVIEW
               <h3>Recent activity</h3>
             </div>
             @if (activityLoading()) {
-              <app-state-message title="Loading activity" message="Fetching project activity." />
+              <app-skeleton [rows]="3" [cols]="2" />
             } @else if (recentActivity().length === 0) {
-              <app-state-message title="No activity found" message="Project activity will appear after significant changes." />
+              <app-state-message title="No activity found" message="Project activity will appear after stories, suites, reviews, or exports change this workspace." />
             } @else {
               <div class="list-stack compact">
                 @for (event of recentActivity(); track event.id) {
@@ -128,9 +128,9 @@ type StoryDisplayStatus = 'DRAFT' | 'ANALYZED' | 'TESTS_GENERATED' | 'ALL_REVIEW
             </div>
 
             @if (storiesLoading()) {
-              <app-state-message title="Loading stories" message="Fetching project stories." />
+              <app-skeleton [rows]="4" [cols]="3" />
             } @else if (stories().length === 0) {
-              <app-state-message title="No stories yet" message="Create the first story for this project." />
+              <app-state-message title="No stories yet" message="Create the first story to start analysis, generated cases, review, and export for this project." />
             } @else {
               <div class="list-stack">
                 @for (story of stories(); track story.id) {
@@ -156,9 +156,9 @@ type StoryDisplayStatus = 'DRAFT' | 'ANALYZED' | 'TESTS_GENERATED' | 'ALL_REVIEW
               <h3>{{ testSuites().length }} test suites</h3>
             </div>
             @if (testSuitesLoading()) {
-              <app-state-message title="Loading test suites" message="Fetching suites for this project." />
+              <app-skeleton [rows]="4" [cols]="3" />
             } @else if (testSuites().length === 0) {
-              <app-state-message title="No test suites yet" message="Generate test cases from project stories to populate this list." />
+              <app-state-message title="No test suites yet" message="Generate test cases from project stories; approved suites will become export-ready assets." />
             } @else {
               <div class="list-stack">
                 @for (suite of testSuites(); track suite.id) {

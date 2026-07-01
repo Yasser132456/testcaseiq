@@ -148,10 +148,42 @@
 
 .notification-state {
   display: grid;
+  gap: 0.6rem;
   min-height: 7rem;
   place-items: center;
   color: var(--color-text-2);
   font-size: 0.85rem;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.notification-state--loading {
+  align-content: center;
+}
+
+.notification-skeleton {
+  display: block;
+  width: min(15rem, 74%);
+  height: 0.75rem;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, var(--glass-bg-1) 25%, var(--glass-sheen) 50%, var(--glass-bg-2) 75%);
+  background-size: 200% 100%;
+  animation: notification-skeleton-sweep 1.4s ease-in-out infinite;
+}
+
+.notification-skeleton--short {
+  width: min(9rem, 52%);
+}
+
+@keyframes notification-skeleton-sweep {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notification-skeleton {
+    animation: none;
+  }
 }
 
 @supports not (backdrop-filter: blur(1px)) {
