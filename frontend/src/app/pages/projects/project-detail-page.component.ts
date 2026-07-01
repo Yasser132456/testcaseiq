@@ -211,7 +211,8 @@ type StoryDisplayStatus = 'DRAFT' | 'ANALYZED' | 'TESTS_GENERATED' | 'ALL_REVIEW
     .health-badge, .suite-count { display: inline-flex; min-height: 1.55rem; align-items: center; padding: 0 0.5rem; border: 1px solid var(--color-green-border); border-radius: 6px; background: var(--color-green-bg); color: var(--color-green); font-size: 0.73rem; font-weight: 600; white-space: nowrap; }
     .activity-row { display: flex; justify-content: space-between; gap: 1rem; padding: 0.75rem; border: 1px solid var(--glass-border); border-radius: 8px; background: var(--glass-1); }
     .activity-row span { color: var(--color-text-2); white-space: nowrap; }
-    .coverage-summary-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.85rem; margin-bottom: 1rem; }
+    .coverage-summary-grid { display: grid; grid-template-columns: minmax(14rem, 1.2fr) repeat(2, minmax(9rem, 0.8fr)); gap: 0.85rem; margin-bottom: 1rem; }
+    .coverage-summary-grid article:first-child { min-height: 6.5rem; }
     .coverage-summary-grid article { display: grid; gap: 0.35rem; }
     .coverage-summary-grid strong { color: var(--color-accent); font-size: 1.75rem; line-height: 1; }
     .coverage-list { display: grid; gap: 0.65rem; }
