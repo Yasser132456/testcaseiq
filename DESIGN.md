@@ -65,13 +65,13 @@ breakpoints:
 
 **The Black Glass Instrument.** Obsidian tool surfaces, surgical precision, phosphor details that feel earned. A QA engineer's cockpit — not a dashboard, not a chatbot wrapper, not an enterprise form factory. Every surface is dark enough to disappear; every color is bright enough to carry meaning.
 
-The aesthetic sits at the intersection of high-precision calibration equipment and serious developer tooling. The background is near-black (`#0a0a0a`) — not dark gray, not navy, not charcoal. Surfaces layer upward in tight tonal steps. The phosphor green accent (`#b8ff5a`) is the only saturated color that isn't carrying semantic workflow meaning; it signals "interactive, primary, do this." All other saturated colors — violet, cyan, green, amber, red — are semantic workflow signals and must not be used decoratively.
+The aesthetic sits at the intersection of high-precision calibration equipment and serious developer tooling. The background is near-black (`#0a0a0a`) — not dark gray, not navy, not charcoal. Surfaces are frosted glass instruments suspended over a WebGL particle field; depth reads through translucency, blur, highlight, and cursor-responsive parallax instead of solid tonal stacking. The phosphor green accent (`#b8ff5a`) is the only saturated color that isn't carrying semantic workflow meaning; it signals "interactive, primary, do this." All other saturated colors — violet, cyan, green, amber, red — are semantic workflow signals and must not be used decoratively.
 
 Typography is Inter for prose and JetBrains Mono for all technical content (step numbers, BDD syntax, test identifiers, code blocks). The pairing is deliberate: humanist sans for readability, geometric mono for precision. Display headings hit weight 800 at large scales.
 
 Motion is intentional and minimal. Transitions run at 150ms (standard) or 250ms (deliberate). The entrance animation (`fadeInUp`: opacity 0→1, translateY 8px→0) is used for page and list content. Nothing bounces. Nothing elastic.
 
-**Anti-references:** Generic SaaS light mode (beige-on-white, glassmorphism, gradient hero text). Heavy terminal aesthetic (no color, no hierarchy, raw monochrome). Enterprise legacy QA tools (grey-table density, joyless chrome). AI chatbot surfaces ("ask me anything" prompt bars as the primary affordance).
+**Anti-references:** Generic SaaS light mode (beige-on-white, gradient hero text, decorative marketing softness). Heavy terminal aesthetic (no color, no hierarchy, raw monochrome). Enterprise legacy QA tools (grey-table density, joyless chrome). AI chatbot surfaces ("ask me anything" prompt bars as the primary affordance).
 
 ---
 
@@ -133,18 +133,30 @@ Each semantic signal has a `*-bg` (tinted background at ~9–10% opacity) and `*
 
 ## Elevation
 
-Three surface levels + glow. No ambient drop shadows except on explicit hover states.
+Three glass levels + glow. Depth is material, not stacked paint: every elevated surface lets the particle field breathe through it, then separates itself with blur, a 1px inner highlight, and a calibrated shadow.
 
 | Level | Token | Character | Use |
 |---|---|---|---|
-| 0 | `--bg` | Void | Body, sidebar backdrop, page root |
-| 1 | `--surface-1` | Shell | Workspace containers, nav panels, primary layout areas |
-| 2 | `--surface-2` | Lifted | Cards, modals, inline editors, floating panels |
-| Glow | `--accent-glow` | Phosphor Pulse | Primary button hover; focused active elements |
+| 0 | `--bg` | Void | Body, WebGL particle canvas, page root |
+| 1 | `--glass-bg-1` + `--glass-blur-sm` | Frosted Shell | Sidebar, workspace containers, auth/welcome panels |
+| 2 | `--glass-bg-2` + `--glass-blur-md` | Instrument Glass | Cards, list groups, inline editors, review panels |
+| 3 | `--glass-bg-3` + `--glass-blur-lg` | Command Glass | Modals, popovers, command surfaces, focused overlays |
+| Highlight | `--glass-border-highlight` | Catchlight | 1px inner edge that proves the surface is glass |
+| Shadow | `--glass-shadow` | Contact Depth | Soft contact shadow only where a glass plane needs separation |
 
-**Philosophy:** elevation is achieved entirely through surface color stepping, not shadows. A `--surface-2` element on a `--surface-1` background reads as elevated without any `box-shadow`. Shadows appear only as interaction feedback — a subtle glow on the active/focus/hover state of interactive elements. The glow uses the matching semantic color (e.g. phosphor glow for primary buttons, cyan glow for generate actions).
+**Philosophy:** elevation is achieved through translucency and optical separation, not solid surface stepping. Level 1 is transparent enough to belong to the room. Level 2 increases tint and blur so workflow content reads as a usable instrument. Level 3 is the most opaque and blurred because it interrupts the task and must stay legible over motion. `--surface-1` and `--surface-2` remain compatibility tokens during rollout but are superseded by glass backgrounds for new work.
 
-**Hover mechanics:** list rows translate `2px` right on hover. Metric cards lift `2px` up. Buttons brighten slightly. These are physical metaphors for "this responds to you" — calibrated, not decorative.
+**Hover mechanics:** list rows translate `2px` right on hover. Glass panels may tilt within `--tilt-max-deg` and deepen to the next depth token on hover/focus. Buttons brighten slightly. These are physical metaphors for "this responds to you" — calibrated, not decorative.
+
+---
+
+## 3D & Depth
+
+The WebGL particle background is environmental, not content. It sits behind every route, including auth and welcome, at the bottom of the stacking order. Particles must stay low contrast, sparse, and slow enough that text remains WCAG 2.2 AA over glass. They may respond to cursor position with subtle parallax, but they never compete with badges, status colors, focus rings, or primary actions.
+
+CSS 3D tilt is reserved for glass panels that behave like instruments: metric cards, review panels, command surfaces, and auth/welcome cards. Tilt uses `--perspective`, caps rotation at `--tilt-max-deg`, and animates with `--dur-tilt` on `--ease-out-quart`. Cursor-follow depth uses `--dur-parallax` on `--ease-out-quint`; it may move the background field and glass highlights, not text baselines or form controls.
+
+**Mandatory fallbacks:** under `prefers-reduced-motion: reduce`, disable WebGL animation loops, cursor-follow parallax, and panel rotation; keep the final visual as a static particle frame or flat dark background with the same glass tint, border, and text contrast. On low-end/mobile devices, reduce particle count, disable CSS 3D tilt, keep `backdrop-filter` optional, and fall back to the matching translucent background plus `--glass-border-highlight`. Motion tokens must never be required to understand state; reduced motion receives instant state changes or a simple opacity crossfade.
 
 ---
 
@@ -196,9 +208,9 @@ Row structure: leading label (body weight 500), trailing metadata (small, `--tex
 
 ### Metric Card
 
-`background: var(--surface-2)`. `border: 1px solid var(--border)`. `border-radius: 10px`. `padding: 1.25rem`.
+`background: var(--glass-bg-2)`. `backdrop-filter: var(--glass-blur-md)`. `border: 1px solid rgba(255,255,255,0.055)`. `box-shadow: var(--glass-border-highlight)`. `border-radius: 10px`. `padding: 1.25rem`.
 
-Hover: `translateY(-2px)` + `border-color: rgba(248, 248, 248, 0.12)`. Display number uses the display scale (weight 800). Label below in `--text-2` at small size.
+Hover: `translateY(-2px)` + bounded tilt up to `--tilt-max-deg` + `box-shadow: var(--glass-shadow)`. Display number uses the display scale (weight 800). Label below in `--text-2` at small size.
 
 No gradient fills. No hero-metric template (big number + tiny label + supporting stats grid). Metric cards are used sparingly, for dashboard summary only.
 
@@ -228,22 +240,24 @@ No `border-left` stripe. The full border and background tint carry the state —
 
 ### Do
 
-- Use `--border` (1px) as the only border weight. Thicker borders read as decorative.
+- Use `--glass-border-highlight` (1px) as the glass edge. Thicker borders read as decorative.
+- Use `--glass-bg-1`, `--glass-bg-2`, and `--glass-bg-3` for new foundation work; solid `--surface-*` tokens are rollout compatibility only.
 - Use JetBrains Mono for all step numbers, identifiers, BDD blocks, and code — even if the surrounding layout is Inter.
 - Apply `translateX(2px)` for list row / nav item hover — it's the consistent spatial metaphor for "this responds."
-- Apply `translateY(-2px)` for card hover — the complementary metaphor for elevation feedback.
+- Apply `translateY(-2px)` or bounded panel tilt for glass hover — the complementary metaphor for elevation feedback.
 - Use `fadeInUp` (opacity + translateY) for entrance animations on lists and page content.
 - Pair every semantic color badge with a text label.
 - Use `var(--accent-bg)` + `var(--accent-border)` for selected / active container states (not solid accent fill).
-- Respect `prefers-reduced-motion`: replace all transforms/opacity transitions with a simple `opacity` crossfade or instant state.
+- Respect `prefers-reduced-motion`: disable WebGL animation loops, cursor-follow parallax, and panel rotation; replace transform-heavy transitions with a simple `opacity` crossfade or instant state.
 
 ### Don't
 
 - `border-left` or `border-right` wider than 1px as a colored accent. Use background tint + full border instead.
 - `background-clip: text` with gradients. All text is solid color.
 - Use semantic colors (violet, cyan, green, amber, red) outside their workflow meaning. Analysis Violet on a primary button, for example, is a category error.
-- Nest cards inside cards. Elevation has three levels; going deeper than surface-2 has no token and no visual logic.
-- Use `box-shadow` for elevation. Shadows appear only as hover glow, not structural depth.
+- Nest glass cards inside glass cards. Elevation has three glass levels; going deeper than `--glass-bg-3` has no token and no visual logic.
+- Use generic drop shadows for elevation. Only `--glass-shadow` is allowed for structural contact depth.
 - Use wide-tracked uppercase eyebrows above sections. No kicker-per-section scaffolding.
 - Add the primary font at bold in places where the hierarchy calls for `--text-2` color reduction instead. Color reduction is lighter than weight increase for secondary content.
 - Let phosphor green appear on a dark surface without clear interactive intent. It must mean something: primary action, active state, or brand anchor.
+- Let WebGL particles, cursor-follow depth, or tilt carry state. They are environmental feedback only; labels, icons, and semantic colors still carry workflow meaning.
