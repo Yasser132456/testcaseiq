@@ -21,7 +21,11 @@
 
   <div class="notification-list">
     @if (loading()) {
-      <div class="notification-state">Loading notifications</div>
+      <div class="notification-state notification-state--loading" role="status" aria-live="polite">
+        <span class="notification-skeleton" aria-hidden="true"></span>
+        <span class="notification-skeleton notification-skeleton--short" aria-hidden="true"></span>
+        <span>Loading notifications</span>
+      </div>
     } @else {
       @for (item of notifications(); track item.id) {
         <div class="notification-row" [class.unread]="!item.read">
@@ -32,7 +36,7 @@
           </div>
         </div>
       } @empty {
-        <div class="notification-state">No notifications</div>
+        <div class="notification-state">No notifications yet. Review, export, and account events will collect here when they need attention.</div>
       }
     }
   </div>

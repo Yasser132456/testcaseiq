@@ -9,7 +9,7 @@ colors:
   border: "oklch(28% 0.018 195)"
   text: "oklch(97% 0.004 195)"
   text_2: "oklch(72% 0.012 195)"
-  text_3: "oklch(56% 0.012 195)"
+  text_3: "oklch(62% 0.012 195)"
   phosphor: "oklch(88% 0.19 130)"
   phosphor_glass: "oklch(88% 0.19 130 / 0.16)"
   phosphor_glow: "oklch(88% 0.19 130 / 0.36)"
@@ -96,7 +96,7 @@ Never swap a semantic color into a structural role. Color is also never the only
 | `--border` | `oklch(28% 0.018 195)` | Obsidian Edge | All borders and dividers. 1px only. |
 | `--text` | `oklch(97% 0.004 195)` | Primary Ink | Body text, headings, interactive labels. |
 | `--text-2` | `oklch(72% 0.012 195)` | Secondary Ink | Metadata, timestamps, placeholders, secondary labels. |
-| `--text-3` | `oklch(56% 0.012 195)` | Tertiary Ink | Disabled states, ghost text, tertiary metadata. Large text only unless a future scrim is applied. |
+| `--text-3` | `oklch(62% 0.012 195)` | Tertiary Ink | Disabled states, ghost text, placeholders, and tertiary metadata. Body-safe on all glass surfaces after the final sprint contrast pass. |
 
 ### Semantic Signals
 
@@ -128,24 +128,24 @@ Ratios below are computed from the OKLCH tokens, with translucent glass composit
 |---|---|---:|---|---|
 | `--color-bg` | `--color-text` | 18.43:1 | Pass | Pass |
 | `--color-bg` | `--color-text-2` | 8.13:1 | Pass | Pass |
-| `--color-bg` | `--color-text-3` | 4.34:1 | Fail | Pass |
+| `--color-bg` | `--color-text-3` | 5.54:1 | Pass | Pass |
 | `--color-surface-1` | `--color-text` | 17.77:1 | Pass | Pass |
 | `--color-surface-1` | `--color-text-2` | 7.84:1 | Pass | Pass |
-| `--color-surface-1` | `--color-text-3` | 4.18:1 | Fail | Pass |
+| `--color-surface-1` | `--color-text-3` | 5.43:1 | Pass | Pass |
 | `--color-surface-2` | `--color-text` | 16.55:1 | Pass | Pass |
 | `--color-surface-2` | `--color-text-2` | 7.30:1 | Pass | Pass |
-| `--color-surface-2` | `--color-text-3` | 3.90:1 | Fail | Pass |
+| `--color-surface-2` | `--color-text-3` | 5.16:1 | Pass | Pass |
 | `--glass-bg-1` | `--color-text` | 18.04:1 | Pass | Pass |
 | `--glass-bg-1` | `--color-text-2` | 7.96:1 | Pass | Pass |
-| `--glass-bg-1` | `--color-text-3` | 4.25:1 | Fail | Pass |
+| `--glass-bg-1` | `--color-text-3` | 5.43:1 | Pass | Pass |
 | `--glass-bg-2` | `--color-text` | 17.15:1 | Pass | Pass |
 | `--glass-bg-2` | `--color-text-2` | 7.57:1 | Pass | Pass |
-| `--glass-bg-2` | `--color-text-3` | 4.04:1 | Fail | Pass |
+| `--glass-bg-2` | `--color-text-3` | 5.16:1 | Pass | Pass |
 | `--glass-bg-3` | `--color-text` | 15.67:1 | Pass | Pass |
 | `--glass-bg-3` | `--color-text-2` | 6.92:1 | Pass | Pass |
-| `--glass-bg-3` | `--color-text-3` | 3.69:1 | Fail | Pass |
+| `--glass-bg-3` | `--color-text-3` | 4.71:1 | Pass | Pass |
 
-`--color-text-3` is not body-copy safe on any listed surface. Until 23D/23F implements component scrims, use it only for disabled, decorative, or large tertiary text. To make `--color-text-3` body-safe without changing the text token, a local black scrim over the surface is required: 82% over `--color-bg`, 90% over `--color-surface-1`, 94% over `--color-surface-2`, 88% over `--glass-bg-1`, 92% over `--glass-bg-2`, and 95% over `--glass-bg-3`.
+`--color-text-3` was raised from 56L to 62L in the final sprint so placeholders, ghost text, and tertiary metadata remain body-safe over all glass surfaces without requiring per-component scrims. Disabled controls may still reduce opacity because disabled text is exempt from the WCAG text contrast requirement, but placeholder and instructional text must use this token at full opacity.
 
 | Glass Tint | Text | Ratio | Body | Large |
 |---|---|---:|---|---|

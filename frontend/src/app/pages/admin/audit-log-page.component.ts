@@ -109,6 +109,7 @@ const TRACEABILITY_ROUTES: Record<string, string> = {
         <app-skeleton [rows]="5" [cols]="6" />
       } @else if (loadError()) {
         <app-state-message title="Could not load activity log" [message]="loadError()" tone="error" />
+        <button class="button secondary" type="button" (click)="load()">Try again</button>
       } @else if (page()?.content?.length === 0) {
         <div class="panel">
           <app-empty-state
@@ -362,7 +363,7 @@ export class AuditLogPageComponent implements OnInit {
     return filters;
   }
 
-  private load(): void {
+  load(): void {
     this.loading.set(true);
     this.loadError.set('');
     this.auditEventService.listEvents(this.buildFilters(), this.currentPage()).subscribe({

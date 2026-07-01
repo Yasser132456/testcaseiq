@@ -16,12 +16,13 @@
 
     <div class="search-content">
       @if (loading()) {
-        <div class="search-state">
-          <span class="spinner" aria-hidden="true"></span>
+        <div class="search-state search-state--loading" role="status" aria-live="polite">
+          <span class="search-skeleton search-skeleton--wide" aria-hidden="true"></span>
+          <span class="search-skeleton search-skeleton--short" aria-hidden="true"></span>
           <span>Searching</span>
         </div>
       } @else if (isEmpty()) {
-        <div class="search-state">No results for '{{ query() }}'</div>
+        <div class="search-state">No results for '{{ query() }}'. Try a project key, story title, suite name, or test case phrase.</div>
       } @else {
         @if (query().length === 0 && recentSearches().length > 0) {
           <div class="result-group">
@@ -58,7 +59,7 @@
             }
           </div>
         } @empty {
-          <div class="search-state">No recent searches</div>
+          <div class="search-state">No recent searches yet. Search projects, stories, suites, or cases to build quick return paths.</div>
         }
       }
     </div>
