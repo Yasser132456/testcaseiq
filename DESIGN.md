@@ -2,33 +2,38 @@
 version: 1
 north_star: "The Black Glass Instrument"
 colors:
-  bg: "#0a0a0a"
-  surface_1: "#121212"
-  surface_2: "#18181b"
-  border: "#27272a"
-  text: "#f5f5f5"
-  text_2: "#a1a1aa"
-  text_3: "#71717a"
-  accent: "#b8ff5a"
-  accent_bg: "rgba(184, 255, 90, 0.10)"
-  accent_border: "rgba(184, 255, 90, 0.40)"
-  accent_glow: "rgba(184, 255, 90, 0.28)"
-  purple: "#a78bfa"
-  purple_bg: "rgba(167, 139, 250, 0.10)"
-  purple_border: "rgba(167, 139, 250, 0.35)"
-  cyan: "#67e8f9"
-  cyan_2: "#22d3ee"
-  cyan_bg: "rgba(34, 211, 238, 0.09)"
-  cyan_border: "rgba(34, 211, 238, 0.30)"
-  green: "#22c55e"
-  green_bg: "rgba(34, 197, 94, 0.09)"
-  green_border: "rgba(34, 197, 94, 0.40)"
-  amber: "#fbbf24"
-  amber_bg: "rgba(251, 191, 36, 0.10)"
-  amber_border: "rgba(251, 191, 36, 0.35)"
-  red: "#f87171"
-  red_bg: "rgba(248, 113, 113, 0.10)"
-  red_border: "rgba(248, 113, 113, 0.45)"
+  strategy: "Committed semantic color"
+  bg: "oklch(13% 0.018 195)"
+  surface_1: "oklch(16% 0.018 195)"
+  surface_2: "oklch(20% 0.018 195)"
+  border: "oklch(28% 0.018 195)"
+  text: "oklch(97% 0.004 195)"
+  text_2: "oklch(72% 0.012 195)"
+  text_3: "oklch(56% 0.012 195)"
+  phosphor: "oklch(88% 0.19 130)"
+  phosphor_glass: "oklch(88% 0.19 130 / 0.16)"
+  phosphor_glow: "oklch(88% 0.19 130 / 0.36)"
+  phosphor_particle: "oklch(86% 0.26 130)"
+  violet: "oklch(76% 0.17 300)"
+  violet_glass: "oklch(76% 0.17 300 / 0.16)"
+  violet_glow: "oklch(76% 0.17 300 / 0.34)"
+  violet_particle: "oklch(75% 0.24 300)"
+  cyan: "oklch(84% 0.13 205)"
+  cyan_glass: "oklch(84% 0.13 205 / 0.15)"
+  cyan_glow: "oklch(84% 0.13 205 / 0.34)"
+  cyan_particle: "oklch(82% 0.20 205)"
+  green: "oklch(73% 0.17 150)"
+  green_glass: "oklch(73% 0.17 150 / 0.16)"
+  green_glow: "oklch(73% 0.17 150 / 0.34)"
+  green_particle: "oklch(72% 0.23 150)"
+  amber: "oklch(83% 0.17 82)"
+  amber_glass: "oklch(83% 0.17 82 / 0.15)"
+  amber_glow: "oklch(83% 0.17 82 / 0.32)"
+  amber_particle: "oklch(82% 0.23 82)"
+  red: "oklch(72% 0.18 25)"
+  red_glass: "oklch(72% 0.18 25 / 0.16)"
+  red_glow: "oklch(72% 0.18 25 / 0.34)"
+  red_particle: "oklch(70% 0.24 25)"
 typography:
   sans: "'Inter', ui-sans-serif, system-ui, sans-serif"
   mono: "'JetBrains Mono', ui-monospace, monospace"
@@ -65,7 +70,7 @@ breakpoints:
 
 **The Black Glass Instrument.** Obsidian tool surfaces, surgical precision, phosphor details that feel earned. A QA engineer's cockpit — not a dashboard, not a chatbot wrapper, not an enterprise form factory. Every surface is dark enough to disappear; every color is bright enough to carry meaning.
 
-The aesthetic sits at the intersection of high-precision calibration equipment and serious developer tooling. The background is near-black (`#0a0a0a`) — not dark gray, not navy, not charcoal. Surfaces are frosted glass instruments suspended over a WebGL particle field; depth reads through translucency, blur, highlight, and cursor-responsive parallax instead of solid tonal stacking. The phosphor green accent (`#b8ff5a`) is the only saturated color that isn't carrying semantic workflow meaning; it signals "interactive, primary, do this." All other saturated colors — violet, cyan, green, amber, red — are semantic workflow signals and must not be used decoratively.
+The aesthetic sits at the intersection of high-precision calibration equipment and serious developer tooling. The background is a subtly cyan-tinted near-black (`oklch(13% 0.018 195)`) — still void-dark, but no longer dead-neutral. Surfaces are frosted glass instruments suspended over a WebGL particle field; depth reads through translucency, blur, highlight, and cursor-responsive parallax instead of solid tonal stacking. The semantic palette is now Committed: phosphor, violet, cyan, green, amber, and red gain visible surface presence through glass tints, glows, and particles while keeping their exact meanings.
 
 Typography is Inter for prose and JetBrains Mono for all technical content (step numbers, BDD syntax, test identifiers, code blocks). The pairing is deliberate: humanist sans for readability, geometric mono for precision. Display headings hit weight 800 at large scales.
 
@@ -77,34 +82,79 @@ Motion is intentional and minimal. Transitions run at 150ms (standard) or 250ms 
 
 ## Colors
 
-The palette has two layers: **structural neutrals** (govern surface, text, and border) and **semantic signals** (carry workflow state). Never swap a semantic color into a structural role.
+The palette has two layers: **structural neutrals** (govern surface, text, and border) and **semantic signals** (carry workflow state). The color strategy is **Committed semantic color**: semantic colors may occupy surfaces, glow fields, and particle accents, but only inside their assigned meaning. Committed means stronger presence, not decorative reuse.
+
+Never swap a semantic color into a structural role. Color is also never the only signal for state: every badge pairs color with a text label, and every status pairs color with an icon or label.
 
 ### Structural Neutrals
 
 | Token | Value | Character | Use |
 |---|---|---|---|
-| `--bg` | `#0a0a0a` | Void Black | Body background. The darkest surface; nothing sits below this. |
-| `--surface-1` | `#121212` | Instrument Shell | Panel backgrounds, sidebar, main workspace containers. |
-| `--surface-2` | `#18181b` | Lifted Panel | Cards, modals, elevated content areas. |
-| `--border` | `#27272a` | Obsidian Edge | All borders and dividers. 1px only. |
-| `--text` | `#f5f5f5` | Primary Ink | Body text, headings, interactive labels. |
-| `--text-2` | `#a1a1aa` | Secondary Ink | Metadata, timestamps, placeholders, secondary labels. |
-| `--text-3` | `#71717a` | Tertiary Ink | Disabled states, ghost text, tertiary metadata. |
+| `--bg` | `oklch(13% 0.018 195)` | Tinted Void | Body background. The darkest surface; nothing sits below this. |
+| `--surface-1` | `oklch(16% 0.018 195)` | Instrument Shell | Panel backgrounds, sidebar, main workspace containers. |
+| `--surface-2` | `oklch(20% 0.018 195)` | Lifted Panel | Cards, modals, elevated content areas. |
+| `--border` | `oklch(28% 0.018 195)` | Obsidian Edge | All borders and dividers. 1px only. |
+| `--text` | `oklch(97% 0.004 195)` | Primary Ink | Body text, headings, interactive labels. |
+| `--text-2` | `oklch(72% 0.012 195)` | Secondary Ink | Metadata, timestamps, placeholders, secondary labels. |
+| `--text-3` | `oklch(56% 0.012 195)` | Tertiary Ink | Disabled states, ghost text, tertiary metadata. Large text only unless a future scrim is applied. |
 
 ### Semantic Signals
 
-| Token | Value | Workflow Name | Carries |
-|---|---|---|---|
-| `--accent` | `#b8ff5a` | Phosphor Green | Primary action, active state, brand anchor. Never semantic state. |
-| `--purple` | `#a78bfa` | Analysis Violet | AI analysis triggers, AI-generated content indicators. |
-| `--cyan` | `#67e8f9` / `#22d3ee` | Generation Cyan | Test case generation, export actions, build triggers. |
-| `--green` | `#22c55e` | Approval Green | Approved status, passed tests, confirmed states. |
-| `--amber` | `#fbbf24` | Risk Amber | Needs clarification, warnings, risk annotations. |
-| `--red` | `#f87171` | Rejection Red | Rejected status, critical errors, destructive confirmations. |
+Each semantic color has four required variants:
 
-Each semantic signal has a `*-bg` (tinted background at ~9–10% opacity) and `*-border` (tinted border at 30–45% opacity) variant for container states: badges, callouts, workflow panels.
+| Variant | Purpose |
+|---|---|
+| `--color-{name}` | Base text, icon, focus, and solid action color. |
+| `--color-{name}-glass` | Translucent tint for frosted semantic surfaces. Existing `*-bg` aliases point here. |
+| `--color-{name}-glow` | 3D-lit hover, focus, and contact glow. |
+| `--color-{name}-particle` | Saturated particle color that remains legible behind the WebGL field. |
 
-**Color as sole carrier rule:** color is never the only signal for state. Every badge pairs color with a text label. Every status pairs color with an icon or label. This is both an accessibility requirement (WCAG 2.2 AA) and a design constraint.
+| Meaning | Base | Glass | Glow | Particle |
+|---|---|---|---|---|
+| Phosphor / primary | `oklch(88% 0.19 130)` | `oklch(88% 0.19 130 / 0.16)` | `oklch(88% 0.19 130 / 0.36)` | `oklch(86% 0.26 130)` |
+| Violet / analysis | `oklch(76% 0.17 300)` | `oklch(76% 0.17 300 / 0.16)` | `oklch(76% 0.17 300 / 0.34)` | `oklch(75% 0.24 300)` |
+| Cyan / generation | `oklch(84% 0.13 205)` | `oklch(84% 0.13 205 / 0.15)` | `oklch(84% 0.13 205 / 0.34)` | `oklch(82% 0.20 205)` |
+| Green / approved | `oklch(73% 0.17 150)` | `oklch(73% 0.17 150 / 0.16)` | `oklch(73% 0.17 150 / 0.34)` | `oklch(72% 0.23 150)` |
+| Amber / risk | `oklch(83% 0.17 82)` | `oklch(83% 0.17 82 / 0.15)` | `oklch(83% 0.17 82 / 0.32)` | `oklch(82% 0.23 82)` |
+| Red / rejected | `oklch(72% 0.18 25)` | `oklch(72% 0.18 25 / 0.16)` | `oklch(72% 0.18 25 / 0.34)` | `oklch(70% 0.24 25)` |
+
+Compatibility aliases remain in the token layer: `--color-accent` maps to phosphor, `--color-purple` maps to violet, and legacy `*-bg` tokens map to the new `*-glass` variants.
+
+### Contrast Check
+
+Ratios below are computed from the OKLCH tokens, with translucent glass composited over `--color-bg`. WCAG 2.2 AA requires 4.5:1 for body text and 3:1 for large text.
+
+| Surface | Text | Ratio | Body | Large |
+|---|---|---:|---|---|
+| `--color-bg` | `--color-text` | 18.43:1 | Pass | Pass |
+| `--color-bg` | `--color-text-2` | 8.13:1 | Pass | Pass |
+| `--color-bg` | `--color-text-3` | 4.34:1 | Fail | Pass |
+| `--color-surface-1` | `--color-text` | 17.77:1 | Pass | Pass |
+| `--color-surface-1` | `--color-text-2` | 7.84:1 | Pass | Pass |
+| `--color-surface-1` | `--color-text-3` | 4.18:1 | Fail | Pass |
+| `--color-surface-2` | `--color-text` | 16.55:1 | Pass | Pass |
+| `--color-surface-2` | `--color-text-2` | 7.30:1 | Pass | Pass |
+| `--color-surface-2` | `--color-text-3` | 3.90:1 | Fail | Pass |
+| `--glass-bg-1` | `--color-text` | 18.04:1 | Pass | Pass |
+| `--glass-bg-1` | `--color-text-2` | 7.96:1 | Pass | Pass |
+| `--glass-bg-1` | `--color-text-3` | 4.25:1 | Fail | Pass |
+| `--glass-bg-2` | `--color-text` | 17.15:1 | Pass | Pass |
+| `--glass-bg-2` | `--color-text-2` | 7.57:1 | Pass | Pass |
+| `--glass-bg-2` | `--color-text-3` | 4.04:1 | Fail | Pass |
+| `--glass-bg-3` | `--color-text` | 15.67:1 | Pass | Pass |
+| `--glass-bg-3` | `--color-text-2` | 6.92:1 | Pass | Pass |
+| `--glass-bg-3` | `--color-text-3` | 3.69:1 | Fail | Pass |
+
+`--color-text-3` is not body-copy safe on any listed surface. Until 23D/23F implements component scrims, use it only for disabled, decorative, or large tertiary text. To make `--color-text-3` body-safe without changing the text token, a local black scrim over the surface is required: 82% over `--color-bg`, 90% over `--color-surface-1`, 94% over `--color-surface-2`, 88% over `--glass-bg-1`, 92% over `--glass-bg-2`, and 95% over `--glass-bg-3`.
+
+| Glass Tint | Text | Ratio | Body | Large |
+|---|---|---:|---|---|
+| Phosphor glass | Phosphor base | 9.31:1 | Pass | Pass |
+| Violet glass | Violet base | 6.19:1 | Pass | Pass |
+| Cyan glass | Cyan base | 8.64:1 | Pass | Pass |
+| Green glass | Green base | 6.34:1 | Pass | Pass |
+| Amber glass | Amber base | 8.15:1 | Pass | Pass |
+| Red glass | Red base | 5.56:1 | Pass | Pass |
 
 ---
 
