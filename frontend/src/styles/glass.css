@@ -1,0 +1,157 @@
+/* Reusable glass material primitives. Use with the 23A token layer only. */
+
+.glass-surface {
+  --glass-surface-bg: var(--glass-bg-2);
+  --glass-surface-blur: var(--glass-blur-md);
+  --glass-surface-border: var(--glass-border-hi);
+  --glass-surface-hover-bg: var(--glass-bg-3);
+  --glass-surface-disabled-opacity: 0.58;
+  --glass-surface-focus: var(--color-accent-border);
+
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border: 1px solid var(--glass-surface-border);
+  border-radius: var(--radius-lg);
+  background: var(--glass-surface-bg);
+  color: var(--color-text);
+  box-shadow: var(--glass-border-highlight);
+  backdrop-filter: var(--glass-surface-blur);
+  -webkit-backdrop-filter: var(--glass-surface-blur);
+  transform: translateZ(0);
+  transition:
+    background var(--dur) var(--ease),
+    border-color var(--dur) var(--ease),
+    box-shadow var(--dur-slow) var(--ease-out-quart),
+    opacity var(--dur) var(--ease),
+    transform var(--dur-slow) var(--ease-out-quart);
+}
+
+.glass-surface::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--glass-noise);
+  opacity: 0.42;
+  pointer-events: none;
+}
+
+.glass-surface:hover {
+  border-color: var(--glass-border-hi);
+  background: var(--glass-surface-hover-bg);
+  box-shadow: var(--glass-border-highlight), var(--glass-shadow);
+}
+
+.glass-surface:focus,
+.glass-surface:focus-visible,
+.glass-surface:focus-within {
+  border-color: var(--glass-surface-focus);
+  box-shadow:
+    var(--glass-border-highlight),
+    0 0 0 3px var(--color-accent-bg),
+    var(--glass-shadow);
+}
+
+.glass-surface:active {
+  transform: translateY(1px) translateZ(0);
+}
+
+.glass-surface:disabled,
+.glass-surface[aria-disabled='true'],
+.glass-surface.is-disabled {
+  cursor: not-allowed;
+  opacity: var(--glass-surface-disabled-opacity);
+  box-shadow: var(--glass-border-highlight);
+  transform: none;
+}
+
+.glass-surface--1 {
+  --glass-surface-bg: var(--glass-bg-1);
+  --glass-surface-blur: var(--glass-blur-sm);
+  --glass-surface-hover-bg: var(--glass-bg-2);
+}
+
+.glass-surface--2 {
+  --glass-surface-bg: var(--glass-bg-2);
+  --glass-surface-blur: var(--glass-blur-md);
+  --glass-surface-hover-bg: var(--glass-bg-3);
+}
+
+.glass-surface--3 {
+  --glass-surface-bg: var(--glass-bg-3);
+  --glass-surface-blur: var(--glass-blur-lg);
+  --glass-surface-hover-bg: var(--glass-bg-3);
+}
+
+.glass-surface--interactive {
+  cursor: pointer;
+}
+
+.glass-surface--interactive:hover {
+  transform: translateY(-2px) translateZ(0);
+}
+
+.glass-surface--interactive:active {
+  transform: translateY(0) translateZ(0);
+}
+
+.glass-surface--flat,
+.glass-surface--flat:hover,
+.glass-surface--flat:active {
+  transform: translateZ(0);
+}
+
+.glass-readable-scrim,
+.glass-scrim {
+  --glass-scrim-opacity: 0.92;
+  position: relative;
+  isolation: isolate;
+}
+
+.glass-readable-scrim::after,
+.glass-scrim::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: rgba(0, 0, 0, var(--glass-scrim-opacity));
+  pointer-events: none;
+}
+
+.glass-scrim--bg { --glass-scrim-opacity: 0.82; }
+.glass-scrim--surface-1 { --glass-scrim-opacity: 0.90; }
+.glass-scrim--surface-2 { --glass-scrim-opacity: 0.94; }
+.glass-scrim--1 { --glass-scrim-opacity: 0.88; }
+.glass-scrim--2 { --glass-scrim-opacity: 0.92; }
+.glass-scrim--3 { --glass-scrim-opacity: 0.95; }
+
+@media (prefers-reduced-motion: reduce) {
+  .glass-surface {
+    transition:
+      background 1ms linear,
+      border-color 1ms linear,
+      box-shadow 1ms linear,
+      opacity 1ms linear;
+  }
+
+  .glass-surface,
+  .glass-surface:hover,
+  .glass-surface:active {
+    transform: none;
+  }
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .glass-surface {
+    background: var(--color-surface-2);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .glass-surface--1 { background: var(--color-surface-1); }
+  .glass-surface--2,
+  .glass-surface--3 { background: var(--color-surface-2); }
+}
