@@ -114,7 +114,7 @@ export class BackgroundSceneComponent implements OnDestroy {
         controller.abort();
         this.scene.dispose();
         resolve('fallback');
-      }, 3000);
+      }, 8000);
     });
 
     try {

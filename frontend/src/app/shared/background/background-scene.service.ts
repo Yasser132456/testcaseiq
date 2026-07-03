@@ -35,12 +35,6 @@ export class BackgroundSceneService {
 
     this.throwIfAborted(signal);
 
-    if (!reducedMotion && !(await this.passesFpsProbe())) {
-      return 'fallback';
-    }
-
-    this.throwIfAborted(signal);
-
     const THREE = await import('three');
     this.throwIfAborted(signal);
 
@@ -188,34 +182,7 @@ export class BackgroundSceneService {
   private isLowEndDevice(): boolean {
     const cores = navigator.hardwareConcurrency || 2;
     const mobileViewport = window.matchMedia('(max-width: 760px), (pointer: coarse)').matches;
-    return cores <= 4 || mobileViewport;
-  }
-
-  private async passesFpsProbe(): Promise<boolean> {
-    const frameCount = 18;
-
-    return new Promise((resolve) => {
-      let frames = 0;
-      let start = 0;
-
-      const tick = (time: number) => {
-        if (!start) {
-          start = time;
-        }
-
-        frames += 1;
-
-        if (frames >= frameCount) {
-          const elapsed = Math.max(time - start, 1);
-          resolve((frames / elapsed) * 1000 >= 45);
-          return;
-        }
-
-        requestAnimationFrame(tick);
-      };
-
-      requestAnimationFrame(tick);
-    });
+    return cores <= 2 || mobileViewport;
   }
 
   private isForcedFallback(): boolean {
