@@ -40,6 +40,7 @@ export class TiltDirective implements AfterViewInit, OnChanges, OnDestroy {
 
   private syncTilt(): void {
     const host = this.el.nativeElement;
+    host.dataset['testid'] = 'glass-tilt';
     if (!this.canTilt()) {
       this.destroyTilt();
       host.dataset['tiltState'] = this.reducedMotionQuery.matches ? 'reduced-motion' : 'disabled';
