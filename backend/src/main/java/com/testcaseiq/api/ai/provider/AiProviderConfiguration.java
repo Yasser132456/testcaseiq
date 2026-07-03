@@ -1,7 +1,6 @@
 package com.testcaseiq.api.ai.provider;
 
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -42,7 +41,6 @@ public class AiProviderConfiguration {
     }
 
     @Bean
-    @ConditionalOnBean(ChatClient.Builder.class)
     @ConditionalOnMissingBean(AiChatClient.class)
     @ConditionalOnProperty(name = "ai.provider", havingValue = "openai")
     AiChatClient springAiChatClient(ChatClient.Builder chatClientBuilder) {
