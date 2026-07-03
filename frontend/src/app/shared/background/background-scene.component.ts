@@ -26,6 +26,7 @@ import { BackgroundSceneMode, BackgroundSceneService } from './background-scene.
     <div
       #stage
       class="background-scene"
+      data-testid="background-scene"
       [class.is-fallback]="mode() === 'fallback'"
       [class.is-static]="mode() === 'static'"
       aria-hidden="true"

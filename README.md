@@ -48,7 +48,8 @@ Angular Frontend (port 4200)
 GitHub Actions CI
   ├── Secret hygiene scan
   ├── Backend: Maven tests on Java 21 (cached)
-  └── Frontend: npm install + Angular build on Node.js 24 (cached)
+  ├── Frontend: Karma tests + Angular build on Node.js 24 (cached)
+  └── E2E: full stack + Playwright Chromium in mock AI mode
 ```
 
 ### Key design decisions
@@ -321,7 +322,7 @@ All endpoints are under `/api`. Consistent error response format:
 
 ---
 
-## Testing & CI
+## Testing
 
 ### Run backend tests
 
@@ -332,6 +333,13 @@ mvn test
 
 Tests use a mock AI provider. No real AI credentials or database required for unit/slice tests.
 
+### Run frontend unit tests
+
+```bash
+cd frontend
+npm test -- --watch=false --browsers=ChromeHeadless
+```
+
 ### Run frontend build
 
 ```bash
@@ -339,13 +347,39 @@ cd frontend
 npm run build
 ```
 
-### CI pipeline (GitHub Actions)
+### Run Playwright e2e tests
+
+Start the full local stack first:
+
+```bash
+docker compose up -d
+
+cd backend
+mvn spring-boot:run
+
+cd ../frontend
+npm start
+```
+
+Then run the suite from another terminal:
+
+```bash
+cd frontend
+npm run e2e
+```
+
+Use `npm run e2e:ui` to debug interactively.
+
+TestCaseIQ exports Playwright suites and is itself tested with Playwright.
+
+## CI Pipeline
 
 Runs on every push and pull request to `main`:
 
 1. **Secret hygiene** — blocks committed `.env` files and obvious API keys
 2. **Backend tests** — Maven test suite on Java 21 with cached dependencies
-3. **Frontend build** — Angular production build on Node.js 24 with cached npm dependencies
+3. **Frontend tests and build** — Karma unit tests plus Angular production build on Node.js 24 with cached npm dependencies
+4. **Playwright e2e** — starts PostgreSQL, Redis, Spring Boot in mock AI mode, Angular on port 4200, then runs the Chromium e2e suite
 
 ---
 
