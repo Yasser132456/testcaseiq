@@ -156,6 +156,37 @@ mvn spring-boot:run -Dspring-boot.run.profiles=demo
 - npm
 - Docker Desktop (for PostgreSQL and Redis)
 
+### Configuration
+
+TestCaseIQ defaults to the mock AI provider, so fresh clones can boot without OpenAI credentials.
+
+| Variable | Default | Notes |
+|----------|---------|-------|
+| `AI_PROVIDER` | `mock` | `mock` or `openai`. `mock` disables the Spring AI OpenAI chat model. |
+| `OPENAI_API_KEY` | empty | Required only when `AI_PROVIDER=openai`. |
+| `OPENAI_MODEL` | `gpt-4o-mini` | OpenAI chat model used in OpenAI mode. |
+| `OPENAI_BASE_URL` | `https://api.openai.com` | Override for OpenAI-compatible endpoints. |
+| `TESTCASEIQ_DATABASE_URL` | `jdbc:postgresql://localhost:5432/testcaseiq` | Backend JDBC URL. |
+| `TESTCASEIQ_DATABASE_USERNAME` | `testcaseiq` | Backend DB username. |
+| `TESTCASEIQ_DATABASE_PASSWORD` | `testcaseiq_dev_password` | Backend DB password. |
+| `REDIS_HOST` | `localhost` | Redis host for local tooling. |
+| `REDIS_PORT` | `6379` | Redis port for local tooling. |
+
+Local startup sequence:
+
+```bash
+docker compose up -d
+
+cd backend
+mvn spring-boot:run
+
+cd ../frontend
+npm ci
+npm start
+```
+
+The backend listens on `http://localhost:8080`; the frontend listens on `http://localhost:4200` and proxies `/api` to the backend.
+
 ### 1. Start infrastructure
 
 ```bash

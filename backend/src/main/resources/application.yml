@@ -28,9 +28,6 @@ spring:
         temperature: 0.1
         response-format:
           type: JSON_OBJECT
-        options:
-          model: ${OPENAI_MODEL:gpt-4o-mini}
-          temperature: 0.1
 
 ai:
   provider: ${AI_PROVIDER:mock}
