@@ -86,6 +86,7 @@ public class AuditEvent {
 
     public String getMetadata() { return metadata; }
 
+    public void setTimestamp(Instant timestamp) { this.timestamp = timestamp; }
     public void setActorUserId(UUID actorUserId) { this.actorUserId = actorUserId; }
     public void setActorEmail(String actorEmail) { this.actorEmail = actorEmail; }
     public void setActorRole(String actorRole) { this.actorRole = actorRole; }

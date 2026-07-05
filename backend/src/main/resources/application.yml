@@ -42,5 +42,8 @@ app:
     jwt-secret: ${TESTCASEIQ_JWT_SECRET:testcaseiq-local-development-jwt-secret-change-me}
     access-token-expiration-seconds: ${TESTCASEIQ_ACCESS_TOKEN_EXPIRATION_SECONDS:3600}
 
+demo:
+  mode: ${DEMO_MODE:false}
+
 server:
   port: 8080

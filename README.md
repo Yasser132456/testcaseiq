@@ -113,37 +113,49 @@ GitHub Actions CI
 
 ---
 
-## Demo Mode
+## Demo mode
 
-Demo mode seeds a realistic QA dataset on startup so the platform is immediately usable without manual data entry.
+Demo mode seeds a realistic mid-sprint QA workflow on startup so a fresh portfolio environment opens with dashboard metrics, story statuses, review queues, export-ready suites, and audit activity already populated.
+
+The seed runs from a startup initializer instead of a Flyway data migration. Flyway stays responsible for schema changes, while demo data remains opt-in runtime behavior because it needs password hashing, entity relationships, and the `DEMO_MODE` flag.
 
 ### Activate
 
+Start with an empty local database, then enable the flag:
+
 ```bash
 cd backend
-mvn spring-boot:run -Dspring-boot.run.profiles=demo
+$env:DEMO_MODE="true"
+mvn spring-boot:run
+```
+
+On macOS or Linux:
+
+```bash
+cd backend
+DEMO_MODE=true mvn spring-boot:run
 ```
 
 ### Seeded data
 
 | Entity | Count | Details |
 |--------|-------|---------|
-| Users | 3 | One per role (see credentials below) |
-| Projects | 3 | E-commerce Platform QA, Banking API QA, HR System QA |
-| Stories | 6 | Realistic acceptance criteria; mix of statuses |
-| Test Suites | 4 | Checkout Flow, Product Search, Fund Transfer API, MFA Security, Onboarding |
-| Test Cases | 9 | Mix of APPROVED / NEEDS_REVIEW / REJECTED / DRAFT with steps |
-| Audit Events | 14 | Login, generation, review decisions, export |
+| Users | 3 | QA engineer, admin, and viewer accounts |
+| Projects | 3 | Harborlane Dispatch, Willowbend Patient Portal, Ledgerwell Payments Console |
+| Stories | 12 | Draft, analyzed, generated, reviewed, and exported workflow states |
+| Test suites | 7 | Logistics, patient portal, payments, risk, and export coverage |
+| Test cases | 18 | Draft, needs review, approved, and rejected cases with BDD-style steps |
+| Audit events | 14 | Story analysis, generation, review decisions, exports, and login activity |
 
 ### Demo credentials
 
 | Role | Email | Password |
 |------|-------|----------|
-| `ADMIN` | `admin@demo.testcaseiq.io` | `demo123!` |
-| `QA_ENGINEER` | `qa@demo.testcaseiq.io` | `demo123!` |
-| `VIEWER` | `viewer@demo.testcaseiq.io` | `demo123!` |
+| `QA_ENGINEER` | `demo@testcaseiq.local` | `testcaseiq-demo-24A` |
+| `ADMIN` | `admin@testcaseiq.local` | `testcaseiq-demo-24A` |
+| `VIEWER` | `viewer@testcaseiq.local` | `testcaseiq-demo-24A` |
 
-**Idempotent:** seeding skips automatically if any users already exist. Safe to restart.
+Seeding is idempotent: it runs only when `DEMO_MODE=true` and the core database is empty. Restarting the backend does not duplicate demo data.
 
 ---
 
@@ -167,6 +179,7 @@ TestCaseIQ defaults to the mock AI provider, so fresh clones can boot without Op
 | `OPENAI_API_KEY` | empty | Required only when `AI_PROVIDER=openai`. |
 | `OPENAI_MODEL` | `gpt-4o-mini` | OpenAI chat model used in OpenAI mode. |
 | `OPENAI_BASE_URL` | `https://api.openai.com` | Override for OpenAI-compatible endpoints. |
+| `DEMO_MODE` | `false` | Set to `true` to seed the portfolio demo dataset on an empty database. |
 | `TESTCASEIQ_DATABASE_URL` | `jdbc:postgresql://localhost:5432/testcaseiq` | Backend JDBC URL. |
 | `TESTCASEIQ_DATABASE_USERNAME` | `testcaseiq` | Backend DB username. |
 | `TESTCASEIQ_DATABASE_PASSWORD` | `testcaseiq_dev_password` | Backend DB password. |
@@ -210,7 +223,8 @@ curl http://localhost:8080/api/health
 To start with demo seed data:
 
 ```bash
-mvn spring-boot:run -Dspring-boot.run.profiles=demo
+$env:DEMO_MODE="true"
+mvn spring-boot:run
 ```
 
 ### 3. Start the frontend

@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 
 import com.testcaseiq.api.ai.dto.AmbiguityDetectionResult;
 import com.testcaseiq.api.ai.dto.CoverageItemDto;
@@ -38,17 +39,22 @@ public class MockAiGenerationProvider implements AiGenerationProvider {
 
     @Override
     public StoryAnalysisResult analyzeStory(StoryAnalysisRequest request) {
+        String title = safe(request.title()).isBlank() ? "Untitled story" : request.title().trim();
         String rawText = safe(request.rawText());
         String lowerText = rawText.toLowerCase(Locale.ROOT);
         String actor = extractActor(rawText);
         String goal = extractGoal(rawText);
         List<String> acceptanceCriteria = extractAcceptanceCriteria(rawText);
+        String primaryCriterion = acceptanceCriteria.isEmpty()
+                ? "the primary workflow succeeds with clear user feedback"
+                : acceptanceCriteria.getFirst();
+        String secondaryCriterion = acceptanceCriteria.size() > 1 ? acceptanceCriteria.get(1) : primaryCriterion;
 
         List<ExtractedRequirementDto> requirements = new ArrayList<>();
         requirements.add(new ExtractedRequirementDto(
                 "REQ-1",
                 "Primary user goal",
-                actor + " can " + goal + ".",
+                actor + " can " + normalizeGoal(goal) + " for \"" + title + "\"; acceptance criterion: " + primaryCriterion + ".",
                 RequirementType.FUNCTIONAL,
                 Priority.HIGH,
                 RiskLevel.MEDIUM
@@ -56,7 +62,7 @@ public class MockAiGenerationProvider implements AiGenerationProvider {
         requirements.add(new ExtractedRequirementDto(
                 "REQ-2",
                 "Validation and feedback",
-                "The system provides clear feedback for invalid or incomplete inputs.",
+                "The system gives clear feedback for \"" + title + "\" when this criterion is not met: " + secondaryCriterion + ".",
                 RequirementType.ACCEPTANCE_CRITERION,
                 Priority.MEDIUM,
                 RiskLevel.MEDIUM
@@ -87,9 +93,9 @@ public class MockAiGenerationProvider implements AiGenerationProvider {
         ));
 
         List<CoverageItemDto> coverageItems = List.of(
-                new CoverageItemDto("REQ-1", CoverageCategory.HAPPY_PATH, "Verify the primary successful workflow.", RiskLevel.MEDIUM),
-                new CoverageItemDto("REQ-2", CoverageCategory.NEGATIVE_PATH, "Verify validation feedback for missing or invalid inputs.", RiskLevel.MEDIUM),
-                new CoverageItemDto("REQ-2", CoverageCategory.BOUNDARY, "Verify boundary values and empty input behavior.", RiskLevel.LOW)
+                new CoverageItemDto("REQ-1", CoverageCategory.HAPPY_PATH, "Verify " + title + " succeeds when " + primaryCriterion + ".", RiskLevel.MEDIUM),
+                new CoverageItemDto("REQ-2", CoverageCategory.NEGATIVE_PATH, "Verify " + title + " gives actionable feedback when " + secondaryCriterion + ".", RiskLevel.MEDIUM),
+                new CoverageItemDto("REQ-2", CoverageCategory.BOUNDARY, "Verify " + title + " handles limits around " + secondaryCriterion + ".", RiskLevel.LOW)
         );
 
         QaValidationResult qaValidation = new QaValidationResult(
@@ -109,12 +115,20 @@ public class MockAiGenerationProvider implements AiGenerationProvider {
                 new CoveragePlanResult(coverageItems),
                 qaValidation,
                 PROVIDER_NAME,
-                Instant.now()
+                deterministicInstant(request.storyId())
         );
     }
 
     @Override
     public GeneratedTestSuiteResult generateTestCases(TestGenerationRequest request) {
+        String title = safe(request.title()).isBlank() ? "Untitled story" : request.title().trim();
+        String rawText = safe(request.rawText());
+        String actor = extractActor(rawText);
+        String goal = normalizeGoal(extractGoal(rawText));
+        List<String> criteria = extractAcceptanceCriteria(rawText);
+        String primaryCriterion = criteria.isEmpty() ? "the primary workflow succeeds" : criteria.getFirst();
+        String secondaryCriterion = criteria.size() > 1 ? criteria.get(1) : "required inputs are missing or invalid";
+        String boundaryCriterion = criteria.size() > 2 ? criteria.get(2) : "the workflow reaches a boundary condition";
         List<ExtractedRequirementDto> requirements = request.requirements() == null ? List.of() : request.requirements();
         List<String> requirementReferences = requirements.stream()
                 .map(ExtractedRequirementDto::reference)
@@ -125,63 +139,63 @@ public class MockAiGenerationProvider implements AiGenerationProvider {
         List<GeneratedTestCaseDto> testCases = List.of(
                 new GeneratedTestCaseDto(
                         "Complete primary workflow successfully",
-                        "Manual functional test covering the core story outcome.",
+                        "Manual functional test covering \"" + title + "\" for " + actor + ".",
                         TestCaseType.FUNCTIONAL,
                         TestLayer.UI,
                         Priority.HIGH,
                         RiskLevel.MEDIUM,
                         true,
                         0.91,
-                        "Given a valid user context\nWhen the user completes the workflow\nThen the expected outcome is shown",
+                        "Given " + primaryCriterion + "\nWhen " + actor + " " + goal + "\nThen \"" + title + "\" completes successfully",
                         linkedReferences,
                         List.of(
-                                new GeneratedTestStepDto(1, "Open the feature workspace.", "The workspace loads without errors."),
-                                new GeneratedTestStepDto(2, "Enter valid inputs for the story workflow.", "The inputs are accepted."),
-                                new GeneratedTestStepDto(3, "Submit the workflow.", "The system confirms the successful outcome.")
+                                new GeneratedTestStepDto(1, "Open the \"" + title + "\" workspace.", "The workspace loads without errors."),
+                                new GeneratedTestStepDto(2, "Enter valid story data that satisfies: " + primaryCriterion + ".", "The inputs are accepted."),
+                                new GeneratedTestStepDto(3, "Submit the \"" + title + "\" workflow.", "The system confirms the successful outcome.")
                         ),
-                        List.of(new GeneratedTestDataDto("validUserInput", "{\"state\":\"valid\",\"role\":\"standard-user\"}")),
-                        "Covers the primary acceptance criterion: the user can complete the core workflow successfully.",
-                        "Given a valid user context, When the user completes the workflow, Then the expected outcome is shown."
+                        List.of(new GeneratedTestDataDto("validStoryInput", "{\"story\":\"" + jsonEscape(title) + "\",\"state\":\"valid\"}")),
+                        "Covers the story-specific happy path for \"" + title + "\".",
+                        primaryCriterion
                 ),
                 new GeneratedTestCaseDto(
                         "Reject incomplete required input",
-                        "Negative test covering missing mandatory information.",
+                        "Negative test covering the validation path for \"" + title + "\".",
                         TestCaseType.NEGATIVE,
                         TestLayer.UI,
                         Priority.MEDIUM,
                         RiskLevel.MEDIUM,
                         true,
                         0.88,
-                        "Given required fields are missing\nWhen the user submits the workflow\nThen validation messages are displayed",
+                        "Given " + secondaryCriterion + "\nWhen " + actor + " submits incomplete information\nThen validation messages explain the correction",
                         linkedReferences,
                         List.of(
-                                new GeneratedTestStepDto(1, "Open the feature workspace.", "The workspace loads without errors."),
-                                new GeneratedTestStepDto(2, "Leave required inputs empty.", "The form remains editable."),
-                                new GeneratedTestStepDto(3, "Submit the workflow.", "Validation feedback identifies the missing inputs.")
+                                new GeneratedTestStepDto(1, "Open the \"" + title + "\" workspace.", "The workspace loads without errors."),
+                                new GeneratedTestStepDto(2, "Leave the data for \"" + secondaryCriterion + "\" incomplete.", "The form remains editable."),
+                                new GeneratedTestStepDto(3, reviewerStep(rawText, title), "Validation feedback identifies the missing or invalid inputs.")
                         ),
-                        List.of(new GeneratedTestDataDto("missingRequiredInput", "{\"state\":\"invalid\",\"missingFields\":true}")),
-                        "Targets the validation failure path identified in REQ-2 (validation and feedback).",
-                        "Given required fields are missing, When the user submits the workflow, Then validation messages are displayed."
+                        List.of(new GeneratedTestDataDto("invalidStoryInput", "{\"story\":\"" + jsonEscape(title) + "\",\"state\":\"invalid\"}")),
+                        "Targets the story-specific validation path from REQ-2.",
+                        secondaryCriterion
                 ),
                 new GeneratedTestCaseDto(
                         "Handle boundary-length input",
-                        "Boundary test for minimum and maximum supported text input.",
+                        "Boundary test for the riskiest edge condition in \"" + title + "\".",
                         TestCaseType.BOUNDARY,
                         TestLayer.UI,
                         Priority.MEDIUM,
                         RiskLevel.LOW,
                         false,
                         0.82,
-                        "Given boundary-length data\nWhen the workflow is submitted\nThen the system handles the value consistently",
+                        "Given " + boundaryCriterion + "\nWhen " + actor + " reaches that edge case\nThen the system handles the value consistently",
                         linkedReferences,
                         List.of(
-                                new GeneratedTestStepDto(1, "Enter a minimum-length value.", "The value is accepted or rejected according to validation rules."),
-                                new GeneratedTestStepDto(2, "Enter a maximum-length value.", "The value is accepted without truncation."),
-                                new GeneratedTestStepDto(3, "Submit each boundary case.", "The system response is clear and consistent.")
+                                new GeneratedTestStepDto(1, "Prepare boundary data for \"" + title + "\".", "The edge-case fixture is available."),
+                                new GeneratedTestStepDto(2, "Submit data around: " + boundaryCriterion + ".", "The value is accepted or rejected according to the story rule."),
+                                new GeneratedTestStepDto(3, "Compare the response with adjacent valid data.", "The system response is clear and consistent.")
                         ),
-                        List.of(new GeneratedTestDataDto("boundaryInput", "{\"min\":\"a\",\"maxLengthCandidate\":255}")),
-                        "Addresses the boundary coverage gap from coverage planning (BOUNDARY category).",
-                        "Given boundary-length data, When the workflow is submitted, Then the system handles the value consistently."
+                        List.of(new GeneratedTestDataDto("boundaryStoryInput", "{\"story\":\"" + jsonEscape(title) + "\",\"boundary\":\"" + jsonEscape(boundaryCriterion) + "\"}")),
+                        "Addresses the boundary coverage gap from the story acceptance criteria.",
+                        boundaryCriterion
                 )
         );
 
@@ -191,7 +205,7 @@ public class MockAiGenerationProvider implements AiGenerationProvider {
                 testCases,
                 new QaValidationResult(0.84, 0.87, List.of("Review generated edge cases against final acceptance criteria.")),
                 PROVIDER_NAME,
-                Instant.now()
+                deterministicInstant(request.storyId())
         );
     }
 
@@ -225,13 +239,51 @@ public class MockAiGenerationProvider implements AiGenerationProvider {
         return "complete the requested workflow";
     }
 
+    private String normalizeGoal(String goal) {
+        String normalized = goal == null ? "" : goal.trim();
+        if (normalized.toLowerCase(Locale.ROOT).startsWith("to ")) {
+            normalized = normalized.substring(3).trim();
+        }
+        return normalized.isBlank() ? "complete the requested workflow" : normalized;
+    }
+
     private List<String> extractAcceptanceCriteria(String rawText) {
         return rawText.lines()
                 .map(String::trim)
-                .filter(line -> line.toLowerCase(Locale.ROOT).startsWith("given ")
-                        || line.toLowerCase(Locale.ROOT).startsWith("when ")
-                        || line.toLowerCase(Locale.ROOT).startsWith("then "))
+                .map(this::normalizeAcceptanceCriterion)
+                .filter(line -> !line.isBlank())
                 .toList();
+    }
+
+    private String normalizeAcceptanceCriterion(String line) {
+        String lower = line.toLowerCase(Locale.ROOT);
+        if (lower.startsWith("ac:")) {
+            return line.substring(3).trim().replaceAll("[.\\s]+$", "");
+        }
+        if (lower.startsWith("acceptance criterion:")) {
+            return line.substring("acceptance criterion:".length()).trim().replaceAll("[.\\s]+$", "");
+        }
+        if (lower.startsWith("given ") || lower.startsWith("when ") || lower.startsWith("then ")) {
+            return line.replaceAll("[.\\s]+$", "");
+        }
+        return "";
+    }
+
+    private String reviewerStep(String rawText, String title) {
+        String lower = rawText.toLowerCase(Locale.ROOT);
+        if (lower.contains("coordinator") && lower.contains("reason")) {
+            return "Record the coordinator and reason while submitting \"" + title + "\".";
+        }
+        return "Submit the \"" + title + "\" workflow with incomplete required information.";
+    }
+
+    private Instant deterministicInstant(UUID storyId) {
+        long offset = storyId == null ? 0L : Math.floorMod(storyId.getLeastSignificantBits(), 86_400L);
+        return Instant.parse("2026-06-01T09:00:00Z").plusSeconds(offset);
+    }
+
+    private String jsonEscape(String value) {
+        return safe(value).replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
     private String safe(String value) {

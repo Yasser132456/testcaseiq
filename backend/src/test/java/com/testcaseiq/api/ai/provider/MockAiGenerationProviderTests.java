@@ -39,6 +39,32 @@ class MockAiGenerationProviderTests {
     }
 
     @Test
+    void analyzeStoryReferencesTitleAndAcceptanceCriteriaDeterministically() {
+        UUID storyId = UUID.fromString("8c43c44f-503d-4b67-b511-d5a435edc503");
+        StoryAnalysisRequest request = new StoryAnalysisRequest(
+                storyId,
+                "Clinician reviews lab results",
+                """
+                As a clinician, I want to review new lab results so I can decide whether to message the patient.
+                AC: unread abnormal results are highlighted.
+                AC: reviewed results move out of the urgent queue.
+                """,
+                StoryType.USER_STORY,
+                List.of()
+        );
+
+        StoryAnalysisResult first = provider.analyzeStory(request);
+        StoryAnalysisResult second = provider.analyzeStory(request);
+
+        assertThat(first).usingRecursiveComparison().isEqualTo(second);
+        assertThat(first.requirements().requirements())
+                .anySatisfy(requirement -> assertThat(requirement.description())
+                        .contains("Clinician reviews lab results", "unread abnormal results are highlighted"));
+        assertThat(first.coveragePlan().coverageItems())
+                .anySatisfy(item -> assertThat(item.description()).contains("reviewed results move out of the urgent queue"));
+    }
+
+    @Test
     void generateTestCasesReturnsFunctionalNegativeAndBoundaryTests() {
         UUID storyId = UUID.randomUUID();
         StoryAnalysisResult analysis = provider.analyzeStory(new StoryAnalysisRequest(
@@ -62,5 +88,41 @@ class MockAiGenerationProviderTests {
                 .contains(TestCaseType.FUNCTIONAL, TestCaseType.NEGATIVE, TestCaseType.BOUNDARY);
         assertThat(result.testCases().get(0).steps()).isNotEmpty();
         assertThat(result.testCases().get(0).linkedRequirementReferences()).contains("REQ-1");
+    }
+
+    @Test
+    void generateTestCasesUsesStoryTitleAndAcceptanceCriteriaDeterministically() {
+        UUID storyId = UUID.fromString("3316ebd1-9d3b-4b06-98ef-2163e152e0ad");
+        String title = "Dispatcher reassigns a delayed stop";
+        String rawText = """
+                As a route coordinator, I want to reassign a delayed stop so that the dock team can keep the trailer plan current.
+                AC: only unsealed routes can be reassigned.
+                AC: reassignment records the coordinator and reason.
+                AC: the old driver receives a removal notification.
+                """;
+
+        StoryAnalysisResult analysis = provider.analyzeStory(new StoryAnalysisRequest(
+                storyId,
+                title,
+                rawText,
+                StoryType.USER_STORY,
+                List.of()
+        ));
+        TestGenerationRequest request = new TestGenerationRequest(storyId, title, rawText, analysis.requirements().requirements());
+
+        GeneratedTestSuiteResult first = provider.generateTestCases(request);
+        GeneratedTestSuiteResult second = provider.generateTestCases(request);
+
+        assertThat(first).usingRecursiveComparison().isEqualTo(second);
+        assertThat(first.suiteName()).isEqualTo("Mock AI Regression Suite");
+        assertThat(first.testCases()).extracting("title")
+                .containsExactly("Complete primary workflow successfully", "Reject incomplete required input", "Handle boundary-length input");
+        assertThat(first.testCases()).extracting("description")
+                .allSatisfy(value -> assertThat((String) value).contains("Dispatcher reassigns a delayed stop"));
+        assertThat(first.testCases().get(0).bddScenario())
+                .contains("Given", "When", "Then", "unsealed routes can be reassigned");
+        assertThat(first.testCases())
+                .anySatisfy(testCase -> assertThat(testCase.steps())
+                        .anySatisfy(step -> assertThat(step.action()).contains("coordinator", "reason")));
     }
 }
