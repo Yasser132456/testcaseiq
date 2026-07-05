@@ -194,6 +194,78 @@
   font-weight: 600;
 }
 
+.activation-nudge {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-base);
+  padding: var(--space-sm) var(--space-base);
+  border: 1px solid var(--color-accent-border);
+  border-radius: var(--radius-md);
+  background: linear-gradient(var(--color-accent-bg), var(--color-accent-bg)), var(--glass-bg-2);
+  box-shadow: var(--glass-border-highlight);
+}
+
+.activation-nudge.compact {
+  justify-content: flex-start;
+  width: min(100%, 36rem);
+}
+
+.activation-nudge strong,
+.activation-nudge span:not(.progress-pill) {
+  color: var(--color-text);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.activation-nudge p {
+  margin: 0.2rem 0 0;
+  color: var(--color-text-2);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.activation-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+}
+
+.progress-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.55rem;
+  padding: 0 var(--space-sm);
+  border: 1px solid var(--color-accent-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-accent-bg);
+  color: var(--color-accent);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.analysis-button.phosphor-glow {
+  box-shadow: 0 0 0 1px var(--color-accent-border), 0 0 18px var(--color-accent-glow);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .analysis-button.phosphor-glow {
+    animation: phosphor-pulse 1.8s var(--ease) infinite;
+  }
+
+  @keyframes phosphor-pulse {
+    0%, 100% {
+      box-shadow: 0 0 0 1px var(--color-accent-border), 0 0 12px var(--color-accent-glow);
+    }
+
+    50% {
+      box-shadow: 0 0 0 1px var(--color-accent), 0 0 22px var(--color-accent-glow);
+    }
+  }
+}
+
 a.workflow-step {
   cursor: pointer;
   text-decoration: none;
@@ -300,6 +372,11 @@ a.workflow-step:focus-visible {
   }
 
   .review-board-banner {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .activation-nudge {
     align-items: flex-start;
     flex-direction: column;
   }

@@ -8,6 +8,7 @@ import { STORY_TYPES, Story, StoryType } from '../../core/models/story.model';
 import { TestSuiteSummary } from '../../core/models/test-suite.model';
 import { AuditEventService } from '../../core/services/audit-event.service';
 import { AuthService } from '../../core/services/auth.service';
+import { OnboardingProgressService } from '../../core/services/onboarding-progress.service';
 import { ProjectService } from '../../core/services/project.service';
 import { StoryService } from '../../core/services/story.service';
 import { TestSuiteService } from '../../core/services/test-suite.service';
@@ -44,6 +45,20 @@ type StoryDisplayStatus = 'DRAFT' | 'ANALYZED' | 'TESTS_GENERATED' | 'ALL_REVIEW
             }
           </div>
         </div>
+
+        @if (showAddStoryNudge()) {
+          <section class="activation-nudge" aria-live="polite" aria-labelledby="add-story-nudge-title">
+            <div>
+              <span class="progress-pill">{{ onboardingProgress.progressLabel() }}</span>
+              <h3 id="add-story-nudge-title">Add the first story</h3>
+              <p>Create a story so TestCaseIQ can analyze requirements and build reviewable test cases.</p>
+            </div>
+            <div class="activation-actions">
+              <button class="button" type="button" (click)="openFirstStoryDrawer()">Add first story</button>
+              <button class="button ghost" type="button" (click)="onboardingProgress.dismiss('add-first-story')">Dismiss</button>
+            </div>
+          </section>
+        }
 
         <nav class="detail-tabs" aria-label="Project sections">
           <button class="tab-btn" type="button" [class.active]="activeTab() === 'overview'" (click)="setTab('overview')">Overview</button>
@@ -200,6 +215,11 @@ type StoryDisplayStatus = 'DRAFT' | 'ANALYZED' | 'TESTS_GENERATED' | 'ALL_REVIEW
   `,
   styles: [`
     .detail-tabs { display: inline-flex; gap: 0.25rem; width: fit-content; padding: 0.25rem; border: 1px solid var(--glass-edge); border-radius: 9999px; background: var(--glass-bg-1); }
+    .activation-nudge { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem; border: 1px solid var(--color-accent-border); border-radius: 8px; background: linear-gradient(var(--color-accent-bg), var(--color-accent-bg)), var(--glass-bg-2); box-shadow: var(--glass-border-highlight); }
+    .activation-nudge h3 { margin: 0.45rem 0 0; color: var(--color-text); font-size: 1rem; }
+    .activation-nudge p { max-width: 58ch; margin: 0.25rem 0 0; color: var(--color-text-2); font-size: 0.875rem; line-height: 1.5; }
+    .activation-actions { display: flex; align-items: center; gap: 0.65rem; flex-wrap: wrap; }
+    .progress-pill { display: inline-flex; align-items: center; min-height: 1.55rem; padding: 0 0.5rem; border: 1px solid var(--color-accent-border); border-radius: 6px; background: var(--color-accent-bg); color: var(--color-accent); font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; }
     .tab-btn { background: transparent; border: 1px solid transparent; border-radius: 9999px; color: var(--color-text-2); cursor: pointer; font-size: 0.875rem; font-weight: 500; padding: 0.45rem 0.9rem; }
     .tab-btn:hover { color: var(--color-text); }
     .tab-btn:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
@@ -220,6 +240,7 @@ type StoryDisplayStatus = 'DRAFT' | 'ANALYZED' | 'TESTS_GENERATED' | 'ALL_REVIEW
     .coverage-row div { display: grid; gap: 0.2rem; min-width: 0; }
     @media (max-width: 900px) {
       .detail-tabs { width: 100%; overflow-x: auto; border-radius: 8px; }
+      .activation-nudge { align-items: flex-start; flex-direction: column; }
       .metadata-grid, .coverage-summary-grid { grid-template-columns: 1fr; }
       .coverage-row, .activity-row { align-items: flex-start; flex-direction: column; }
     }
@@ -235,6 +256,7 @@ export class ProjectDetailPageComponent implements OnInit {
   private readonly auditEventService = inject(AuditEventService);
   private readonly authService = inject(AuthService);
   private readonly toastService = inject(ToastService);
+  readonly onboardingProgress = inject(OnboardingProgressService);
 
   readonly canEdit = computed(() => {
     if (!this.authService.isAuthenticated()) return true;
@@ -263,6 +285,10 @@ export class ProjectDetailPageComponent implements OnInit {
   readonly activeTab = signal<ProjectDetailTab>('overview');
   readonly storyDrawerOpen = signal(false);
   readonly storyCount = computed(() => this.stories().length);
+  readonly showAddStoryNudge = computed(() => this.onboardingProgress.shouldShowNudge(
+    'add-first-story',
+    this.onboardingProgress.isComplete('project-created') && this.storyCount() === 0 && this.canEdit() && !this.storiesLoading()
+  ));
   readonly storiesWithTests = computed(() => new Set(this.testSuites().map((suite) => suite.storyId)).size);
   readonly allReviewedStories = computed(() => this.stories().filter((story) => this.displayStoryStatus(story) === 'ALL_REVIEWED').length);
   readonly coveragePercent = computed(() => this.storyCount() === 0 ? 0 : Math.round(this.storiesWithTests() / this.storyCount() * 100));
@@ -293,6 +319,11 @@ export class ProjectDetailPageComponent implements OnInit {
     this.activeTab.set(tab);
   }
 
+  openFirstStoryDrawer(): void {
+    this.activeTab.set('stories');
+    this.storyDrawerOpen.set(true);
+  }
+
   createStory(): void {
     if (this.storyForm.invalid) {
       this.storyForm.markAllAsTouched();
@@ -301,7 +332,10 @@ export class ProjectDetailPageComponent implements OnInit {
     this.creatingStory.set(true);
     this.createError.set('');
     this.storyService.create(this.projectId, this.storyForm.getRawValue()).subscribe({
-      next: (story) => this.router.navigate(['/stories', story.id], { state: { projectContext: this.projectContext() } }),
+      next: (story) => {
+        this.onboardingProgress.complete('story-created');
+        this.router.navigate(['/stories', story.id], { state: { projectContext: this.projectContext() } });
+      },
       error: () => {
         const message = 'The story could not be created. Check the backend and try again.';
         this.createError.set(message);

@@ -178,7 +178,21 @@
                 <h3>No analysis has been generated yet.</h3>
                 <p>Run the mock AI analysis to extract requirements, ambiguities, scores, and coverage suggestions.</p>
                 @if (canEdit()) {
-                  <button class="button analysis-button" type="button" (click)="analyzeStory()" [disabled]="analyzing()">
+                  @if (showAnalyzeNudge()) {
+                    <div class="activation-nudge compact" aria-live="polite" id="analyze-nudge">
+                      <span class="progress-pill">{{ onboardingProgress.progressLabel() }}</span>
+                      <span>Analyze this story to unlock generated test cases.</span>
+                      <button class="button ghost small" type="button" (click)="onboardingProgress.dismiss('analyze-story')">Dismiss</button>
+                    </div>
+                  }
+                  <button
+                    class="button analysis-button"
+                    [class.phosphor-glow]="showAnalyzeNudge()"
+                    type="button"
+                    (click)="analyzeStory()"
+                    [disabled]="analyzing()"
+                    [attr.aria-describedby]="showAnalyzeNudge() ? 'analyze-nudge' : null"
+                  >
                     {{ analyzing() ? 'Analyzing...' : 'Analyze Story' }}
                   </button>
                   @if (analyzing()) {
@@ -316,7 +330,19 @@
 
       @if (activeTab() === 'test-cases') {
         <div class="test-cases-tab-panel">
-          @if (pendingReviewCount() > 0) {
+          @if (showReviewBoardNudge()) {
+            <div class="activation-nudge" aria-live="polite">
+              <div>
+                <span class="progress-pill">{{ onboardingProgress.progressLabel() }}</span>
+                <strong>Review the generated cases</strong>
+                <p>Approve the cases that match the story before exporting QA assets.</p>
+              </div>
+              <div class="activation-actions">
+                <a class="button secondary small" routerLink="/review-board">Review Board</a>
+                <button class="button ghost small" type="button" (click)="onboardingProgress.dismiss('review-board')">Dismiss</button>
+              </div>
+            </div>
+          } @else if (pendingReviewCount() > 0) {
             <div class="review-board-banner">
               <span class="review-board-banner-copy">
                 {{ pendingReviewCount() }}

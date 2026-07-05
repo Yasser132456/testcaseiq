@@ -5,6 +5,7 @@ import { gsap } from 'gsap';
 import { LucideCheckSquare2, LucideDynamicIcon } from '@lucide/angular';
 import { Subscription, forkJoin, fromEvent } from 'rxjs';
 import { TestCaseSummary, TestSuiteDetail, TestSuitePage } from '../../core/models/test-suite.model';
+import { OnboardingProgressService } from '../../core/services/onboarding-progress.service';
 import { ReviewService } from '../../core/services/review.service';
 import { TestSuiteService } from '../../core/services/test-suite.service';
 import { ToastService } from '../../core/services/toast.service';
@@ -51,9 +52,16 @@ interface ReviewCaseItem {
                 <svg [lucideIcon]="LucideCheckSquare2" [size]="24" [strokeWidth]="1.8"></svg>
               </span>
               <div>
-                <h3>All done — {{ sessionReviewCount() }} cases reviewed this session</h3>
+                <h3>All done: {{ sessionReviewCount() }} cases reviewed this session</h3>
                 <p>Suite is ready for export</p>
               </div>
+              @if (showExportHubNudge()) {
+                <div class="activation-nudge" aria-live="polite">
+                  <span class="progress-pill">{{ onboardingProgress.progressLabel() }}</span>
+                  <span>Export the approved suite for handoff.</span>
+                  <button class="button ghost small" type="button" (click)="onboardingProgress.dismiss('export-hub')">Dismiss</button>
+                </div>
+              }
               <a class="button approve-button" routerLink="/export">Go to Export Hub</a>
             </div>
           } @else {
@@ -223,6 +231,8 @@ interface ReviewCaseItem {
     .session-complete-icon{display:grid;width:3rem;height:3rem;place-items:center;border:1px solid var(--color-green-border);border-radius:8px;background:var(--color-green-bg);color:var(--color-green)}
     .session-complete-state h3{margin:0;color:var(--color-green);font-size:1.25rem}
     .session-complete-state p{margin:.35rem 0 0;color:var(--color-text-2)}
+    .activation-nudge{display:flex;align-items:center;justify-content:center;gap:var(--space-sm);max-width:42rem;padding:var(--space-sm) var(--space-base);border:1px solid var(--color-accent-border);border-radius:var(--radius-md);background:linear-gradient(var(--color-accent-bg),var(--color-accent-bg)),var(--glass-bg-2);box-shadow:var(--glass-border-highlight);color:var(--color-text);font-size:.9rem;font-weight:600}
+    .progress-pill{display:inline-flex;align-items:center;min-height:1.55rem;padding:0 var(--space-sm);border:1px solid var(--color-accent-border);border-radius:var(--radius-sm);background:var(--color-accent-bg);color:var(--color-accent);font-family:var(--font-mono);font-size:.72rem;font-weight:700}
     @media (max-width:900px){.review-master-detail{grid-template-columns:1fr}.review-case-list{max-height:22rem;border-right:0;border-bottom:var(--b)}.review-detail-main{padding-right:var(--space-xl)}.review-detail-grid{grid-template-columns:1fr}.quality-readout{position:static;justify-self:start;padding:var(--space-lg) var(--space-lg) 0}.review-sticky-actions{align-items:flex-start;flex-direction:column}}
   `]
 })
@@ -231,6 +241,7 @@ export class ReviewBoardPageComponent implements OnInit, OnDestroy {
   private readonly testSuiteService = inject(TestSuiteService);
   private readonly reviewService = inject(ReviewService);
   private readonly toastService = inject(ToastService);
+  readonly onboardingProgress = inject(OnboardingProgressService);
   private keyboardSubscription: Subscription | null = null;
 
   readonly LucideCheckSquare2 = LucideCheckSquare2;
@@ -249,6 +260,10 @@ export class ReviewBoardPageComponent implements OnInit, OnDestroy {
   readonly reviewError = signal('');
   readonly liveAnnouncement = signal('');
   readonly sessionReviewCount = signal(0);
+  readonly showExportHubNudge = computed(() => this.onboardingProgress.shouldShowNudge(
+    'export-hub',
+    this.onboardingProgress.isComplete('first-approval') && this.sessionReviewCount() > 0
+  ));
 
   readonly reviewCases = computed<ReviewCaseItem[]>(() => this.suites().flatMap((suite) => (
     suite.testCases.map((testCase) => ({ suite, testCase }))
@@ -401,6 +416,9 @@ export class ReviewBoardPageComponent implements OnInit, OnDestroy {
             .map((testCase) => ({ ...testCase }))
         })));
         this.sessionReviewCount.update((count) => count + 1);
+        if (status === 'APPROVED') {
+          this.onboardingProgress.complete('first-approval');
+        }
         const message = status === 'APPROVED' ? 'Test case approved.' : 'Test case rejected.';
         this.reviewMessage.set(message);
         this.liveAnnouncement.set(status === 'APPROVED' ? 'Approved' : 'Rejected');

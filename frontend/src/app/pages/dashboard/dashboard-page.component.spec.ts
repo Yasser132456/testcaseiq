@@ -122,8 +122,13 @@ describe('DashboardPageComponent', () => {
 
   it('prioritizes project creation when there are no projects', () => {
     const { element } = createComponent('ADMIN', ZERO_METRICS);
-    expect(element.textContent).toContain('Create your first project to begin');
-    expect(element.textContent).toContain('Get started');
+    expect(element.textContent).toContain('Create your first project');
+    expect(element.textContent).toContain('Add a project, then move one story through analysis, generation, review, and export.');
+    expect(element.textContent).toContain('Analyze');
+    expect(element.textContent).toContain('Generate');
+    expect(element.textContent).toContain('Review');
+    expect(element.textContent).toContain('Export');
+    expect(element.querySelector('[aria-live="polite"]')?.textContent).toContain('Step 1 of 6');
   });
 
   it('shows export action when approved cases are ready and review is clear', () => {
