@@ -68,7 +68,7 @@ const LABEL_MAP: Record<BadgeStatus, string> = {
     .badge--approved {
       background: var(--color-green-bg);
       border-color: var(--color-green-border);
-      color: var(--color-green);
+      color: var(--color-text);
     }
 
     .badge--needs-review {

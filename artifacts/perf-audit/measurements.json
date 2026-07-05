@@ -1,0 +1,479 @@
+{
+  "story": {
+    "id": "771693da-7bff-4e66-ba01-0c46c87d088c",
+    "title": "Support lead exports dispute evidence packet",
+    "status": "EXPORTED"
+  },
+  "cold": {
+    "readyMs": 2246,
+    "loaderVisibleAtDom": true,
+    "initial": {
+      "readyClass": true,
+      "loaderOpacity": "0",
+      "loaderVisibility": "hidden",
+      "bgClass": "background-scene",
+      "canvasCount": 1,
+      "tiltStates": [
+        "active",
+        "active",
+        "active",
+        "active",
+        "active",
+        "active",
+        "active"
+      ],
+      "longTasks": [
+        {
+          "duration": 325,
+          "startTime": 911.6999999284744
+        },
+        {
+          "duration": 55,
+          "startTime": 1384.2999999523163
+        },
+        {
+          "duration": 63,
+          "startTime": 1464.8999999761581
+        },
+        {
+          "duration": 192,
+          "startTime": 1528.6999999284744
+        }
+      ],
+      "heap": 33100000
+    },
+    "settled": {
+      "bgClass": "background-scene",
+      "canvasCount": 1,
+      "loaderOpacity": "0",
+      "loaderVisibility": "hidden"
+    }
+  },
+  "noWebgl": {
+    "readyMs": 2187,
+    "details": {
+      "readyClass": true,
+      "loaderOpacity": "0",
+      "loaderVisibility": "hidden",
+      "bgClass": "background-scene is-fallback",
+      "canvasCount": 0,
+      "tiltStates": [
+        "active",
+        "active",
+        "active",
+        "active",
+        "active",
+        "active",
+        "active"
+      ],
+      "longTasks": [
+        {
+          "duration": 322,
+          "startTime": 875.1999999284744
+        },
+        {
+          "duration": 83,
+          "startTime": 1433.8999999761581
+        },
+        {
+          "duration": 105,
+          "startTime": 1526.6999999284744
+        }
+      ],
+      "heap": 35100000
+    }
+  },
+  "forcedFallback": {
+    "readyMs": 2214,
+    "details": {
+      "readyClass": true,
+      "loaderOpacity": "0",
+      "loaderVisibility": "hidden",
+      "bgClass": "background-scene is-fallback",
+      "canvasCount": 0,
+      "tiltStates": [
+        "active",
+        "active",
+        "active",
+        "active",
+        "active",
+        "active",
+        "active"
+      ],
+      "longTasks": [
+        {
+          "duration": 348,
+          "startTime": 834
+        },
+        {
+          "duration": 98,
+          "startTime": 1460.2000000476837
+        },
+        {
+          "duration": 119,
+          "startTime": 1568.7000000476837
+        }
+      ],
+      "heap": 31200000
+    }
+  },
+  "reduced": {
+    "readyMs": 3587,
+    "details": {
+      "readyClass": true,
+      "loaderOpacity": "0",
+      "loaderVisibility": "hidden",
+      "bgClass": "background-scene is-static",
+      "canvasCount": 1,
+      "tiltStates": [
+        "reduced-motion",
+        "reduced-motion",
+        "reduced-motion",
+        "reduced-motion",
+        "reduced-motion",
+        "reduced-motion",
+        "reduced-motion"
+      ],
+      "longTasks": [
+        {
+          "duration": 61,
+          "startTime": 1988.1999999284744
+        },
+        {
+          "duration": 231,
+          "startTime": 2258.7999999523163
+        },
+        {
+          "duration": 65,
+          "startTime": 2632.399999976158
+        },
+        {
+          "duration": 74,
+          "startTime": 2719.1999999284744
+        },
+        {
+          "duration": 104,
+          "startTime": 2794
+        },
+        {
+          "duration": 142,
+          "startTime": 2916
+        }
+      ],
+      "heap": 33100000
+    }
+  },
+  "lowEnd": {
+    "readyMs": 1855,
+    "details": {
+      "readyClass": true,
+      "loaderOpacity": "0",
+      "loaderVisibility": "hidden",
+      "bgClass": "background-scene is-fallback",
+      "canvasCount": 0,
+      "tiltStates": [
+        "disabled",
+        "disabled",
+        "disabled",
+        "disabled",
+        "disabled",
+        "disabled",
+        "disabled"
+      ],
+      "longTasks": [
+        {
+          "duration": 276,
+          "startTime": 671.6000000238419
+        },
+        {
+          "duration": 61,
+          "startTime": 1218.1000000238419
+        },
+        {
+          "duration": 60,
+          "startTime": 1289.6000000238419
+        }
+      ],
+      "heap": 31200000
+    }
+  },
+  "perf": {
+    "fpsStats": {
+      "frames": 19,
+      "avgFps": 3.6,
+      "p95FrameMs": 483.3
+    },
+    "longTasksCount": 54,
+    "maxLongTaskMs": 2234,
+    "medianLongTaskMs": 71
+  },
+  "memory": [
+    {
+      "route": "/dashboard",
+      "heap": 37300000,
+      "canvasCount": 1,
+      "bgClass": "background-scene"
+    },
+    {
+      "route": "/review-board",
+      "heap": 37300000,
+      "canvasCount": 1,
+      "bgClass": "background-scene"
+    },
+    {
+      "route": "/export",
+      "heap": 37300000,
+      "canvasCount": 1,
+      "bgClass": "background-scene"
+    },
+    {
+      "route": "/stories/771693da-7bff-4e66-ba01-0c46c87d088c",
+      "heap": 37300000,
+      "canvasCount": 1,
+      "bgClass": "background-scene"
+    },
+    {
+      "route": "/dashboard",
+      "heap": 37300000,
+      "canvasCount": 1,
+      "bgClass": "background-scene"
+    },
+    {
+      "route": "/review-board",
+      "heap": 37300000,
+      "canvasCount": 1,
+      "bgClass": "background-scene"
+    },
+    {
+      "route": "/export",
+      "heap": 37300000,
+      "canvasCount": 1,
+      "bgClass": "background-scene"
+    },
+    {
+      "route": "/stories/771693da-7bff-4e66-ba01-0c46c87d088c",
+      "heap": 37300000,
+      "canvasCount": 1,
+      "bgClass": "background-scene"
+    },
+    {
+      "route": "/dashboard",
+      "heap": 37300000,
+      "canvasCount": 1,
+      "bgClass": "background-scene"
+    },
+    {
+      "route": "/review-board",
+      "heap": 37300000,
+      "canvasCount": 1,
+      "bgClass": "background-scene"
+    }
+  ],
+  "contrast": {
+    "dashboard": [
+      {
+        "selector": "auto:4",
+        "text": "QUALITY PIPELINE",
+        "fontSize": 12.48,
+        "fontWeight": 600,
+        "minRatio": 7.58,
+        "requiredRatio": 4.5
+      },
+      {
+        "selector": "auto:5",
+        "text": "Approval",
+        "fontSize": 13.12,
+        "fontWeight": 400,
+        "minRatio": 7.58,
+        "requiredRatio": 4.5
+      },
+      {
+        "selector": "auto:7",
+        "text": "Rejection",
+        "fontSize": 13.12,
+        "fontWeight": 400,
+        "minRatio": 7.58,
+        "requiredRatio": 4.5
+      },
+      {
+        "selector": "auto:11",
+        "text": "Avg 2.6 cases / suite",
+        "fontSize": 13.12,
+        "fontWeight": 400,
+        "minRatio": 7.58,
+        "requiredRatio": 4.5
+      },
+      {
+        "selector": "auto:6",
+        "text": "Pending",
+        "fontSize": 13.12,
+        "fontWeight": 400,
+        "minRatio": 7.62,
+        "requiredRatio": 4.5
+      },
+      {
+        "selector": "auto:8",
+        "text": "Export ready",
+        "fontSize": 13.12,
+        "fontWeight": 400,
+        "minRatio": 7.62,
+        "requiredRatio": 4.5
+      },
+      {
+        "selector": "auto:12",
+        "text": "RECENT ACTIVITY",
+        "fontSize": 12.48,
+        "fontWeight": 600,
+        "minRatio": 7.62,
+        "requiredRatio": 4.5
+      },
+      {
+        "selector": "auto:15",
+        "text": "1m ago",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "minRatio": 7.62,
+        "requiredRatio": 4.5
+      }
+    ],
+    "storyDetail": [
+      {
+        "selector": "auto:4",
+        "text": "As a support lead, I want to export dispute evidence packets",
+        "fontSize": 14.08,
+        "fontWeight": 400,
+        "minRatio": 7.62,
+        "requiredRatio": 4.5
+      },
+      {
+        "selector": "auto:0",
+        "text": "User Story",
+        "fontSize": 11.52,
+        "fontWeight": 700,
+        "minRatio": 7.71,
+        "requiredRatio": 4.5
+      },
+      {
+        "selector": "auto:2",
+        "text": "Approved",
+        "fontSize": 10.88,
+        "fontWeight": 600,
+        "minRatio": 8.52,
+        "requiredRatio": 4.5
+      },
+      {
+        "selector": "auto:11",
+        "text": "Analyze Story",
+        "fontSize": 13.6,
+        "fontWeight": 700,
+        "minRatio": 8.65,
+        "requiredRatio": 4.5
+      },
+      {
+        "selector": "auto:1",
+        "text": "Approved",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "minRatio": 10.76,
+        "requiredRatio": 4.5
+      },
+      {
+        "selector": "auto:9",
+        "text": "No analysis has been generated yet.",
+        "fontSize": 16,
+        "fontWeight": 600,
+        "minRatio": 13.31,
+        "requiredRatio": 4.5
+      },
+      {
+        "selector": "auto:10",
+        "text": "Run the mock AI analysis to extract requirements, ambiguitie",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "minRatio": 13.31,
+        "requiredRatio": 4.5
+      },
+      {
+        "selector": "auto:3",
+        "text": "Hide story",
+        "fontSize": 13.6,
+        "fontWeight": 700,
+        "minRatio": 16.64,
+        "requiredRatio": 4.5
+      }
+    ],
+    "reviewBoard": [
+      {
+        "selector": "auto:34",
+        "text": "Rejected",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "minRatio": 5.12,
+        "requiredRatio": 4.5
+      },
+      {
+        "selector": "auto:31",
+        "text": "NEGATIVEHIGH Rejected",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "minRatio": 5.64,
+        "requiredRatio": 4.5
+      },
+      {
+        "selector": "auto:10",
+        "text": "NEGATIVEHIGH Approved",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "minRatio": 6.28,
+        "requiredRatio": 4.5
+      },
+      {
+        "selector": "auto:24",
+        "text": "APICRITICAL Approved",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "minRatio": 6.36,
+        "requiredRatio": 4.5
+      },
+      {
+        "selector": ".case-meta-badge",
+        "text": "FUNCTIONAL",
+        "fontSize": 11.52,
+        "fontWeight": 500,
+        "minRatio": 6.99,
+        "requiredRatio": 4.5
+      },
+      {
+        "selector": "auto:5",
+        "text": "HIGH",
+        "fontSize": 11.52,
+        "fontWeight": 500,
+        "minRatio": 6.99,
+        "requiredRatio": 4.5
+      },
+      {
+        "selector": "auto:28",
+        "text": "Hold cannot be saved without reasonRisk reviewer holds suspi",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "minRatio": 7.06,
+        "requiredRatio": 4.5
+      },
+      {
+        "selector": "auto:29",
+        "text": "Hold cannot be saved without reason",
+        "fontSize": 14,
+        "fontWeight": 500,
+        "minRatio": 7.06,
+        "requiredRatio": 4.5
+      }
+    ]
+  },
+  "noBackdrop": {
+    "supportsBackdropFilter": true,
+    "supportsWebkitBackdropFilter": false,
+    "sampleBackground": "oklch(0.2 0.018 195 / 0.72)",
+    "sampleColor": "oklch(0.97 0.004 195)"
+  },
+  "screenshotsDir": "C:\\Users\\yasse\\OneDrive\\Documents\\TestCaseIQ\\artifacts\\perf-audit"
+}
