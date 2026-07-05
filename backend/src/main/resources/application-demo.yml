@@ -1,14 +1,14 @@
-# TestCaseIQ — Demo Profile
+# TestCaseIQ demo profile.
 #
-# Activate: --spring.profiles.active=demo
+# Preferred activation: DEMO_MODE=true
 #
-# Demo credentials (all accounts use password: demo123!)
-#   admin@demo.testcaseiq.io     ADMIN
-#   qa@demo.testcaseiq.io        QA_ENGINEER
-#   viewer@demo.testcaseiq.io    VIEWER
+# Demo credentials, all using password: testcaseiq-demo-24A
+#   demo@testcaseiq.local     QA_ENGINEER
+#   admin@testcaseiq.local    ADMIN
+#   viewer@testcaseiq.local   VIEWER
 
 demo:
-  enabled: true
+  mode: true
 
 logging:
   level:
