@@ -6,6 +6,7 @@ import { AuthResponse, AuthUser, LoginRequest, RegisterRequest, UserRole } from 
 export type { AuthResponse, AuthUser, LoginRequest, RegisterRequest, UserRole } from '../models/auth.model';
 
 const TOKEN_STORAGE_KEY = 'testcaseiq.auth.token';
+const ONBOARDING_STORAGE_PREFIX = 'testcaseiq.onboarding';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -26,7 +27,10 @@ export class AuthService {
 
   register(request: RegisterRequest): Observable<AuthResponse> {
     return this.http.post<AuthResponse>('/api/auth/register', request).pipe(
-      tap((response) => this.storeSession(response.accessToken, response.user))
+      tap((response) => {
+        this.storeSession(response.accessToken, response.user);
+        this.markFreshAccount(response.user);
+      })
     );
   }
 
@@ -94,6 +98,21 @@ export class AuthService {
       localStorage.removeItem(TOKEN_STORAGE_KEY);
     } catch {
       // Ignore storage cleanup failures.
+    }
+  }
+
+  private markFreshAccount(user: AuthUser): void {
+    try {
+      const key = `${ONBOARDING_STORAGE_PREFIX}.${user.id}`;
+      const existing = localStorage.getItem(key);
+      const progress = existing ? JSON.parse(existing) as { completed?: Record<string, true>; dismissed?: Record<string, true> } : {};
+      localStorage.setItem(key, JSON.stringify({
+        completed: { ...(progress.completed ?? {}), 'account-created': true },
+        dismissed: progress.dismissed ?? {},
+        updatedAt: new Date().toISOString()
+      }));
+    } catch {
+      // Onboarding hints are optional; registration should not fail if storage is unavailable.
     }
   }
 }

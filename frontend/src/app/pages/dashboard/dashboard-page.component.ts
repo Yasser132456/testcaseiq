@@ -8,6 +8,7 @@ import { gsap } from 'gsap';
 import { DashboardMetrics } from '../../core/models/dashboard.model';
 import { AuthService } from '../../core/services/auth.service';
 import { DashboardService } from '../../core/services/dashboard.service';
+import { OnboardingProgressService } from '../../core/services/onboarding-progress.service';
 import { StateMessageComponent } from '../../shared/components/state-message.component';
 import { TiltDirective } from '../../shared/directives/tilt.directive';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
@@ -25,26 +26,50 @@ import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
         <app-state-message title="Dashboard unavailable" [message]="error()" tone="error" />
         <button class="button secondary" type="button" (click)="loadMetrics()">Try again</button>
       } @else if (metrics()) {
-        <section class="next-action-card">
-          <span class="section-kicker">NEXT ACTION</span>
-          <h2>{{ nextActionMessage() }}</h2>
-          @if (nextActionKind() !== 'clear') {
-            <div class="hero-actions">
-              @if (nextActionKind() === 'start') {
-                <a class="button" routerLink="/projects">Get started</a>
-              }
-              @if (nextActionKind() === 'review') {
-                <a class="button" routerLink="/review-board">Review Board</a>
-                <a class="button secondary" routerLink="/dashboard" fragment="coverage" (click)="scrollToCoverage($event)">
-                  View coverage &rarr;
-                </a>
-              }
-              @if (nextActionKind() === 'export') {
-                <a class="button" routerLink="/export">Export</a>
+        @if (isFirstRun()) {
+          <section class="getting-started-card t-stagger is-shown" aria-labelledby="getting-started-title">
+            <div class="getting-started-copy">
+              <span class="progress-pill" aria-live="polite">{{ onboardingProgress.progressLabel() }}</span>
+              <h2 id="getting-started-title" class="t-stagger-line t-stagger-line--1">Create your first project</h2>
+              <p class="t-stagger-line t-stagger-line--2">
+                Add a project, then move one story through analysis, generation, review, and export.
+              </p>
+              @if (canMutate()) {
+                <a class="button" routerLink="/projects" [queryParams]="{ create: 'project' }">Create your first project</a>
               }
             </div>
-          }
-        </section>
+            <ol class="workflow-preview" aria-label="First workflow preview">
+              @for (step of workflowPreview; track step.label) {
+                <li [attr.data-tone]="step.tone">
+                  <span>{{ step.index }}</span>
+                  <strong>{{ step.label }}</strong>
+                  <small>{{ step.copy }}</small>
+                </li>
+              }
+            </ol>
+          </section>
+        } @else {
+          <section class="next-action-card">
+            <span class="section-kicker">NEXT ACTION</span>
+            <h2>{{ nextActionMessage() }}</h2>
+            @if (nextActionKind() !== 'clear') {
+              <div class="hero-actions">
+                @if (nextActionKind() === 'start') {
+                  <a class="button" routerLink="/projects">Get started</a>
+                }
+                @if (nextActionKind() === 'review') {
+                  <a class="button" routerLink="/review-board">Review Board</a>
+                  <a class="button secondary" routerLink="/dashboard" fragment="coverage" (click)="scrollToCoverage($event)">
+                    View coverage &rarr;
+                  </a>
+                }
+                @if (nextActionKind() === 'export') {
+                  <a class="button" routerLink="/export">Export</a>
+                }
+              </div>
+            }
+          </section>
+        }
 
         <nav class="kpi-chip-row" aria-label="Dashboard totals">
           <a class="kpi-chip glass-surface glass-surface--2 glass-surface--interactive" routerLink="/projects" glassTilt [glassTiltGlare]="true" [glassTiltMaxDeg]="4" [glassTiltMaxGlare]="0.08">
@@ -161,6 +186,7 @@ export class DashboardPageComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly el = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);
+  readonly onboardingProgress = inject(OnboardingProgressService);
 
   @ViewChild('donutArc') private donutArc?: ElementRef<SVGCircleElement>;
 
@@ -168,6 +194,14 @@ export class DashboardPageComponent implements OnInit {
   readonly error = signal('');
   readonly metrics = signal<DashboardMetrics | null>(null);
   readonly hasAnimated = signal(false);
+  readonly workflowPreview = [
+    { index: '01', label: 'Analyze', copy: 'Extract requirements and risks from the story.', tone: 'analysis' },
+    { index: '02', label: 'Generate', copy: 'Create draft test cases from the analysis.', tone: 'generate' },
+    { index: '03', label: 'Review', copy: 'Approve the cases that are ready to ship.', tone: 'review' },
+    { index: '04', label: 'Export', copy: 'Download approved QA assets for handoff.', tone: 'export' }
+  ];
+
+  readonly isFirstRun = computed(() => (this.metrics()?.totalProjects ?? 0) === 0 || this.onboardingProgress.isFreshAccount());
 
   readonly nextActionKind = computed(() => {
     const m = this.metrics();

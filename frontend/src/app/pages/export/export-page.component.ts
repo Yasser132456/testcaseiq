@@ -3,6 +3,7 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { LucideDownload, LucideDynamicIcon } from '@lucide/angular';
 import { ExportFormat, ExportService } from '../../core/services/export.service';
+import { OnboardingProgressService } from '../../core/services/onboarding-progress.service';
 import { TestSuitePage, TestSuiteSummary } from '../../core/models/test-suite.model';
 import { TestSuiteService } from '../../core/services/test-suite.service';
 import { ToastService } from '../../core/services/toast.service';
@@ -354,6 +355,7 @@ export class ExportPageComponent implements OnInit {
   private readonly testSuiteService = inject(TestSuiteService);
   private readonly exportService = inject(ExportService);
   private readonly toastService = inject(ToastService);
+  private readonly onboardingProgress = inject(OnboardingProgressService);
 
   readonly page = signal<TestSuitePage | null>(null);
   readonly loading = signal(true);
@@ -454,6 +456,7 @@ export class ExportPageComponent implements OnInit {
         this.lastExportedFormat.set(format);
         this.lastExportedSuiteName.set(suite.name);
         this.lastExportedAt.set(new Date());
+        this.onboardingProgress.complete('first-export');
         this.selectedSuiteId.set(null);
         this.toastService.show(`${this.exportLabel(format)} export download started.`, 'success');
         this.exportingFormat.set(null);

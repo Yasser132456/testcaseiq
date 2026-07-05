@@ -16,6 +16,7 @@ import { TestCaseResponse } from '../../core/models/review.model';
 import { STORY_TYPES, Story, StoryStatus, StoryType } from '../../core/models/story.model';
 import { AnalysisService } from '../../core/services/analysis.service';
 import { AuthService } from '../../core/services/auth.service';
+import { OnboardingProgressService } from '../../core/services/onboarding-progress.service';
 import { StoryService } from '../../core/services/story.service';
 import { TestGenerationService } from '../../core/services/test-generation.service';
 import { ToastService } from '../../core/services/toast.service';
@@ -55,6 +56,7 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
   private readonly testGenerationService = inject(TestGenerationService);
   private readonly toastService = inject(ToastService);
   private readonly authService = inject(AuthService);
+  readonly onboardingProgress = inject(OnboardingProgressService);
   private readonly projectContext = (this.router.getCurrentNavigation()?.extras.state?.['projectContext'] ?? window.history.state?.projectContext) as { name?: string } | null;
   private storyId = '';
   private stickyObserver?: IntersectionObserver;
@@ -108,6 +110,14 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
   readonly allTestCases = computed(() => this.testSuites().flatMap((suite) => suite.testCases));
   readonly displayStatus = computed<StoryDisplayStatus>(() => this.story() ? this.displayStoryStatus(this.story()!) : 'DRAFT');
   readonly projectName = computed(() => this.projectContext?.name || 'Project');
+  readonly showAnalyzeNudge = computed(() => this.onboardingProgress.shouldShowNudge(
+    'analyze-story',
+    this.onboardingProgress.isComplete('story-created') && !this.hasAnalysis() && this.canEdit() && !this.analysisLoading()
+  ));
+  readonly showReviewBoardNudge = computed(() => this.onboardingProgress.shouldShowNudge(
+    'review-board',
+    this.onboardingProgress.isComplete('generation-completed') && this.pendingReviewCount() > 0
+  ));
 
   readonly form = this.fb.nonNullable.group({
     title: ['', Validators.required],
@@ -196,6 +206,7 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
       next: (analysis) => {
         this.analyzeTimer = this.stopTimer(this.analyzeTimer);
         this.analysis.set(analysis);
+        this.onboardingProgress.complete('analysis-completed');
         this.updateStoryStatus('ANALYZED');
         this.analyzing.set(false);
         this.animateWorkflowStep();
@@ -217,6 +228,7 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
       next: (suite) => {
         this.generateTimer = this.stopTimer(this.generateTimer);
         this.testSuites.set([suite, ...this.testSuites()]);
+        this.onboardingProgress.complete('generation-completed');
         this.updateStoryStatus('TESTS_GENERATED');
         this.generatingTests.set(false);
         this.activeTab.set('test-cases');

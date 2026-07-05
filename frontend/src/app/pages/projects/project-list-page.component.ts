@@ -1,10 +1,11 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { LucideFolderKanban } from '@lucide/angular';
 import { Project } from '../../core/models/project.model';
 import { AuthService } from '../../core/services/auth.service';
 import { ProjectService } from '../../core/services/project.service';
+import { OnboardingProgressService } from '../../core/services/onboarding-progress.service';
 import { ToastService } from '../../core/services/toast.service';
 import { StateMessageComponent } from '../../shared/components/state-message.component';
 import { DrawerComponent } from '../../shared/components/drawer.component';
@@ -132,10 +133,12 @@ export class ProjectListPageComponent implements OnInit {
   readonly coverageCircumference = 2 * Math.PI * 22;
 
   private readonly fb = inject(FormBuilder);
+  private readonly route = inject(ActivatedRoute);
   private readonly projectService = inject(ProjectService);
   private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
   private readonly toastService = inject(ToastService);
+  private readonly onboardingProgress = inject(OnboardingProgressService);
 
   readonly canEdit = computed(() => {
     if (!this.authService.isAuthenticated()) return true;
@@ -160,6 +163,9 @@ export class ProjectListPageComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadProjects();
+    if (this.route.snapshot.queryParamMap.get('create') === 'project' && this.canEdit()) {
+      this.projectDrawerOpen.set(true);
+    }
   }
 
   createProject(): void {
@@ -172,7 +178,10 @@ export class ProjectListPageComponent implements OnInit {
       name: this.form.controls.name.value,
       description: this.form.controls.description.value || null
     }).subscribe({
-      next: (project) => this.router.navigate(['/projects', project.id]),
+      next: (project) => {
+        this.onboardingProgress.complete('project-created');
+        this.router.navigate(['/projects', project.id]);
+      },
       error: () => {
         this.toastService.show('The project could not be created. Check the backend and try again.', 'error');
         this.creating.set(false);
