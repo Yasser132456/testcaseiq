@@ -13,9 +13,9 @@ import {
 import { BackgroundSceneMode, BackgroundSceneService } from './background-scene.service';
 
 /*
- * Performance budget: target 60fps on desktop-class hardware, degrade below a 45fps runtime probe.
+ * Performance budget: target 60fps on desktop-class hardware with static CSS fallback.
  * Max particles: 700 saturated token-derived points. DPR cap: 1.5 to protect GPU fill rate.
- * Boot ceiling: 3s hard timeout; reveal app with static CSS gradient if WebGL is unavailable or late.
+ * Boot ceiling: 8s hard timeout; reveal app with static CSS gradient if WebGL is unavailable or late.
  * Teardown: dispose renderer, geometry, material, resize observer, pointer listeners, and RAF on destroy.
  */
 @Component({
@@ -27,6 +27,7 @@ import { BackgroundSceneMode, BackgroundSceneService } from './background-scene.
       #stage
       class="background-scene"
       data-testid="background-scene"
+      [style.--scene-accent-particle]="scene.sceneAccent().cssColor"
       [class.is-fallback]="mode() === 'fallback'"
       [class.is-static]="mode() === 'static'"
       aria-hidden="true"
@@ -40,8 +41,8 @@ import { BackgroundSceneMode, BackgroundSceneService } from './background-scene.
       pointer-events: none;
       overflow: hidden;
       background:
-        radial-gradient(ellipse 58% 38% at 18% 12%, color-mix(in oklch, var(--color-cyan-particle) 13%, transparent), transparent 62%),
-        radial-gradient(ellipse 46% 34% at 86% 78%, color-mix(in oklch, var(--color-phosphor-particle) 10%, transparent), transparent 68%),
+        radial-gradient(ellipse 58% 38% at 18% 12%, color-mix(in oklch, var(--scene-accent-particle, var(--color-phosphor-particle)) 13%, transparent), transparent 62%),
+        radial-gradient(ellipse 46% 34% at 86% 78%, color-mix(in oklch, var(--scene-accent-particle, var(--color-phosphor-particle)) 10%, transparent), transparent 68%),
         linear-gradient(135deg, var(--color-bg), oklch(10% 0.018 215));
     }
 
@@ -70,9 +71,9 @@ import { BackgroundSceneMode, BackgroundSceneService } from './background-scene.
       position: absolute;
       inset: 0;
       background:
-        radial-gradient(circle at 18% 16%, color-mix(in oklch, var(--color-cyan-particle) 12%, transparent) 0 1px, transparent 2px),
-        radial-gradient(circle at 74% 68%, color-mix(in oklch, var(--color-violet-particle) 12%, transparent) 0 1px, transparent 2px),
-        radial-gradient(circle at 52% 34%, color-mix(in oklch, var(--color-phosphor-particle) 10%, transparent) 0 1px, transparent 2px);
+        radial-gradient(circle at 18% 16%, color-mix(in oklch, var(--scene-accent-particle, var(--color-phosphor-particle)) 12%, transparent) 0 1px, transparent 2px),
+        radial-gradient(circle at 74% 68%, color-mix(in oklch, var(--scene-accent-particle, var(--color-phosphor-particle)) 12%, transparent) 0 1px, transparent 2px),
+        radial-gradient(circle at 52% 34%, color-mix(in oklch, var(--scene-accent-particle, var(--color-phosphor-particle)) 10%, transparent) 0 1px, transparent 2px);
       background-size: 132px 132px, 180px 180px, 240px 240px;
       opacity: 0.6;
     }
@@ -86,7 +87,7 @@ import { BackgroundSceneMode, BackgroundSceneService } from './background-scene.
 })
 export class BackgroundSceneComponent implements OnDestroy {
   private readonly platformId = inject(PLATFORM_ID);
-  private readonly scene = inject(BackgroundSceneService);
+  readonly scene = inject(BackgroundSceneService);
   private readonly stage = viewChild.required<ElementRef<HTMLElement>>('stage');
   readonly mode = signal<BackgroundSceneMode>('fallback');
 
@@ -114,7 +115,7 @@ export class BackgroundSceneComponent implements OnDestroy {
         controller.abort();
         this.scene.dispose();
         resolve('fallback');
-      }, 3000);
+      }, 8000);
     });
 
     try {
