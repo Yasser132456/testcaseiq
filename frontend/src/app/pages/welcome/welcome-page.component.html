@@ -6,35 +6,59 @@
   <div class="wl-nav-links">
     <a class="wl-nav-link" href="#workflow">Workflow</a>
     <a class="wl-nav-link" href="#formats">Exports</a>
-    <a class="wl-btn-ghost-sm" routerLink="/login">Sign in</a>
+    <a class="wl-btn-ghost-sm wl-magnetic" routerLink="/login">Sign in</a>
   </div>
 </nav>
 
-<main class="wl-page">
-  <section class="wl-hero" aria-labelledby="welcome-title">
-    <div class="wl-hero-grid">
-      <div class="wl-hero-copy">
+<main class="wl-page" id="main-content">
+  <section class="wl-cinema" aria-labelledby="welcome-title">
+    <div class="wl-cinema-pin glass-scrim glass-scrim--2">
+      <section class="wl-beat wl-beat--hero is-active" data-cinematic-beat="monolith" data-accent="phosphor">
         <p class="wl-system-line">Human-reviewed test generation</p>
-        <h1 id="welcome-title">AI drafts. Humans approve.</h1>
+        <h1 id="welcome-title" class="wl-headline" aria-label="AI drafts. Humans approve.">
+          <span>AI drafts. </span>
+          <span>Humans approve.</span>
+        </h1>
         <p class="wl-sub">
           TestCaseIQ turns user stories into traceable QA assets without hiding the craft.
           The system analyzes requirements, drafts BDD cases, and keeps approval in the hands
           of the people accountable for quality.
         </p>
         <div class="wl-ctas">
-          <a class="wl-btn-primary" routerLink="/register">Create account</a>
-          <a class="wl-btn-secondary" routerLink="/login">Open workspace</a>
+          <a class="wl-btn-primary wl-magnetic" routerLink="/register">Create account</a>
+          <a class="wl-btn-secondary wl-magnetic" routerLink="/login">Open workspace</a>
         </div>
-      </div>
+      </section>
 
-      <aside
-        class="wl-product-panel glass-surface glass-surface--3 glass-scrim glass-scrim--3"
-        aria-label="Workflow preview"
-        glassTilt
-        [glassTiltGlare]="true"
-        [glassTiltMaxDeg]="4"
-        [glassTiltMaxGlare]="0.05"
-      >
+      <section class="wl-beat wl-beat--analysis" data-cinematic-beat="analysis" data-accent="violet">
+        <p class="wl-system-line wl-system-line--violet">Analyze</p>
+        <h2>Requirements become reviewable structure.</h2>
+        <p>
+          The system analyzes requirements, drafts BDD cases, and keeps approval in the hands
+          of the people accountable for quality.
+        </p>
+      </section>
+
+      <section class="wl-beat wl-beat--review" data-cinematic-beat="review" data-accent="green">
+        <p class="wl-system-line wl-system-line--green">Review gate active</p>
+        <h2>The review gate is the product.</h2>
+        <p>
+          AI helps with draft coverage, not final judgment. TestCaseIQ keeps the workflow explicit:
+          every generated case is readable, editable, and tied back to the story it came from.
+        </p>
+      </section>
+
+      <section class="wl-beat wl-beat--release" data-cinematic-beat="release" data-accent="phosphor">
+        <p class="wl-system-line">Release</p>
+        <h2>Make QA assets feel inspectable again.</h2>
+        <p>Keep the review workflow in TestCaseIQ, then export only what your team has accepted.</p>
+        <div class="wl-ctas">
+          <a class="wl-btn-primary wl-magnetic" routerLink="/register">Create account</a>
+          <a class="wl-btn-secondary wl-magnetic" routerLink="/login">Sign in</a>
+        </div>
+      </section>
+
+      <aside class="wl-instrument-panel glass-surface glass-surface--3 glass-scrim glass-scrim--3" aria-label="Workflow preview">
         <div class="wl-panel-topline">
           <span class="wl-panel-status wl-pulse"></span>
           <strong>Review gate active</strong>
@@ -64,54 +88,29 @@
         </div>
       </aside>
     </div>
-
-    <div class="wl-flow-row" aria-label="TestCaseIQ workflow overview">
-      <article class="wl-flow-card glass-surface glass-surface--2 glass-surface--flat">
-        <span>01</span>
-        <strong>Analyze</strong>
-        <p>Requirements, risks, and acceptance criteria become reviewable structure.</p>
-      </article>
-      <article class="wl-flow-card glass-surface glass-surface--2 glass-surface--flat">
-        <span>02</span>
-        <strong>Generate</strong>
-        <p>Draft BDD cases arrive in a format QA engineers can inspect and edit.</p>
-      </article>
-      <article class="wl-flow-card glass-surface glass-surface--2 glass-surface--flat">
-        <span>03</span>
-        <strong>Approve</strong>
-        <p>The human review gate decides what can become part of the suite.</p>
-      </article>
-      <article class="wl-flow-card glass-surface glass-surface--2 glass-surface--flat">
-        <span>04</span>
-        <strong>Export</strong>
-        <p>Approved assets leave as Markdown, CSV, JSON, Playwright, or Postman.</p>
-      </article>
-    </div>
   </section>
 
-  <section class="wl-section wl-reveal" id="workflow" aria-labelledby="workflow-title">
-    <div class="wl-section-copy">
-      <h2 id="workflow-title">The review gate is the product.</h2>
-      <p>
-        AI helps with draft coverage, not final judgment. TestCaseIQ keeps the workflow explicit:
-        every generated case is readable, editable, and tied back to the story it came from.
-      </p>
-    </div>
-
-    <div class="wl-proof-grid">
-      <article class="wl-proof-card glass-surface glass-surface--2 glass-surface--flat">
-        <strong>Traceability first</strong>
-        <p>Stories, generated cases, review decisions, and export formats stay connected.</p>
-      </article>
-      <article class="wl-proof-card glass-surface glass-surface--2 glass-surface--flat">
-        <strong>Readable test language</strong>
-        <p>BDD steps make the draft understandable before anyone approves it.</p>
-      </article>
-      <article class="wl-proof-card glass-surface glass-surface--2 glass-surface--flat">
-        <strong>Built for handoff</strong>
-        <p>Approved suites are ready for QA, engineering, and automation workflows.</p>
-      </article>
-    </div>
+  <section class="wl-flow-row" id="workflow" aria-label="TestCaseIQ workflow overview">
+    <article class="wl-flow-card glass-surface glass-surface--2 glass-surface--flat">
+      <span>01</span>
+      <strong>Analyze</strong>
+      <p>Requirements, risks, and acceptance criteria become reviewable structure.</p>
+    </article>
+    <article class="wl-flow-card glass-surface glass-surface--2 glass-surface--flat">
+      <span>02</span>
+      <strong>Generate</strong>
+      <p>Draft BDD cases arrive in a format QA engineers can inspect and edit.</p>
+    </article>
+    <article class="wl-flow-card glass-surface glass-surface--2 glass-surface--flat">
+      <span>03</span>
+      <strong>Approve</strong>
+      <p>The human review gate decides what can become part of the suite.</p>
+    </article>
+    <article class="wl-flow-card glass-surface glass-surface--2 glass-surface--flat">
+      <span>04</span>
+      <strong>Export</strong>
+      <p>Approved assets leave as Markdown, CSV, JSON, Playwright, or Postman.</p>
+    </article>
   </section>
 
   <section class="wl-section wl-section--formats wl-reveal" id="formats" aria-labelledby="formats-title">
@@ -126,15 +125,6 @@
       <span class="wl-format wl-format--green">CSV</span>
       <span class="wl-format wl-format--green">JSON</span>
       <span class="wl-format wl-format--purple">Markdown</span>
-    </div>
-  </section>
-
-  <section class="wl-cta glass-surface glass-surface--2 glass-scrim glass-scrim--2 wl-reveal" aria-labelledby="cta-title">
-    <h2 id="cta-title">Make QA assets feel inspectable again.</h2>
-    <p>Start in the glass instrument, then move from story to reviewed suite with the same visual language throughout.</p>
-    <div class="wl-cta-actions">
-      <a class="wl-btn-primary" routerLink="/register">Create account</a>
-      <a class="wl-btn-secondary" routerLink="/login">Sign in</a>
     </div>
   </section>
 </main>

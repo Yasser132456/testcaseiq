@@ -43,6 +43,20 @@ describe('BackgroundSceneComponent', () => {
 
     tick(1);
     expect(service.dispose).toHaveBeenCalled();
-    expect(fixture.componentInstance.mode()).toBe('fallback');
+    expect(fixture.componentInstance.renderMode()).toBe('fallback');
+  }));
+
+  it('passes the requested welcome scene mode to the service', fakeAsync(() => {
+    const fixture = TestBed.createComponent(BackgroundSceneComponent);
+    fixture.componentRef.setInput('mode', 'welcome');
+    fixture.detectChanges();
+    tick();
+
+    expect(service.init).toHaveBeenCalledWith(
+      jasmine.any(HTMLElement),
+      false,
+      jasmine.any(AbortSignal),
+      'welcome'
+    );
   }));
 });
