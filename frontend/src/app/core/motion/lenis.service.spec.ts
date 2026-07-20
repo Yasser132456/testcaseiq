@@ -73,12 +73,29 @@ describe('LenisService', () => {
       anchors: true,
       allowNestedScroll: true
     }));
-    expect(lenis.on as jasmine.Spy).toHaveBeenCalledWith('scroll', motion.ScrollTrigger.update);
+    expect(lenis.on as jasmine.Spy).toHaveBeenCalledWith('scroll', jasmine.any(Function));
     expect(motion.gsap.ticker.add).toHaveBeenCalled();
     expect(motion.gsap.ticker.lagSmoothing).toHaveBeenCalledWith(0);
 
     tickerCallback?.(1.25);
     expect(lenis.raf).toHaveBeenCalledWith(1250);
+  });
+
+  it('exposes the current Lenis scroll velocity as a signal', () => {
+    let scrollCallback: ((event: { velocity: number }) => void) | undefined;
+    lenis.on.and.callFake(((_: string, callback: (event: { velocity: number }) => void) => {
+      scrollCallback = callback;
+      return unsubscribe;
+    }) as unknown as typeof lenis.on);
+
+    const service = TestBed.inject(LenisService);
+    service.attach(document.createElement('section'), document.createElement('div'));
+    TestBed.flushEffects();
+
+    scrollCallback?.({ velocity: 3.2 });
+
+    expect(service.scrollVelocity()).toBe(3.2);
+    expect(motion.ScrollTrigger.update).toHaveBeenCalled();
   });
 
   it('does not construct Lenis for the static quality tier', () => {

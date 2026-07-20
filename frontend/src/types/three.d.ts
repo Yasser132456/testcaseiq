@@ -8,9 +8,17 @@ declare module 'three' {
 
   export class Color {
     constructor(hex: number);
+    constructor(style: string);
     r: number;
     g: number;
     b: number;
+    clone(): Color;
+    setRGB(r: number, g: number, b: number): this;
+  }
+
+  export class FogExp2 {
+    constructor(color: Color, density?: number);
+    color: Color;
   }
 
   export class Float32BufferAttribute {
@@ -25,7 +33,7 @@ declare module 'three' {
   }
 
   export class Points {
-    constructor(geometry: BufferGeometry, material: PointsMaterial);
+    constructor(geometry: BufferGeometry, material: PointsMaterial | ShaderMaterial);
     rotation: { x: number; y: number; z: number };
   }
 
@@ -43,8 +51,29 @@ declare module 'three' {
     dispose(): void;
   }
 
+  export interface ShaderMaterialParameters {
+    transparent?: boolean;
+    depthWrite?: boolean;
+    blending?: number;
+    uniforms?: Record<string, { value: unknown }>;
+    vertexShader?: string;
+    fragmentShader?: string;
+  }
+
+  export class ShaderMaterial {
+    constructor(parameters?: ShaderMaterialParameters);
+    uniforms: Record<string, { value: any }>;
+    dispose(): void;
+  }
+
   export class Scene {
+    fog: FogExp2 | null;
     add(object: Points): void;
+  }
+
+  export class Vector2 {
+    constructor(x?: number, y?: number);
+    set(x: number, y: number): this;
   }
 
   export interface WebGLRendererParameters {

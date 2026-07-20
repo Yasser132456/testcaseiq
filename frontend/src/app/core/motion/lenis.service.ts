@@ -1,4 +1,4 @@
-import { DestroyRef, Injectable, InjectionToken, effect, inject, signal, untracked } from '@angular/core';
+import { DestroyRef, Injectable, InjectionToken, Signal, effect, inject, signal, untracked } from '@angular/core';
 import Lenis, { LenisOptions } from 'lenis';
 import { MotionService } from './motion.service';
 
@@ -16,6 +16,9 @@ export class LenisService {
   private readonly destroyRef = inject(DestroyRef);
   private readonly wrapper = signal<HTMLElement | null>(null);
   private readonly content = signal<HTMLElement | null>(null);
+  private readonly scrollVelocityState = signal(0);
+
+  readonly scrollVelocity: Signal<number> = this.scrollVelocityState.asReadonly();
 
   private lenis?: Lenis;
   private unsubscribeScroll?: () => void;
@@ -64,7 +67,10 @@ export class LenisService {
       allowNestedScroll: true,
       prevent: (node) => Boolean(node.closest('[role="dialog"], [popover], [data-lenis-prevent]'))
     });
-    this.unsubscribeScroll = this.lenis.on('scroll', this.motion.ScrollTrigger.update);
+    this.unsubscribeScroll = this.lenis.on('scroll', (event) => {
+      this.scrollVelocityState.set(event.velocity);
+      this.motion.ScrollTrigger.update();
+    });
     this.motion.gsap.ticker.lagSmoothing(0);
     this.motion.gsap.ticker.add(this.tick);
   }
@@ -77,6 +83,7 @@ export class LenisService {
     this.motion.gsap.ticker.remove(this.tick);
     this.unsubscribeScroll?.();
     this.unsubscribeScroll = undefined;
+    this.scrollVelocityState.set(0);
     this.lenis.destroy();
     this.lenis = undefined;
   }
