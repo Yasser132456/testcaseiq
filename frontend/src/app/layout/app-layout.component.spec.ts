@@ -97,6 +97,7 @@ describe('AppLayoutComponent mobile navigation', () => {
 
   it('closes the mobile nav on backdrop click and restores focus to the hamburger', async () => {
     const button = fixture.nativeElement.querySelector('.mobile-nav-btn') as HTMLButtonElement;
+    button.style.display = 'grid';
     button.click();
     fixture.detectChanges();
 
