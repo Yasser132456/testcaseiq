@@ -100,6 +100,7 @@ function createComponent(role: string, metrics: DashboardMetrics | null = MOCK_M
 
 describe('DashboardPageComponent', () => {
   beforeEach(() => {
+    localStorage.clear();
     spyOn(window, 'matchMedia').and.returnValue({
       matches: true,
       media: '(prefers-reduced-motion: reduce)',
