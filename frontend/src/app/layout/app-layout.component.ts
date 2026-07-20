@@ -21,6 +21,7 @@ import { NotificationService } from '../core/services/notification.service';
 import { NotificationCenterComponent } from '../shared/notification-center/notification-center.component';
 import { SearchModalComponent } from '../shared/search-modal/search-modal.component';
 import { KeyboardShortcutsComponent } from '../shared/components/keyboard-shortcuts.component';
+import { LenisService } from '../core/motion/lenis.service';
 
 interface Crumb { label: string; path: string; }
 interface ProjectContext { projectId: string; name: string; storyCount: number; coveragePercent: number; }
@@ -176,7 +177,8 @@ const PROJECT_CONTEXT_STORAGE_KEY = 'tciq_project_ctx';
         </div>
       </aside>
 
-      <section class="workspace">
+      <section #scrollWrapper class="workspace">
+        <div #scrollContent class="workspace-content">
         <header class="topbar glass-surface glass-surface--2 glass-surface--flat">
           <nav aria-label="breadcrumb" class="breadcrumb">
             @for (crumb of breadcrumbs(); track crumb.path; let last = $last) {
@@ -227,7 +229,8 @@ const PROJECT_CONTEXT_STORAGE_KEY = 'tciq_project_ctx';
           </div>
         }
 
-        <router-outlet (activate)="onRouteActivate($event)" />
+          <router-outlet (activate)="onRouteActivate($event)" />
+        </div>
       </section>
 
     </div>
@@ -378,6 +381,7 @@ export class AppLayoutComponent implements AfterViewInit, OnDestroy {
   private readonly injector = inject(Injector);
   private readonly title = inject(Title);
   private readonly notificationService = inject(NotificationService);
+  private readonly lenisService = inject(LenisService);
   private readonly appTitle = 'TestCaseIQ';
 
   readonly LucideLayoutDashboard = LucideLayoutDashboard;   readonly LucideFolderKanban = LucideFolderKanban;
@@ -389,6 +393,8 @@ export class AppLayoutComponent implements AfterViewInit, OnDestroy {
   readonly LucideMenu = LucideMenu;                          readonly LucideX = LucideX;
 
   @ViewChild('sidebarEl') private sidebarEl!: ElementRef<HTMLElement>;
+  @ViewChild('scrollWrapper') private scrollWrapper!: ElementRef<HTMLElement>;
+  @ViewChild('scrollContent') private scrollContent!: ElementRef<HTMLElement>;
 
   readonly collapsed = signal(false);
   readonly pendingReviewCount = signal(0);
@@ -449,12 +455,14 @@ export class AppLayoutComponent implements AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit(): void {
+    this.lenisService.attach(this.scrollWrapper.nativeElement, this.scrollContent.nativeElement);
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const navItems = this.sidebarEl.nativeElement.querySelectorAll('.nav-item');
     gsap.from(navItems, { x: -16, opacity: 0, duration: 0.35, stagger: 0.04, ease: 'power2.out' });
   }
 
   ngOnDestroy(): void {
+    this.lenisService.detach();
     document.removeEventListener('keydown', this.handleDocumentKeydown);
     this.projectContextEffect?.destroy();
   }

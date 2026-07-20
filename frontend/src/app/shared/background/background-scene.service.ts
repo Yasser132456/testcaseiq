@@ -1,7 +1,7 @@
 import { DOCUMENT } from '@angular/common';
 import { Injectable, NgZone, inject } from '@angular/core';
-import { gsap } from 'gsap';
 import type * as Three from 'three';
+import { MotionService } from '../../core/motion/motion.service';
 
 export type BackgroundSceneMode = 'live' | 'static' | 'fallback';
 
@@ -19,6 +19,7 @@ interface SceneHandles {
 export class BackgroundSceneService {
   private readonly document = inject(DOCUMENT);
   private readonly zone = inject(NgZone);
+  private readonly motion = inject(MotionService);
 
   private animationFrame = 0;
   private handles?: SceneHandles;
@@ -29,7 +30,7 @@ export class BackgroundSceneService {
   async init(host: HTMLElement, reducedMotion: boolean, signal?: AbortSignal): Promise<BackgroundSceneMode> {
     this.dispose();
 
-    if (this.isForcedFallback() || !this.hasWebGLContext() || this.isLowEndDevice()) {
+    if (this.motion.qualityTier() === 'static' || !this.hasWebGLContext()) {
       return 'fallback';
     }
 
@@ -133,8 +134,8 @@ export class BackgroundSceneService {
   }
 
   private bindPointerParallax(camera: Three.PerspectiveCamera): void {
-    const moveX = gsap.quickTo(camera.position, 'x', { duration: 0.42, ease: 'power3.out' });
-    const moveY = gsap.quickTo(camera.position, 'y', { duration: 0.42, ease: 'power3.out' });
+    const moveX = this.motion.gsap.quickTo(camera.position, 'x', { duration: 0.42, ease: 'power3.out' });
+    const moveY = this.motion.gsap.quickTo(camera.position, 'y', { duration: 0.42, ease: 'power3.out' });
 
     const onPointerMove = (event: PointerEvent) => {
       const x = event.clientX / Math.max(window.innerWidth, 1) - 0.5;
@@ -177,16 +178,6 @@ export class BackgroundSceneService {
 
     const canvas = this.document.createElement('canvas');
     return Boolean(canvas.getContext('webgl2') || canvas.getContext('webgl'));
-  }
-
-  private isLowEndDevice(): boolean {
-    const cores = navigator.hardwareConcurrency || 2;
-    const mobileViewport = window.matchMedia('(max-width: 760px), (pointer: coarse)').matches;
-    return cores <= 2 || mobileViewport;
-  }
-
-  private isForcedFallback(): boolean {
-    return new URLSearchParams(window.location.search).get('bg') === 'fallback';
   }
 
   private isForcedNoWebGL(): boolean {

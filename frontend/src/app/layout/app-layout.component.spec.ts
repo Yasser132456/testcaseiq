@@ -6,12 +6,14 @@ import { provideRouter, Router } from '@angular/router';
 import { of } from 'rxjs';
 import { AuthService } from '../core/services/auth.service';
 import { NotificationService } from '../core/services/notification.service';
+import { LenisService } from '../core/motion/lenis.service';
 import { AppLayoutComponent } from './app-layout.component';
 
 describe('AppLayoutComponent mobile navigation', () => {
   let fixture: ComponentFixture<AppLayoutComponent>;
   let router: Router;
   let http: HttpTestingController;
+  let lenisService: jasmine.SpyObj<LenisService>;
 
   beforeEach(async () => {
     const notificationService = jasmine.createSpyObj<NotificationService>(
@@ -20,6 +22,7 @@ describe('AppLayoutComponent mobile navigation', () => {
       { unreadCount: signal(0) }
     );
     notificationService.getUnreadCount.and.returnValue(of({ count: 0 }));
+    lenisService = jasmine.createSpyObj<LenisService>('LenisService', ['attach', 'detach']);
 
     await TestBed.configureTestingModule({
       imports: [AppLayoutComponent],
@@ -42,7 +45,8 @@ describe('AppLayoutComponent mobile navigation', () => {
             logout: jasmine.createSpy('logout')
           }
         },
-        { provide: NotificationService, useValue: notificationService }
+        { provide: NotificationService, useValue: notificationService },
+        { provide: LenisService, useValue: lenisService }
       ]
     }).compileComponents();
 
@@ -80,8 +84,20 @@ describe('AppLayoutComponent mobile navigation', () => {
     expect(fixture.nativeElement.querySelector('.mobile-nav-panel')?.textContent).toContain('Dashboard');
   });
 
+  it('attaches smooth scrolling to the workspace and detaches on destroy', () => {
+    const wrapper = fixture.nativeElement.querySelector('.workspace') as HTMLElement;
+    const content = fixture.nativeElement.querySelector('.workspace-content') as HTMLElement;
+
+    expect(lenisService.attach).toHaveBeenCalledOnceWith(wrapper, content);
+
+    fixture.destroy();
+
+    expect(lenisService.detach).toHaveBeenCalled();
+  });
+
   it('closes the mobile nav on backdrop click and restores focus to the hamburger', async () => {
     const button = fixture.nativeElement.querySelector('.mobile-nav-btn') as HTMLButtonElement;
+    button.style.display = 'grid';
     button.click();
     fixture.detectChanges();
 
