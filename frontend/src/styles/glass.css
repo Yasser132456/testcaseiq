@@ -1,5 +1,17 @@
 /* Reusable glass material primitives. Use with the 23A token layer only. */
 
+@property --pointer-x {
+  syntax: '<length-percentage>';
+  inherits: false;
+  initial-value: 50%;
+}
+
+@property --pointer-y {
+  syntax: '<length-percentage>';
+  inherits: false;
+  initial-value: 50%;
+}
+
 .glass-surface {
   --glass-surface-bg: var(--glass-bg-2);
   --glass-surface-blur: var(--glass-blur-md);
@@ -25,6 +37,40 @@
     box-shadow var(--dur-slow) var(--ease-out-quart),
     opacity var(--dur) var(--ease),
     transform var(--dur-slow) var(--ease-out-quart);
+}
+
+.glass-surface--live {
+  --pointer-active: 0;
+}
+
+.glass-surface--live::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  padding: 1px;
+  border-radius: inherit;
+  background:
+    radial-gradient(
+      160px circle at var(--pointer-x) var(--pointer-y),
+      rgba(255, 255, 255, 0.82),
+      var(--color-accent-glow) 32%,
+      transparent 68%
+    );
+  opacity: var(--pointer-active);
+  pointer-events: none;
+  transition:
+    --pointer-x 120ms linear,
+    --pointer-y 120ms linear,
+    opacity var(--dur) var(--ease);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
 }
 
 .glass-surface::before {
@@ -141,6 +187,17 @@
   .glass-surface:hover,
   .glass-surface:active {
     transform: none;
+  }
+
+  .glass-surface--live::after {
+    opacity: 0;
+    transition: none;
+  }
+}
+
+@media (pointer: coarse), (hover: none) {
+  .glass-surface--live::after {
+    opacity: 0;
   }
 }
 

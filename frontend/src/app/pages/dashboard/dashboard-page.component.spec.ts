@@ -154,15 +154,35 @@ describe('DashboardPageComponent', () => {
     expect(element.querySelector('.hero-actions')).toBeNull();
   });
 
-  it('renders four KPI chips with dashboard totals', () => {
+  it('renders a workflow pipeline strip with accessible immediate counts', () => {
     const { element } = createComponent('ADMIN');
-    const chips = element.querySelectorAll('.kpi-chip');
-    expect(chips.length).toBe(4);
-    expect(element.textContent).toContain('Projects');
+    const nodes = Array.from(element.querySelectorAll<HTMLElement>('.pipeline-node'));
+
+    expect(nodes.length).toBe(6);
     expect(element.textContent).toContain('Stories');
-    expect(element.textContent).toContain('Test Suites');
-    expect(element.textContent).toContain('Test Cases');
+    expect(element.textContent).toContain('Analyzed');
+    expect(element.textContent).toContain('Generated');
+    expect(element.textContent).toContain('In Review');
+    expect(element.textContent).toContain('Approved');
+    expect(element.textContent).toContain('Exported');
     expect(element.textContent).toContain('72');
+    expect(nodes[0].getAttribute('aria-label')).toBe('Stories: 12');
+    expect(nodes[0].querySelector('[data-count="totalStories"]')?.getAttribute('aria-hidden')).toBe('true');
+    expect(nodes[0].querySelector('.sr-only')?.textContent).toContain('12');
+  });
+
+  it('routes pipeline nodes to their corresponding filtered pages', () => {
+    const { element } = createComponent('ADMIN');
+    const links = Array.from(element.querySelectorAll<HTMLAnchorElement>('.pipeline-node'));
+
+    expect(links.map(link => link.getAttribute('href'))).toEqual([
+      '/stories?stage=all',
+      '/stories?stage=analyzed',
+      '/review-board?stage=generated',
+      '/review-board?status=NEEDS_REVIEW',
+      '/review-board?status=APPROVED',
+      '/export?stage=exported'
+    ]);
   });
 
   it('removes quick actions and the old attention chip strip', () => {
