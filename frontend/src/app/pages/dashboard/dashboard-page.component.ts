@@ -1,5 +1,5 @@
 import {
-  Component, ElementRef, Injector, OnInit, ViewChild,
+  Component, ElementRef, HostListener, Injector, OnInit, ViewChild,
   afterNextRender, computed, inject, signal
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
@@ -10,13 +10,24 @@ import { AuthService } from '../../core/services/auth.service';
 import { DashboardService } from '../../core/services/dashboard.service';
 import { OnboardingProgressService } from '../../core/services/onboarding-progress.service';
 import { StateMessageComponent } from '../../shared/components/state-message.component';
+import { RevealDirective } from '../../shared/directives/reveal.directive';
 import { TiltDirective } from '../../shared/directives/tilt.directive';
+import { PointerGlowService } from '../../shared/services/pointer-glow.service';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
+
+type PipelineNode = {
+  label: string;
+  value: number;
+  countKey: keyof DashboardMetrics;
+  tone: 'violet' | 'cyan' | 'amber' | 'green';
+  routerLink: string;
+  queryParams: Record<string, string>;
+};
 
 @Component({
   selector: 'app-dashboard-page',
   standalone: true,
-  imports: [RouterLink, StateMessageComponent, SkeletonComponent, TiltDirective],
+  imports: [RouterLink, StateMessageComponent, SkeletonComponent, TiltDirective, RevealDirective],
   styleUrl: './dashboard-page.component.css',
   template: `
     <section class="page-stack dashboard-page">
@@ -71,23 +82,25 @@ import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
           </section>
         }
 
-        <nav class="kpi-chip-row" aria-label="Dashboard totals">
-          <a class="kpi-chip glass-surface glass-surface--2 glass-surface--interactive" routerLink="/projects" glassTilt [glassTiltGlare]="true" [glassTiltMaxDeg]="4" [glassTiltMaxGlare]="0.08">
-            <span>Projects</span>
-            <strong data-count="totalProjects">{{ metrics()!.totalProjects.toLocaleString() }}</strong>
-          </a>
-          <a class="kpi-chip glass-surface glass-surface--2 glass-surface--interactive" routerLink="/stories" glassTilt [glassTiltGlare]="true" [glassTiltMaxDeg]="4" [glassTiltMaxGlare]="0.08">
-            <span>Stories</span>
-            <strong data-count="totalStories">{{ metrics()!.totalStories.toLocaleString() }}</strong>
-          </a>
-          <a class="kpi-chip glass-surface glass-surface--2 glass-surface--interactive" routerLink="/test-suites" glassTilt [glassTiltGlare]="true" [glassTiltMaxDeg]="4" [glassTiltMaxGlare]="0.08">
-            <span>Test Suites</span>
-            <strong data-count="totalTestSuites">{{ metrics()!.totalTestSuites.toLocaleString() }}</strong>
-          </a>
-          <a class="kpi-chip glass-surface glass-surface--2 glass-surface--interactive" routerLink="/review-board" glassTilt [glassTiltGlare]="true" [glassTiltMaxDeg]="4" [glassTiltMaxGlare]="0.08">
-            <span>Test Cases</span>
-            <strong data-count="totalTestCases">{{ metrics()!.totalTestCases.toLocaleString() }}</strong>
-          </a>
+        <nav class="workflow-pipeline" [class.is-flow-paused]="flowPaused()" aria-label="Dashboard totals">
+          @for (node of pipelineNodes(); track node.label; let last = $last) {
+            <a
+              class="pipeline-node glass-surface glass-surface--2 glass-surface--interactive glass-surface--live"
+              [attr.data-tone]="node.tone"
+              [attr.aria-label]="node.label + ': ' + node.value.toLocaleString()"
+              [routerLink]="node.routerLink"
+              [queryParams]="node.queryParams"
+              glassTilt
+              [glassTiltGlare]="true"
+            >
+              <span class="pipeline-node-label">{{ node.label }}</span>
+              <strong [attr.data-count]="node.countKey" aria-hidden="true">{{ node.value.toLocaleString() }}</strong>
+              <span class="sr-only">{{ node.value.toLocaleString() }}</span>
+            </a>
+            @if (!last) {
+              <span class="pipeline-connector" aria-hidden="true"></span>
+            }
+          }
         </nav>
 
         <div class="dashboard-metrics-grid">
@@ -139,7 +152,7 @@ import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
           } @else {
             <div class="timeline">
               @for (item of metrics()!.recentActivity.slice(0, 10); track item.timestamp + item.action) {
-                <div class="timeline-entry">
+                <div class="timeline-entry" [tcqReveal]="$index * 0.04">
                   <span [class]="dotClass(item.outcome)"></span>
                   <div class="timeline-body">
                     <span class="timeline-action">{{ formatAction(item.action) }}</span>
@@ -160,7 +173,7 @@ import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
           } @else {
             <div class="project-card-row">
               @for (project of recentProjects(); track project.id) {
-                <a class="project-card glass-surface glass-surface--2 glass-surface--interactive" [routerLink]="['/projects', project.id]" [attr.data-accent]="projectAccent(project.key)" glassTilt [glassTiltGlare]="true" [glassTiltMaxDeg]="4" [glassTiltMaxGlare]="0.06">
+                <a class="project-card glass-surface glass-surface--2 glass-surface--interactive glass-surface--live" [routerLink]="['/projects', project.id]" [attr.data-accent]="projectAccent(project.key)" glassTilt [glassTiltGlare]="true">
                   <span class="project-key">{{ project.key }}</span>
                   <strong>{{ project.name }}</strong>
                   @if (project.description) {
@@ -186,6 +199,7 @@ export class DashboardPageComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly el = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);
+  private readonly pointerGlow = inject(PointerGlowService);
   readonly onboardingProgress = inject(OnboardingProgressService);
 
   @ViewChild('donutArc') private donutArc?: ElementRef<SVGCircleElement>;
@@ -194,6 +208,7 @@ export class DashboardPageComponent implements OnInit {
   readonly error = signal('');
   readonly metrics = signal<DashboardMetrics | null>(null);
   readonly hasAnimated = signal(false);
+  readonly flowPaused = signal(document.visibilityState === 'hidden');
   readonly workflowPreview = [
     { index: '01', label: 'Analyze', copy: 'Extract requirements and risks from the story.', tone: 'analysis' },
     { index: '02', label: 'Generate', copy: 'Create draft test cases from the analysis.', tone: 'generate' },
@@ -233,6 +248,62 @@ export class DashboardPageComponent implements OnInit {
     ];
   });
 
+  readonly pipelineNodes = computed<PipelineNode[]>(() => {
+    const m = this.metrics();
+    if (!m) return [];
+    const nodes: PipelineNode[] = [
+      {
+        label: 'Stories',
+        value: m.totalStories,
+        countKey: 'totalStories',
+        tone: 'violet',
+        routerLink: '/stories',
+        queryParams: { stage: 'all' }
+      },
+      {
+        label: 'Analyzed',
+        value: m.storiesWithGeneratedTests,
+        countKey: 'storiesWithGeneratedTests',
+        tone: 'cyan',
+        routerLink: '/stories',
+        queryParams: { stage: 'analyzed' }
+      },
+      {
+        label: 'Generated',
+        value: m.totalTestCases,
+        countKey: 'totalTestCases',
+        tone: 'cyan',
+        routerLink: '/review-board',
+        queryParams: { stage: 'generated' }
+      },
+      {
+        label: 'In Review',
+        value: m.pendingReviewTestCases,
+        countKey: 'pendingReviewTestCases',
+        tone: 'amber',
+        routerLink: '/review-board',
+        queryParams: { status: 'NEEDS_REVIEW' }
+      },
+      {
+        label: 'Approved',
+        value: m.approvedTestCases,
+        countKey: 'approvedTestCases',
+        tone: 'green',
+        routerLink: '/review-board',
+        queryParams: { status: 'APPROVED' }
+      },
+      {
+        label: 'Exported',
+        value: m.totalExports,
+        countKey: 'totalExports',
+        tone: 'green',
+        routerLink: '/export',
+        queryParams: { stage: 'exported' }
+      }
+    ];
+    return nodes;
+  });
+
   readonly recentProjects = computed(() => this.metrics()?.recentProjects.slice(0, 3) ?? []);
 
   readonly coveragePct = computed(() => {
@@ -242,7 +313,13 @@ export class DashboardPageComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.pointerGlow.start();
     this.loadMetrics();
+  }
+
+  @HostListener('document:visibilitychange')
+  onVisibilityChange(): void {
+    this.flowPaused.set(document.visibilityState === 'hidden');
   }
 
   loadMetrics(): void {
@@ -322,7 +399,7 @@ export class DashboardPageComponent implements OnInit {
         return;
       }
       const cu = new CountUp(el, value, {
-        duration: 1.2, useEasing: true, useGrouping: true, separator: ','
+        duration: 0.6, useEasing: true, useGrouping: true, separator: ','
       });
       cu.start();
     });
@@ -341,7 +418,7 @@ export class DashboardPageComponent implements OnInit {
   }
 
   private staggerKpiChips(rm: boolean): void {
-    const chips = this.el.nativeElement.querySelectorAll('.kpi-chip-row .kpi-chip');
+    const chips = this.el.nativeElement.querySelectorAll('.workflow-pipeline .pipeline-node');
     if (rm || !chips.length) return;
     gsap.from(chips, { y: 8, opacity: 0, stagger: 0.05, duration: 0.28, ease: 'power2.out', clearProps: 'all' });
   }
@@ -359,7 +436,7 @@ export class DashboardPageComponent implements OnInit {
   }
 
   private animateTimeline(): void {
-    const entries = this.el.nativeElement.querySelectorAll('.timeline-entry, .project-card');
+    const entries = this.el.nativeElement.querySelectorAll('.project-card');
     if (!entries.length) return;
     gsap.from(entries, { x: 12, opacity: 0, stagger: 0.06, duration: 0.35, ease: 'power2.out', clearProps: 'all' });
   }
