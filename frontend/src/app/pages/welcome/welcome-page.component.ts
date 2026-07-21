@@ -21,6 +21,7 @@ export class WelcomePageComponent implements OnInit, OnDestroy {
   private readonly background = inject(BackgroundSceneService);
 
   private cleanupFns: Array<() => void> = [];
+  private readonly narrativeAbort = new AbortController();
   private scrollTrigger?: ScrollTrigger;
   private activeBeatIndex = -1;
 
@@ -33,7 +34,7 @@ export class WelcomePageComponent implements OnInit, OnDestroy {
     afterNextRender(() => {
       this.runEntrance();
       this.bindMagneticCtas();
-      this.setupScrollNarrative();
+      void this.setupScrollNarrative(this.narrativeAbort.signal);
     }, { injector: this.injector });
   }
 
@@ -41,7 +42,7 @@ export class WelcomePageComponent implements OnInit, OnDestroy {
     const headlineLines = this.host.nativeElement.querySelectorAll('.wl-headline span');
     const baseSelector = '.wl-nav, .wl-system-line, .wl-sub, .wl-ctas';
 
-    if (this.motion.reducedMotion()) {
+    if (!this.motion.motionEnabled()) {
       this.motion.gsap.set([headlineLines, baseSelector], { opacity: 1, y: 0, clipPath: 'inset(0 0 0 0)' });
       return;
     }
@@ -64,19 +65,24 @@ export class WelcomePageComponent implements OnInit, OnDestroy {
     });
   }
 
-  private setupScrollNarrative(): void {
+  private async setupScrollNarrative(signal: AbortSignal): Promise<void> {
     const element = this.host.nativeElement as HTMLElement;
     const root = element.querySelector('.wl-cinema') as HTMLElement | null;
     const pin = element.querySelector('.wl-cinema-pin') as HTMLElement | null;
     const beats = Array.from(element.querySelectorAll('[data-cinematic-beat]')) as HTMLElement[];
 
-    if (!root || !pin || beats.length === 0 || this.motion.reducedMotion()) {
+    if (!root || !pin || beats.length === 0 || !this.motion.sceneEffectsEnabled() || signal.aborted) {
       beats.forEach((beat) => beat.classList.add('is-active'));
       this.background.setWelcomeProgress(1);
       return;
     }
 
-    this.scrollTrigger = this.motion.ScrollTrigger.create({
+    const ScrollTrigger = await this.motion.loadScrollTrigger();
+    if (signal.aborted || !this.motion.sceneEffectsEnabled()) {
+      return;
+    }
+
+    this.scrollTrigger = ScrollTrigger.create({
       trigger: root,
       start: 'top top',
       end: '+=300%',
@@ -87,7 +93,10 @@ export class WelcomePageComponent implements OnInit, OnDestroy {
         this.activateBeat(beats, self.progress);
       }
     });
-    this.cleanupFns.push(() => this.scrollTrigger?.kill());
+    this.cleanupFns.push(() => {
+      this.scrollTrigger?.kill();
+      this.scrollTrigger = undefined;
+    });
     this.activateBeat(beats, 0);
   }
 
@@ -114,7 +123,7 @@ export class WelcomePageComponent implements OnInit, OnDestroy {
   }
 
   private bindMagneticCtas(): void {
-    if (this.motion.reducedMotion()) {
+    if (!this.motion.cursorEffectsEnabled()) {
       return;
     }
 
@@ -145,6 +154,7 @@ export class WelcomePageComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.narrativeAbort.abort();
     this.cleanupFns.forEach((cleanup) => cleanup());
     this.cleanupFns = [];
     this.background.setWelcomeProgress(0);

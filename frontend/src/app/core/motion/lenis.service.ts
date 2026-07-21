@@ -29,7 +29,7 @@ export class LenisService {
   private readonly policyEffect = effect(() => {
     const wrapper = this.wrapper();
     const content = this.content();
-    const enabled = !this.motion.reducedMotion() && this.motion.qualityTier() !== 'static';
+    const enabled = this.motion.motionEnabled() && this.motion.documentVisible();
 
     untracked(() => this.reconcile(wrapper, content, enabled));
   });
@@ -69,7 +69,7 @@ export class LenisService {
     });
     this.unsubscribeScroll = this.lenis.on('scroll', (event) => {
       this.scrollVelocityState.set(event.velocity);
-      this.motion.ScrollTrigger.update();
+      this.motion.updateScrollTrigger();
     });
     this.motion.gsap.ticker.lagSmoothing(0);
     this.motion.gsap.ticker.add(this.tick);

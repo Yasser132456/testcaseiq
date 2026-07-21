@@ -19,13 +19,15 @@ describe('WelcomePageComponent', () => {
         {
           provide: MotionService,
           useValue: {
-            reducedMotion: () => true,
+            motionEnabled: () => false,
+            cursorEffectsEnabled: () => false,
+            sceneEffectsEnabled: () => false,
+            loadScrollTrigger: jasmine.createSpy('loadScrollTrigger'),
             gsap: {
               set: jasmine.createSpy('set'),
               from: jasmine.createSpy('from'),
               to: jasmine.createSpy('to')
-            },
-            ScrollTrigger: { create: jasmine.createSpy('create') }
+            }
           }
         },
         {

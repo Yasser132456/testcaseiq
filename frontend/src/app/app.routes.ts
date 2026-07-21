@@ -15,10 +15,14 @@ import { StoryDetailPageComponent } from './pages/stories/story-detail-page.comp
 import { TestSuitesListPageComponent } from './pages/test-suites/test-suites-list-page.component';
 import { TestSuiteDetailPageComponent } from './pages/test-suites/test-suite-detail-page.component';
 import { ReviewBoardPageComponent } from './pages/review-board/review-board-page.component';
-import { WelcomePageComponent } from './pages/welcome/welcome-page.component';
 
 export const routes: Routes = [
-  { path: '', pathMatch: 'full', component: WelcomePageComponent },
+  {
+    path: '',
+    pathMatch: 'full',
+    loadComponent: () => import('./pages/welcome/welcome-page.component')
+      .then((m) => m.WelcomePageComponent)
+  },
   { path: 'login', component: LoginPageComponent },
   { path: 'register', component: RegisterPageComponent },
   {
