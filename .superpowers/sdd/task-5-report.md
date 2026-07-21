@@ -11,7 +11,8 @@
   - `story-detail-analyzing.png`
   - `review-board-idle.png`
   - `search-modal-open.png`
-- Every capture asserts the `bg=fallback` query parameter and reduced-motion media state. Dates use Playwright's deterministic clock; CSS motion is disabled at document initialization; screenshot animations and carets are disabled.
+- Every capture asserts the `bg=fallback` query parameter and reduced-motion media state. Dates use Playwright's deterministic clock with `en-US` locale and `Africa/Tunis` timezone pinned in Playwright configuration; CSS motion is disabled at document initialization; screenshot animations and carets are disabled.
+- Authenticated visual tests use fixture-only token installation and do not request Playwright's `APIRequestContext`. Browser request tracking fails the suite if `/api/auth/register` or `/api/auth/login` is issued.
 - No screenshot masks were needed because the captured data and browser state are deterministic.
 
 ## State ownership decision
@@ -58,4 +59,27 @@ Ignore checks confirmed root/frontend `test-results` and `playwright-report` pat
 ## Remaining concerns
 
 - The deterministic analyzing capture uses a test-owned pending `/analyze` response and releases it after the screenshot. It exercises the real Story Detail UI state without a production feature or test-only product hook.
-- The quality auth helper retains its bounded real-backend attempt before deterministic fallback, so authenticated visual cases can take several seconds when no backend is listening. This is inherited Task 4 behavior and does not affect screenshot determinism.
+
+## Review hardening follow-up
+
+The review pass pinned locale and timezone at the Playwright context level and split visual authentication from the existing backend-first quality auth path.
+
+RED evidence:
+
+- The effective project configuration assertion received `undefined` for locale before `locale: 'en-US'` and `timezoneId: 'Africa/Tunis'` were added.
+- After the visual suite was changed to its desired fixture-only API, strict TypeScript failed with `TS2724` because `authenticateQualityUserFromFixture` did not exist. The minimal helper was then added without changing `authenticateQualityUser`, which accessibility and full quality E2E tests continue to use.
+
+Follow-up verification:
+
+```text
+npm.cmd run e2e:visual -- --workers=1 --update-snapshots
+6 passed (24.2s)
+
+npm.cmd run e2e:visual -- --workers=1
+6 passed (27.6s)
+
+npm.cmd run e2e:a11y -- --workers=1 --grep "dashboard has no serious"
+1 passed (13.8s)
+```
+
+All six baselines were regenerated under the pinned context. Their SHA-256 hashes were unchanged, so no baseline image changed and no additional visual variance was introduced. The focused accessibility route proves the existing backend-first auth helper remains active and functional outside the visual suite.

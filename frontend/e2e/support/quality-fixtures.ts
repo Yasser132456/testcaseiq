@@ -268,6 +268,14 @@ export function clearUnexpectedApiRequests(page: Page): void {
   unexpectedApiRequests.set(page, []);
 }
 
+export async function authenticateQualityUserFromFixture(page: Page): Promise<AuthResponse> {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.addInitScript((token) => {
+    localStorage.setItem('testcaseiq.auth.token', token);
+  }, deterministicAuth.accessToken);
+  return deterministicAuth;
+}
+
 export async function authenticateQualityUser(
   page: Page,
   request: APIRequestContext

@@ -13,6 +13,8 @@ export default defineConfig({
   reporter: process.env['CI'] ? [['list'], ['html', { open: 'never' }]] : [['list']],
   use: {
     baseURL: process.env['E2E_BASE_URL'] ?? 'http://localhost:4200',
+    locale: 'en-US',
+    timezoneId: 'Africa/Tunis',
     trace: 'retain-on-failure'
   },
   projects: [

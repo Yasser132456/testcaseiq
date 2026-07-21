@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import {
   QUALITY_STORY_ID,
   assertNoUnexpectedApiRequests,
-  authenticateQualityUser,
+  authenticateQualityUserFromFixture,
   gotoStable,
   installDeterministicApi
 } from './support/quality-fixtures';
@@ -13,6 +13,7 @@ const SCREENSHOT_OPTIONS = {
   animations: 'disabled',
   caret: 'hide'
 } as const;
+const liveAuthRequests = new WeakMap<Page, string[]>();
 
 async function capture(page: Page, name: string): Promise<void> {
   expect(new URL(page.url()).searchParams.get('bg')).toBe('fallback');
@@ -20,7 +21,9 @@ async function capture(page: Page, name: string): Promise<void> {
   await expect(page).toHaveScreenshot(name, SCREENSHOT_OPTIONS);
 }
 
-test.beforeEach(async ({ page }) => {
+test.beforeEach(async ({ page }, testInfo) => {
+  expect(testInfo.project.use.locale).toBe('en-US');
+  expect(testInfo.project.use.timezoneId).toBe('Africa/Tunis');
   await page.setViewportSize(VIEWPORT);
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.clock.install({ time: FIXED_NOW });
@@ -44,10 +47,18 @@ test.beforeEach(async ({ page }) => {
     if (document.documentElement) installDeterministicMotionStyle();
     else document.addEventListener('DOMContentLoaded', installDeterministicMotionStyle, { once: true });
   });
+  liveAuthRequests.set(page, []);
+  page.on('request', (request) => {
+    const url = new URL(request.url());
+    if (url.pathname === '/api/auth/register' || url.pathname === '/api/auth/login') {
+      liveAuthRequests.get(page)?.push(`${request.method()} ${request.url()}`);
+    }
+  });
   await installDeterministicApi(page);
 });
 
 test.afterEach(async ({ page }) => {
+  expect(liveAuthRequests.get(page) ?? [], 'visual tests must not issue live auth requests').toEqual([]);
   assertNoUnexpectedApiRequests(page);
 });
 
@@ -60,8 +71,8 @@ test('welcome static fallback', async ({ page }) => {
   await capture(page, 'welcome-static.png');
 });
 
-test('dashboard pipeline', async ({ page, request }) => {
-  await authenticateQualityUser(page, request);
+test('dashboard pipeline', async ({ page }) => {
+  await authenticateQualityUserFromFixture(page);
   await gotoStable(page, '/dashboard');
 
   const pipeline = page.getByRole('navigation', { name: 'Dashboard totals' });
@@ -72,8 +83,8 @@ test('dashboard pipeline', async ({ page, request }) => {
   await capture(page, 'dashboard-pipeline.png');
 });
 
-test('story detail', async ({ page, request }) => {
-  await authenticateQualityUser(page, request);
+test('story detail', async ({ page }) => {
+  await authenticateQualityUserFromFixture(page);
   await gotoStable(page, `/stories/${QUALITY_STORY_ID}`);
 
   await expect(page.getByRole('heading', { name: 'Buyer completes checkout', level: 1 })).toBeVisible();
@@ -86,8 +97,8 @@ test('story detail', async ({ page, request }) => {
   await capture(page, 'story-detail.png');
 });
 
-test('story detail analyzing', async ({ page, request }) => {
-  await authenticateQualityUser(page, request);
+test('story detail analyzing', async ({ page }) => {
+  await authenticateQualityUserFromFixture(page);
   await page.route(`**/api/stories/${QUALITY_STORY_ID}/analysis`, (route) => route.fulfill({
     status: 404,
     contentType: 'application/json',
@@ -129,8 +140,8 @@ test('story detail analyzing', async ({ page, request }) => {
   finishAnalysis?.();
 });
 
-test('review board idle', async ({ page, request }) => {
-  await authenticateQualityUser(page, request);
+test('review board idle', async ({ page }) => {
+  await authenticateQualityUserFromFixture(page);
   await gotoStable(page, '/review-board');
 
   await expect(page.getByRole('heading', { name: 'Review Board' })).toBeVisible();
@@ -140,8 +151,8 @@ test('review board idle', async ({ page, request }) => {
   await capture(page, 'review-board-idle.png');
 });
 
-test('search modal open', async ({ page, request }) => {
-  await authenticateQualityUser(page, request);
+test('search modal open', async ({ page }) => {
+  await authenticateQualityUserFromFixture(page);
   await gotoStable(page, '/dashboard');
   await page.getByRole('button', { name: 'Open search' }).click();
 
