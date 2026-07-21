@@ -1,5 +1,6 @@
 import { Component, ElementRef, computed, inject, output, signal, input } from '@angular/core';
 import { commitReviewVerdictMotion } from '../../core/motion/review-verdict-motion';
+import { MotionService } from '../../core/motion/motion.service';
 import { GeneratedTestCase, GeneratedTestSuiteResult } from '../../core/models/generated-test.model';
 import { TestCaseResponse } from '../../core/models/review.model';
 import { ReviewService } from '../../core/services/review.service';
@@ -123,6 +124,7 @@ export class StoryReviewTabComponent {
   private readonly host = inject(ElementRef<HTMLElement>);
   private readonly reviewService = inject(ReviewService);
   private readonly toastService = inject(ToastService);
+  private readonly motion = inject(MotionService);
 
   readonly testSuites = input.required<GeneratedTestSuiteResult[]>();
   readonly testCaseUpdated = output<{ original: GeneratedTestCase; updated: TestCaseResponse }>();
@@ -199,13 +201,9 @@ export class StoryReviewTabComponent {
       container: this.host.nativeElement,
       card: this.host.nativeElement.querySelector('.review-detail-panel'),
       verdict: status,
-      reducedMotion: this.prefersReducedMotion(),
+      reducedMotion: this.motion.reducedMotion(),
       commit: () => this.verdictOptimistic.emit({ original: testCase, status })
     });
-  }
-
-  private prefersReducedMotion(): boolean {
-    return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
   }
 
   private selectRelativeCase(delta: number): void {

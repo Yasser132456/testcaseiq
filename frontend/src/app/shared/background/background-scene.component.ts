@@ -136,8 +136,6 @@ export class BackgroundSceneComponent implements OnDestroy {
   }
 
   private async boot(): Promise<void> {
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
-      new URLSearchParams(window.location.search).get('bg') === 'reduced-motion';
     const controller = new AbortController();
     let timeoutId = 0;
     const timeout = new Promise<BackgroundSceneMode>((resolve) => {
@@ -150,7 +148,7 @@ export class BackgroundSceneComponent implements OnDestroy {
 
     try {
       const result = await Promise.race([
-        this.scene.init(this.stage().nativeElement, prefersReducedMotion, controller.signal, this.mode()),
+        this.scene.init(this.stage().nativeElement, controller.signal, this.mode()),
         timeout
       ]);
       this.renderMode.set(result);

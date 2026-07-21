@@ -2,6 +2,7 @@ import { Component, ElementRef, HostListener, OnChanges, OnDestroy, output, inpu
 import { gsap } from 'gsap';
 import { LucideX, LucideDynamicIcon } from '@lucide/angular';
 import { RevealDirective } from '../directives/reveal.directive';
+import { MotionService } from '../../core/motion/motion.service';
 
 @Component({
   selector: 'app-drawer',
@@ -141,6 +142,7 @@ export class DrawerComponent implements OnChanges, OnDestroy {
   readonly isVisible = signal(false);
 
   private readonly host = inject(ElementRef<HTMLElement>);
+  private readonly motion = inject(MotionService);
   private closeTimer?: ReturnType<typeof setTimeout>;
   private returnFocusTarget: HTMLElement | null = null;
 
@@ -169,7 +171,7 @@ export class DrawerComponent implements OnChanges, OnDestroy {
     queueMicrotask(() => {
       const drawer = this.host.nativeElement.querySelector('.drawer-panel');
       this.focusInitialElement();
-      if (drawer && !this.prefersReducedMotion()) {
+      if (drawer && !this.motion.reducedMotion()) {
         gsap.from(drawer, { x: 480, duration: 0.28, ease: 'expo.out' });
       }
     });
@@ -191,7 +193,7 @@ export class DrawerComponent implements OnChanges, OnDestroy {
     this.closing.set(true);
     const drawer = this.host.nativeElement.querySelector('.drawer-panel');
 
-    if (drawer && !this.prefersReducedMotion()) {
+    if (drawer && !this.motion.reducedMotion()) {
       gsap.to(drawer, { x: 480, duration: 0.25, ease: 'power2.in' });
       this.closeTimer = setTimeout(() => this.finishClose(emitClosed), 250);
       return;
@@ -229,7 +231,4 @@ export class DrawerComponent implements OnChanges, OnDestroy {
     }
   }
 
-  private prefersReducedMotion(): boolean {
-    return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
-  }
 }

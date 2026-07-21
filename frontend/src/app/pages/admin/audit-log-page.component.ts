@@ -3,6 +3,7 @@ import { Component, ElementRef, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { gsap } from 'gsap';
+import { MotionService } from '../../core/motion/motion.service';
 import { LucideShieldCheck } from '@lucide/angular';
 import { AuditEvent, AuditEventFilters, AuditEventPage } from '../../core/models/audit-event.model';
 import { AuditEventService } from '../../core/services/audit-event.service';
@@ -260,6 +261,7 @@ export class AuditLogPageComponent implements OnInit {
 
   private readonly host = inject(ElementRef<HTMLElement>);
   private readonly auditEventService = inject(AuditEventService);
+  private readonly motion = inject(MotionService);
 
   readonly page = signal<AuditEventPage | null>(null);
   readonly loading = signal(true);
@@ -379,7 +381,7 @@ export class AuditLogPageComponent implements OnInit {
   }
 
   private animateFilterChips(): void {
-    if (this.prefersReducedMotion()) {
+    if (this.motion.reducedMotion()) {
       return;
     }
     queueMicrotask(() => {
@@ -390,7 +392,4 @@ export class AuditLogPageComponent implements OnInit {
     });
   }
 
-  private prefersReducedMotion(): boolean {
-    return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
-  }
 }

@@ -1,5 +1,6 @@
-import { Component, OnChanges, OnDestroy, SimpleChanges, computed, input, signal } from '@angular/core';
+import { Component, OnChanges, OnDestroy, SimpleChanges, computed, inject, input, signal } from '@angular/core';
 import { LucideDynamicIcon, LucideCheck, LucideClock, LucideX, LucidePencil, LucideDownload } from '@lucide/angular';
+import { MotionService } from '../../core/motion/motion.service';
 
 export type BadgeStatus = 'APPROVED' | 'NEEDS_REVIEW' | 'NEEDS_CLARIFICATION' | 'REJECTED' | 'DRAFT' | 'EXPORTED';
 
@@ -103,6 +104,7 @@ const LABEL_MAP: Record<BadgeStatus, string> = {
   `]
 })
 export class BadgeComponent implements OnChanges, OnDestroy {
+  private readonly motion = inject(MotionService);
   readonly status = input.required<BadgeStatus>();
   readonly flipping = signal(false);
   private flipTimer: ReturnType<typeof setTimeout> | null = null;
@@ -112,7 +114,7 @@ export class BadgeComponent implements OnChanges, OnDestroy {
   readonly cls = computed(() => `glass-surface glass-surface--flat badge--${this.status().toLowerCase().replaceAll('_', '-')}`);
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (!changes['status'] || changes['status'].firstChange || this.prefersReducedMotion()) {
+    if (!changes['status'] || changes['status'].firstChange || this.motion.reducedMotion()) {
       return;
     }
     if (this.flipTimer) {
@@ -128,7 +130,4 @@ export class BadgeComponent implements OnChanges, OnDestroy {
     }
   }
 
-  private prefersReducedMotion(): boolean {
-    return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
-  }
 }

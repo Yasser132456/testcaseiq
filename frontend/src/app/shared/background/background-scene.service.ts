@@ -1,5 +1,5 @@
 import { DOCUMENT } from '@angular/common';
-import { DestroyRef, Injectable, NgZone, Signal, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, NgZone, Signal, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs';
@@ -17,8 +17,12 @@ export interface BackgroundSceneAccent {
   cssColor: string;
 }
 
-export function operationAccentEnabledForMotion(tier: MotionQualityTier, reducedMotion: boolean): boolean {
-  return tier === 'high' && !reducedMotion;
+export function operationAccentEnabledForMotion(
+  tier: MotionQualityTier,
+  reducedMotion: boolean,
+  documentVisible = true
+): boolean {
+  return tier === 'high' && !reducedMotion && documentVisible;
 }
 
 interface ParticleLayer {
@@ -121,17 +125,23 @@ export class BackgroundSceneService {
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe((event) => this.setRouteAccent(event.urlAfterRedirects || event.url));
+
+    effect(() => {
+      this.syncMotionPolicy(
+        this.motion.sceneEffectsEnabled(),
+        this.motion.cursorEffectsEnabled()
+      );
+    });
   }
 
   async init(
     host: HTMLElement,
-    reducedMotion: boolean,
     signal?: AbortSignal,
     renderMode: BackgroundSceneRenderMode = 'ambient'
   ): Promise<BackgroundSceneMode> {
     this.dispose();
 
-    if (this.motion.qualityTier() === 'static' || !this.hasWebGLContext()) {
+    if (this.motion.forcedFallback() || this.motion.qualityTier() === 'static' || !this.hasWebGLContext()) {
       return 'fallback';
     }
 
@@ -141,6 +151,7 @@ export class BackgroundSceneService {
     this.throwIfAborted(signal);
 
     this.accentPalette = this.readAccentPalette(THREE);
+    const reducedMotion = this.motion.reducedMotion();
     this.createScene(THREE, host, reducedMotion, renderMode);
 
     return reducedMotion ? 'static' : 'live';
@@ -198,13 +209,21 @@ export class BackgroundSceneService {
   }
 
   setOperationAccent(name: Extract<BackgroundSceneAccentName, 'violet' | 'cyan'> | null): void {
-    const enabled = name !== null && operationAccentEnabledForMotion(
+    if (name === null) {
+      this.operationAccentName = null;
+      this.pauseOperationAccentPulse();
+      return;
+    }
+
+    this.operationAccentName = name;
+    const enabled = operationAccentEnabledForMotion(
       this.motion.qualityTier(),
-      this.motion.reducedMotion()
+      this.motion.reducedMotion(),
+      this.motion.documentVisible()
     );
 
     if (!enabled) {
-      this.stopOperationAccentPulse();
+      this.pauseOperationAccentPulse();
       return;
     }
 
@@ -212,7 +231,6 @@ export class BackgroundSceneService {
       return;
     }
 
-    this.operationAccentName = name;
     this.startOperationAccentPulse();
   }
 
@@ -280,21 +298,15 @@ export class BackgroundSceneService {
     };
     resize();
 
-    if (this.operationAccentName) {
-      this.startOperationAccentPulse();
-    }
-
-    if (reducedMotion) {
-      renderer.render(scene, camera);
-      return;
-    }
-
-    this.bindPointerInteraction();
-    this.zone.runOutsideAngular(() => this.animate());
+    this.syncMotionPolicy(
+      this.motion.sceneEffectsEnabled(),
+      this.motion.cursorEffectsEnabled()
+    );
   }
 
   private animate(): void {
-    if (!this.handles) {
+    if (!this.handles || !this.motion.sceneEffectsEnabled() || !this.motion.documentVisible()) {
+      this.animationFrame = 0;
       return;
     }
 
@@ -323,11 +335,14 @@ export class BackgroundSceneService {
       }
     }
     renderer.render(scene, camera);
-    this.animationFrame = requestAnimationFrame(() => this.animate());
+    this.animationFrame = requestAnimationFrame(() => {
+      this.animationFrame = 0;
+      this.animate();
+    });
   }
 
   private bindPointerInteraction(): void {
-    if (!this.handles || this.motion.qualityTier() !== 'high' || window.matchMedia('(pointer: coarse)').matches) {
+    if (!this.handles || this.pointerCleanup || !this.motion.cursorEffectsEnabled()) {
       return;
     }
 
@@ -347,6 +362,39 @@ export class BackgroundSceneService {
 
     window.addEventListener('pointermove', onPointerMove, { passive: true });
     this.pointerCleanup = () => window.removeEventListener('pointermove', onPointerMove);
+  }
+
+  private syncMotionPolicy(sceneEnabled: boolean, cursorEnabled: boolean): void {
+    if (!sceneEnabled) {
+      if (this.animationFrame) {
+        cancelAnimationFrame(this.animationFrame);
+        this.animationFrame = 0;
+      }
+      this.pointerCleanup?.();
+      this.pointerCleanup = undefined;
+      if (this.handles) {
+        this.handles.cursorLight.enabled = 0;
+      }
+      this.pauseOperationAccentPulse();
+      return;
+    }
+
+    if (cursorEnabled) {
+      this.bindPointerInteraction();
+    } else {
+      this.pointerCleanup?.();
+      this.pointerCleanup = undefined;
+      if (this.handles) {
+        this.handles.cursorLight.enabled = 0;
+      }
+    }
+
+    if (this.handles && !this.animationFrame) {
+      this.zone.runOutsideAngular(() => this.animate());
+    }
+    if (this.operationAccentName) {
+      this.startOperationAccentPulse();
+    }
   }
 
   private buildParticleLayers(THREE: typeof Three, color: Three.Color): ParticleLayer[] {
@@ -565,7 +613,15 @@ export class BackgroundSceneService {
     this.operationAccentTween = undefined;
     this.operationAccentMix.amount = 0;
 
-    if (!this.handles || !this.operationAccentName) {
+    if (
+      !this.handles
+      || !this.operationAccentName
+      || !operationAccentEnabledForMotion(
+        this.motion.qualityTier(),
+        this.motion.reducedMotion(),
+        this.motion.documentVisible()
+      )
+    ) {
       return;
     }
 
@@ -580,15 +636,38 @@ export class BackgroundSceneService {
   }
 
   private stopOperationAccentPulse(): void {
-    const hadPulse = this.operationAccentName !== null || !!this.operationAccentTween;
+    this.operationAccentName = null;
+    this.pauseOperationAccentPulse();
+  }
+
+  private pauseOperationAccentPulse(): void {
+    const hadPulse = !!this.operationAccentTween || this.operationAccentMix.amount !== 0;
     this.operationAccentTween?.kill();
     this.operationAccentTween = undefined;
-    this.operationAccentName = null;
     this.operationAccentMix.amount = 0;
 
     if (hadPulse) {
-      this.applyAccent(this.sceneAccent().name);
+      this.applyAccentImmediately(this.sceneAccent().name);
     }
+  }
+
+  private applyAccentImmediately(name: BackgroundSceneAccentName): void {
+    if (!this.handles) {
+      return;
+    }
+
+    const color = this.currentAccentColor(undefined, name);
+    Object.assign(this.handles.tint, { r: color.r, g: color.g, b: color.b });
+    Object.assign(this.handles.vignette, { r: color.r, g: color.g, b: color.b });
+    this.handles.layers.forEach(({ material }) => {
+      material.uniforms['uColor'].value.setRGB(color.r, color.g, color.b);
+      material.uniforms['uVignette'].value.setRGB(color.r, color.g, color.b);
+      material.uniforms['uLightEnabled'].value = 0;
+    });
+    if (this.handles.scene.fog) {
+      this.handles.scene.fog.color.setRGB(color.r, color.g, color.b);
+    }
+    this.handles.renderer.render(this.handles.scene, this.handles.camera);
   }
 
   private renderOperationAccentMix(): void {
@@ -616,6 +695,11 @@ export class BackgroundSceneService {
 
   private applyAccent(name: BackgroundSceneAccentName): void {
     if (!this.handles) {
+      return;
+    }
+
+    if (!this.motion.sceneEffectsEnabled()) {
+      this.applyAccentImmediately(name);
       return;
     }
 

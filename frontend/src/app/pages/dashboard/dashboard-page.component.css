@@ -34,6 +34,7 @@
 .pipeline-node{flex:1 1 0;min-width:0}
 .pipeline-connector{flex:0 0 1.35rem;align-self:center;height:2px;margin:0 -.55rem;border-radius:999px;background:repeating-linear-gradient(90deg,var(--color-phosphor) 0 12px,transparent 12px 22px);background-size:44px 100%;box-shadow:0 0 14px var(--color-phosphor-glow);animation:pipelineFlow 900ms linear infinite;pointer-events:none}
 .workflow-pipeline.is-flow-paused .pipeline-connector{animation-play-state:paused}
+:host-context(html[data-motion-paused='true']) .pipeline-connector{animation-play-state:paused}
 .dashboard-metrics-grid,.project-card-row{display:grid;gap:.75rem}
 .dashboard-metrics-grid{grid-template-columns:minmax(0,1.25fr) minmax(280px,.75fr);gap:1rem}
 .project-card-row{grid-template-columns:minmax(18rem,1.35fr) minmax(12rem,.85fr);grid-template-areas:"primary secondary" "primary tertiary";align-items:stretch}

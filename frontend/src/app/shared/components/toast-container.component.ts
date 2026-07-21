@@ -2,6 +2,7 @@ import { Component, effect, inject } from '@angular/core';
 import { gsap } from 'gsap';
 import { LucideAlertCircle, LucideCheckCircle2, LucideInfo, LucideDynamicIcon, LucideTriangleAlert } from '@lucide/angular';
 import { ToastItem, ToastService, ToastType } from '../../core/services/toast.service';
+import { MotionService } from '../../core/motion/motion.service';
 
 @Component({
   selector: 'app-toast-container',
@@ -129,6 +130,7 @@ import { ToastItem, ToastService, ToastType } from '../../core/services/toast.se
 })
 export class ToastContainerComponent {
   readonly toastService = inject(ToastService);
+  private readonly motion = inject(MotionService);
   private readonly animatedIn = new Set<number>();
   private readonly animatedOut = new Set<number>();
 
@@ -152,7 +154,7 @@ export class ToastContainerComponent {
   }
 
   private animateIn(toast: ToastItem): void {
-    if (this.animatedIn.has(toast.id) || this.prefersReducedMotion()) {
+    if (this.animatedIn.has(toast.id) || this.motion.reducedMotion()) {
       this.animatedIn.add(toast.id);
       return;
     }
@@ -176,7 +178,7 @@ export class ToastContainerComponent {
     this.animatedOut.add(toast.id);
     queueMicrotask(() => {
       const el = this.toastElement(toast.id);
-      if (!el || this.prefersReducedMotion()) {
+      if (!el || this.motion.reducedMotion()) {
         this.toastService.remove(toast.id);
         return;
       }
@@ -195,7 +197,4 @@ export class ToastContainerComponent {
     return document.querySelector(`[data-toast-id="${id}"]`);
   }
 
-  private prefersReducedMotion(): boolean {
-    return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
-  }
 }

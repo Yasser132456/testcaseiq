@@ -22,6 +22,7 @@ import { NotificationCenterComponent } from '../shared/notification-center/notif
 import { SearchModalComponent } from '../shared/search-modal/search-modal.component';
 import { KeyboardShortcutsComponent } from '../shared/components/keyboard-shortcuts.component';
 import { LenisService } from '../core/motion/lenis.service';
+import { MotionService } from '../core/motion/motion.service';
 
 interface Crumb { label: string; path: string; }
 interface ProjectContext { projectId: string; name: string; storyCount: number; coveragePercent: number; }
@@ -382,6 +383,7 @@ export class AppLayoutComponent implements AfterViewInit, OnDestroy {
   private readonly title = inject(Title);
   private readonly notificationService = inject(NotificationService);
   private readonly lenisService = inject(LenisService);
+  private readonly motion = inject(MotionService);
   private readonly appTitle = 'TestCaseIQ';
 
   readonly LucideLayoutDashboard = LucideLayoutDashboard;   readonly LucideFolderKanban = LucideFolderKanban;
@@ -426,7 +428,7 @@ export class AppLayoutComponent implements AfterViewInit, OnDestroy {
         const panel = document.querySelector('.mobile-nav-panel');
         const firstNav = document.querySelector('.mobile-nav-panel .nav-item') as HTMLElement | null;
         firstNav?.focus({ preventScroll: true });
-        if (panel && !this.prefersReducedMotion()) {
+        if (panel && !this.motion.reducedMotion()) {
           gsap.from(panel, { x: -280, duration: 0.28, ease: 'power2.out' });
         }
       });
@@ -458,7 +460,7 @@ export class AppLayoutComponent implements AfterViewInit, OnDestroy {
 
   ngAfterViewInit(): void {
     this.lenisService.attach(this.scrollWrapper.nativeElement, this.scrollContent.nativeElement);
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (this.motion.reducedMotion()) return;
     const navItems = this.sidebarEl.nativeElement.querySelectorAll('.nav-item');
     gsap.from(navItems, { x: -16, opacity: 0, duration: 0.35, stagger: 0.04, ease: 'power2.out' });
   }
@@ -473,7 +475,7 @@ export class AppLayoutComponent implements AfterViewInit, OnDestroy {
     this.collapsed.update(v => !v);
     const sidebar = this.sidebarEl.nativeElement;
     const labels = sidebar.querySelectorAll<HTMLElement>('.nav-label, .nav-group-label, .brand-text, .footer-info');
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    if (this.motion.reducedMotion()) {
       labels.forEach(label => label.style.opacity = this.collapsed() ? '0' : '1');
       sidebar.style.width = this.collapsed() ? '60px' : '220px';
       return;
@@ -636,15 +638,11 @@ export class AppLayoutComponent implements AfterViewInit, OnDestroy {
     return /^\/projects\/[^/]+$/.test(url) || /^\/stories\/[^/]+$/.test(url);
   }
 
-  private prefersReducedMotion(): boolean {
-    return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
-  }
-
   private runViewTransition(update: () => void): void {
     const transitionDocument = document as Document & {
       startViewTransition?: (callback: () => void) => { finished: Promise<void> };
     };
-    if (!transitionDocument.startViewTransition || this.prefersReducedMotion()) {
+    if (!transitionDocument.startViewTransition || this.motion.reducedMotion()) {
       update();
       return;
     }

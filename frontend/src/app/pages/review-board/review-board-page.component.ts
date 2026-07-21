@@ -6,6 +6,7 @@ import { LucideCheckSquare2, LucideDynamicIcon } from '@lucide/angular';
 import { Subscription, forkJoin, fromEvent } from 'rxjs';
 import { TestCaseSummary, TestSuiteDetail, TestSuitePage } from '../../core/models/test-suite.model';
 import { commitReviewVerdictMotion } from '../../core/motion/review-verdict-motion';
+import { MotionService } from '../../core/motion/motion.service';
 import { OnboardingProgressService } from '../../core/services/onboarding-progress.service';
 import { ReviewService } from '../../core/services/review.service';
 import { TestSuiteService } from '../../core/services/test-suite.service';
@@ -253,6 +254,7 @@ export class ReviewBoardPageComponent implements OnInit, OnDestroy {
   private readonly testSuiteService = inject(TestSuiteService);
   private readonly reviewService = inject(ReviewService);
   private readonly toastService = inject(ToastService);
+  private readonly motion = inject(MotionService);
   readonly onboardingProgress = inject(OnboardingProgressService);
   private keyboardSubscription: Subscription | null = null;
 
@@ -352,7 +354,7 @@ export class ReviewBoardPageComponent implements OnInit, OnDestroy {
   }
 
   onQualityMouseMove(event: MouseEvent): void {
-    if (this.prefersReducedMotion()) return;
+    if (this.motion.reducedMotion()) return;
     const panel = event.currentTarget as HTMLElement | null;
     const gauge = panel?.querySelector('.quality-gauge');
     if (!panel || !gauge) return;
@@ -363,7 +365,7 @@ export class ReviewBoardPageComponent implements OnInit, OnDestroy {
   }
 
   onQualityMouseLeave(): void {
-    if (this.prefersReducedMotion()) return;
+    if (this.motion.reducedMotion()) return;
     const gauge = this.host.nativeElement.querySelector('.quality-gauge');
     if (gauge) {
       gsap.to(gauge, { rotateX: 0, rotateY: 0, duration: 0.6 });
@@ -425,7 +427,7 @@ export class ReviewBoardPageComponent implements OnInit, OnDestroy {
       container: this.host.nativeElement,
       card: this.host.nativeElement.querySelector('.review-detail-panel'),
       verdict: status,
-      reducedMotion: this.prefersReducedMotion(),
+      reducedMotion: this.motion.reducedMotion(),
       commit: () => {
         this.suites.update((suites) => suites.map((suite) => ({
           ...suite,
@@ -495,7 +497,7 @@ export class ReviewBoardPageComponent implements OnInit, OnDestroy {
   }
 
   private animateDetailEntrance(): void {
-    if (this.prefersReducedMotion()) {
+    if (this.motion.reducedMotion()) {
       return;
     }
     queueMicrotask(() => {
@@ -507,7 +509,7 @@ export class ReviewBoardPageComponent implements OnInit, OnDestroy {
   }
 
   private animateQualityGauge(): void {
-    if (this.prefersReducedMotion()) {
+    if (this.motion.reducedMotion()) {
       return;
     }
     queueMicrotask(() => {
@@ -524,7 +526,4 @@ export class ReviewBoardPageComponent implements OnInit, OnDestroy {
     });
   }
 
-  private prefersReducedMotion(): boolean {
-    return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
-  }
 }

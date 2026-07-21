@@ -16,8 +16,6 @@ describe('BackgroundSceneComponent', () => {
 
     service.init.and.returnValue(new Promise(() => undefined));
 
-    spyOn(window, 'matchMedia').and.returnValue({ matches: false } as MediaQueryList);
-
     TestBed.configureTestingModule({
       imports: [BackgroundSceneComponent],
       providers: [
@@ -52,11 +50,10 @@ describe('BackgroundSceneComponent', () => {
     fixture.detectChanges();
     tick();
 
-    expect(service.init).toHaveBeenCalledWith(
+    expect(service.init.calls.mostRecent().args as unknown[]).toEqual([
       jasmine.any(HTMLElement),
-      false,
       jasmine.any(AbortSignal),
       'welcome'
-    );
+    ]);
   }));
 });
