@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Injectable, inject, signal } from '@angular/core';
+import { Observable, defer, tap } from 'rxjs';
 import {
   AutomationCandidateUpdateRequest,
   PriorityUpdateRequest,
@@ -10,14 +10,33 @@ import {
   TestCaseResponse,
   TestCaseUpdateRequest
 } from '../models/review.model';
+import { ReviewOperationState } from '../motion/async-operation-state';
 
 @Injectable({ providedIn: 'root' })
 export class ReviewService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = '/api/test-cases';
+  private readonly operationStateStore = signal<ReviewOperationState>({
+    phase: 'idle',
+    testCaseId: null,
+    verdict: null,
+    sequence: 0
+  });
+
+  readonly operationState = this.operationStateStore.asReadonly();
 
   updateReviewStatus(testCaseId: string, request: ReviewStatusUpdateRequest): Observable<TestCaseResponse> {
-    return this.http.patch<TestCaseResponse>(`${this.baseUrl}/${testCaseId}/review-status`, request);
+    return defer(() => {
+      const sequence = this.operationStateStore().sequence + 1;
+      const verdict = request.status;
+      this.operationStateStore.set({ phase: 'running', testCaseId, verdict, sequence });
+      return this.http.patch<TestCaseResponse>(`${this.baseUrl}/${testCaseId}/review-status`, request).pipe(
+        tap({
+          next: () => this.operationStateStore.set({ phase: 'success', testCaseId, verdict, sequence }),
+          error: () => this.operationStateStore.set({ phase: 'error', testCaseId, verdict, sequence })
+        })
+      );
+    });
   }
 
   updatePriority(testCaseId: string, request: PriorityUpdateRequest): Observable<TestCaseResponse> {

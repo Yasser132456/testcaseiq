@@ -24,16 +24,44 @@ describe('ReviewService', () => {
   });
 
   it('updates review status for a persisted test case', () => {
+    expect(service.operationState().phase).toBe('idle');
+
     service.updateReviewStatus('test-case-1', { status: 'APPROVED', comment: 'Ready for regression.' })
       .subscribe((testCase) => {
         expect(testCase.id).toBe('test-case-1');
         expect(testCase.reviewStatus).toBe('APPROVED');
       });
 
+    expect(service.operationState()).toEqual(jasmine.objectContaining({
+      phase: 'running',
+      testCaseId: 'test-case-1',
+      verdict: 'APPROVED'
+    }));
+
     const request = http.expectOne('/api/test-cases/test-case-1/review-status');
     expect(request.request.method).toBe('PATCH');
     expect(request.request.body).toEqual({ status: 'APPROVED', comment: 'Ready for regression.' });
     request.flush(testCaseResponse({ reviewStatus: 'APPROVED' }));
+
+    expect(service.operationState()).toEqual(jasmine.objectContaining({
+      phase: 'success',
+      testCaseId: 'test-case-1',
+      verdict: 'APPROVED'
+    }));
+  });
+
+  it('exposes a settled error state when a verdict request fails', () => {
+    service.updateReviewStatus('test-case-2', { status: 'REJECTED', comment: null })
+      .subscribe({ error: () => undefined });
+
+    const request = http.expectOne('/api/test-cases/test-case-2/review-status');
+    request.flush({ message: 'failed' }, { status: 500, statusText: 'Server Error' });
+
+    expect(service.operationState()).toEqual(jasmine.objectContaining({
+      phase: 'error',
+      testCaseId: 'test-case-2',
+      verdict: 'REJECTED'
+    }));
   });
 
   it('updates priority, risk, and automation candidate fields', () => {
