@@ -2,19 +2,19 @@ import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import type Lenis from 'lenis';
 import type { LenisOptions } from 'lenis';
-import { MotionQualityTier, MotionService } from './motion.service';
+import { MotionService } from './motion.service';
 import { LENIS_FACTORY, LenisService } from './lenis.service';
 
 describe('LenisService', () => {
-  let reducedMotion: ReturnType<typeof signal<boolean>>;
-  let qualityTier: ReturnType<typeof signal<MotionQualityTier>>;
+  let documentVisible: ReturnType<typeof signal<boolean>>;
+  let motionEnabled: ReturnType<typeof signal<boolean>>;
   let lenis: jasmine.SpyObj<Lenis>;
   let factory: jasmine.Spy<(options: LenisOptions) => Lenis>;
   let unsubscribe: jasmine.Spy;
   let tickerCallback: ((time: number) => void) | undefined;
   let motion: {
-    reducedMotion: typeof reducedMotion;
-    qualityTier: typeof qualityTier;
+    documentVisible: typeof documentVisible;
+    motionEnabled: typeof motionEnabled;
     gsap: {
       ticker: {
         add: jasmine.Spy;
@@ -22,19 +22,19 @@ describe('LenisService', () => {
         lagSmoothing: jasmine.Spy;
       };
     };
-    ScrollTrigger: { update: jasmine.Spy };
+    updateScrollTrigger: jasmine.Spy;
   };
 
   beforeEach(() => {
-    reducedMotion = signal(false);
-    qualityTier = signal<MotionQualityTier>('high');
+    documentVisible = signal(true);
+    motionEnabled = signal(true);
     unsubscribe = jasmine.createSpy('unsubscribe');
     lenis = jasmine.createSpyObj<Lenis>('Lenis', ['on', 'raf', 'destroy']);
     lenis.on.and.returnValue(unsubscribe);
     factory = jasmine.createSpy('lenisFactory').and.returnValue(lenis);
     motion = {
-      reducedMotion,
-      qualityTier,
+      documentVisible,
+      motionEnabled,
       gsap: {
         ticker: {
           add: jasmine.createSpy('ticker.add').and.callFake((callback: (time: number) => void) => {
@@ -44,7 +44,7 @@ describe('LenisService', () => {
           lagSmoothing: jasmine.createSpy('ticker.lagSmoothing')
         }
       },
-      ScrollTrigger: { update: jasmine.createSpy('ScrollTrigger.update') }
+      updateScrollTrigger: jasmine.createSpy('updateScrollTrigger')
     };
 
     TestBed.configureTestingModule({
@@ -95,11 +95,11 @@ describe('LenisService', () => {
     scrollCallback?.({ velocity: 3.2 });
 
     expect(service.scrollVelocity()).toBe(3.2);
-    expect(motion.ScrollTrigger.update).toHaveBeenCalled();
+    expect(motion.updateScrollTrigger).toHaveBeenCalled();
   });
 
-  it('does not construct Lenis for the static quality tier', () => {
-    qualityTier.set('static');
+  it('does not construct Lenis when motion is disabled', () => {
+    motionEnabled.set(false);
     const service = TestBed.inject(LenisService);
 
     service.attach(document.createElement('section'), document.createElement('div'));
@@ -108,17 +108,56 @@ describe('LenisService', () => {
     expect(factory).not.toHaveBeenCalled();
   });
 
-  it('destroys Lenis when reduced motion becomes active', () => {
+  it('destroys Lenis when motion becomes disabled', () => {
     const service = TestBed.inject(LenisService);
     service.attach(document.createElement('section'), document.createElement('div'));
     TestBed.flushEffects();
 
-    reducedMotion.set(true);
+    motionEnabled.set(false);
     TestBed.flushEffects();
 
     expect(unsubscribe).toHaveBeenCalled();
     expect(motion.gsap.ticker.remove).toHaveBeenCalledWith(tickerCallback);
     expect(lenis.destroy).toHaveBeenCalled();
+  });
+
+  it('stops Lenis while the document is hidden', () => {
+    const service = TestBed.inject(LenisService);
+    service.attach(document.createElement('section'), document.createElement('div'));
+    TestBed.flushEffects();
+
+    documentVisible.set(false);
+    TestBed.flushEffects();
+
+    expect(unsubscribe).toHaveBeenCalled();
+    expect(motion.gsap.ticker.remove).toHaveBeenCalledWith(tickerCallback);
+    expect(lenis.destroy).toHaveBeenCalled();
+  });
+
+  it('restarts only after the document is visible and motion is enabled', () => {
+    const service = TestBed.inject(LenisService);
+    service.attach(document.createElement('section'), document.createElement('div'));
+    TestBed.flushEffects();
+
+    documentVisible.set(false);
+    motionEnabled.set(false);
+    TestBed.flushEffects();
+    factory.calls.reset();
+
+    expect(motion.gsap.ticker.add).toHaveBeenCalledTimes(1);
+    expect(motion.gsap.ticker.remove).toHaveBeenCalledTimes(1);
+
+    documentVisible.set(true);
+    TestBed.flushEffects();
+    expect(factory).not.toHaveBeenCalled();
+    expect(motion.gsap.ticker.add).toHaveBeenCalledTimes(1);
+    expect(motion.gsap.ticker.remove).toHaveBeenCalledTimes(1);
+
+    motionEnabled.set(true);
+    TestBed.flushEffects();
+    expect(factory).toHaveBeenCalledTimes(1);
+    expect(motion.gsap.ticker.add).toHaveBeenCalledTimes(2);
+    expect(motion.gsap.ticker.remove).toHaveBeenCalledTimes(1);
   });
 
   it('cleans up synchronization when detached', () => {

@@ -1,16 +1,14 @@
-import { AfterViewInit, Directive, ElementRef, Input, OnChanges, OnDestroy, SimpleChanges, inject } from '@angular/core';
+import { AfterViewInit, Directive, ElementRef, Input, OnChanges, OnDestroy, SimpleChanges, effect, inject } from '@angular/core';
 import type { TiltOptions } from 'vanilla-tilt';
 import VanillaTilt from 'vanilla-tilt/lib/vanilla-tilt.es2015';
+import { MotionService } from '../../core/motion/motion.service';
 
 @Directive({ selector: '[glassTilt]', standalone: true })
 export class TiltDirective implements AfterViewInit, OnChanges, OnDestroy {
   private readonly el = inject(ElementRef<HTMLElement>);
-  private readonly finePointerQuery = window.matchMedia('(pointer: fine)');
-  private readonly reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+  private readonly motion = inject(MotionService);
   private instance?: VanillaTilt;
   private viewReady = false;
-  private readonly reducedMotionListener = () => this.syncTilt();
-  private readonly pointerListener = () => this.syncTilt();
   private readonly previousStyles = new Map<string, string>();
 
   @Input() glassTiltDisabled = false;
@@ -19,31 +17,37 @@ export class TiltDirective implements AfterViewInit, OnChanges, OnDestroy {
   @Input() glassTiltGlare = false;
   @Input() glassTiltMaxGlare = 0.18;
 
+  constructor() {
+    effect(() => {
+      const enabled = this.motion.cursorEffectsEnabled();
+      const reducedMotion = this.motion.reducedMotion();
+      if (this.viewReady) {
+        this.syncTilt(enabled, reducedMotion);
+      }
+    });
+  }
+
   ngAfterViewInit(): void {
     this.viewReady = true;
-    this.finePointerQuery.addEventListener('change', this.pointerListener);
-    this.reducedMotionQuery.addEventListener('change', this.reducedMotionListener);
-    this.syncTilt();
+    this.syncTilt(this.motion.cursorEffectsEnabled(), this.motion.reducedMotion());
   }
 
   ngOnChanges(_: SimpleChanges): void {
     if (!this.viewReady) return;
-    this.syncTilt();
+    this.syncTilt(this.motion.cursorEffectsEnabled(), this.motion.reducedMotion());
   }
 
   ngOnDestroy(): void {
-    this.finePointerQuery.removeEventListener('change', this.pointerListener);
-    this.reducedMotionQuery.removeEventListener('change', this.reducedMotionListener);
     this.destroyTilt();
     this.restoreStyles();
   }
 
-  private syncTilt(): void {
+  private syncTilt(policyEnabled: boolean, reducedMotion: boolean): void {
     const host = this.el.nativeElement;
     host.dataset['testid'] = 'glass-tilt';
-    if (!this.canTilt()) {
+    if (!this.canTilt(policyEnabled)) {
       this.destroyTilt();
-      host.dataset['tiltState'] = this.reducedMotionQuery.matches ? 'reduced-motion' : 'disabled';
+      host.dataset['tiltState'] = reducedMotion ? 'reduced-motion' : 'disabled';
       host.style.transform = 'none';
       return;
     }
@@ -54,11 +58,10 @@ export class TiltDirective implements AfterViewInit, OnChanges, OnDestroy {
     this.instance = new VanillaTilt(host, this.options());
   }
 
-  private canTilt(): boolean {
+  private canTilt(policyEnabled: boolean): boolean {
     return !this.glassTiltDisabled
       && typeof window.PointerEvent !== 'undefined'
-      && this.finePointerQuery.matches
-      && !this.reducedMotionQuery.matches;
+      && policyEnabled;
   }
 
   private options(): TiltOptions {

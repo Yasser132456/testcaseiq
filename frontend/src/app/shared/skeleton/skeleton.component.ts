@@ -1,8 +1,12 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
+import { MotionService } from '../../core/motion/motion.service';
 
 @Component({
   selector: 'app-skeleton',
   standalone: true,
+  host: {
+    '[class.is-motion-paused]': '!motion.documentVisible()'
+  },
   template: `
     <div class="skel-wrap glass-surface glass-surface--1 glass-surface--flat" role="status" aria-label="Loading">
       @for (_ of rowArr(); track $index) {
@@ -43,9 +47,14 @@ import { Component, computed, input } from '@angular/core';
       height: 0.9rem;
       border-radius: 4px;
     }
+
+    :host.is-motion-paused .tcq-skeleton-shimmer {
+      animation-play-state: paused;
+    }
   `]
 })
 export class SkeletonComponent {
+  readonly motion = inject(MotionService);
   readonly rows = input(5);
   readonly cols = input(3);
 

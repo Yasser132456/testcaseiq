@@ -1,37 +1,50 @@
+import { computed, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { MotionService } from '../../core/motion/motion.service';
 import { PointerGlowService } from './pointer-glow.service';
 
 describe('PointerGlowService', () => {
   let listeners: Record<string, EventListener> = {};
-  let mediaQueries: Record<string, MediaQueryList>;
-  let rafCallback: FrameRequestCallback | undefined;
+  let rafCallbacks: Record<number, FrameRequestCallback> = {};
+  let nextFrame = 0;
+
+  function configureMotion(overrides: {
+    coarse?: boolean;
+    forcedFallback?: boolean;
+    reducedMotion?: boolean;
+    visible?: boolean;
+  } = {}) {
+    const coarse = signal(overrides.coarse ?? false);
+    const forcedFallback = signal(overrides.forcedFallback ?? false);
+    const reducedMotion = signal(overrides.reducedMotion ?? false);
+    const visible = signal(overrides.visible ?? true);
+    const cursorEffectsEnabled = computed(() =>
+      visible() && !reducedMotion() && !forcedFallback() && !coarse()
+    );
+
+    TestBed.configureTestingModule({
+      providers: [{ provide: MotionService, useValue: { cursorEffectsEnabled } }]
+    });
+
+    return { coarse, forcedFallback, reducedMotion, visible };
+  }
 
   beforeEach(() => {
     listeners = {};
-    rafCallback = undefined;
-    mediaQueries = {};
+    rafCallbacks = {};
+    nextFrame = 0;
 
     spyOn(document, 'addEventListener').and.callFake((type: string, listener: EventListenerOrEventListenerObject) => {
       listeners[type] = listener as EventListener;
     });
     spyOn(document, 'removeEventListener').and.stub();
     spyOn(window, 'requestAnimationFrame').and.callFake((callback: FrameRequestCallback) => {
-      rafCallback = callback;
-      return 1;
+      const id = ++nextFrame;
+      rafCallbacks[id] = callback;
+      return id;
     });
-    spyOn(window, 'matchMedia').and.callFake((query: string) => {
-      const list = {
-        matches: !query.includes('prefers-reduced-motion') && !query.includes('pointer: coarse'),
-        media: query,
-        onchange: null,
-        addEventListener: () => undefined,
-        removeEventListener: () => undefined,
-        addListener: () => undefined,
-        removeListener: () => undefined,
-        dispatchEvent: () => true
-      } as MediaQueryList;
-      mediaQueries[query] = list;
-      return list;
+    spyOn(window, 'cancelAnimationFrame').and.callFake((id: number) => {
+      delete rafCallbacks[id];
     });
   });
 
@@ -40,7 +53,7 @@ describe('PointerGlowService', () => {
   });
 
   it('updates live glass variables only for hovered or nearby elements', () => {
-    TestBed.configureTestingModule({});
+    configureMotion();
     const service = TestBed.inject(PointerGlowService);
     service.start();
 
@@ -60,29 +73,79 @@ describe('PointerGlowService', () => {
 
     document.body.append(near, far);
     listeners['pointermove'](new PointerEvent('pointermove', { clientX: 100, clientY: 100, pointerType: 'mouse' }));
-    rafCallback?.(0);
+    (window.requestAnimationFrame as jasmine.Spy).calls.mostRecent().args[0](0);
 
     expect(near.style.getPropertyValue('--pointer-x')).toBe('20px');
     expect(near.style.getPropertyValue('--pointer-y')).toBe('20px');
     expect(far.style.getPropertyValue('--pointer-x')).toBe('');
   });
 
-  it('does not register pointer tracking when reduced motion is requested', () => {
-    TestBed.configureTestingModule({});
-    (window.matchMedia as jasmine.Spy).and.callFake((query: string) => ({
-      matches: query.includes('prefers-reduced-motion'),
-      media: query,
-      onchange: null,
-      addEventListener: () => undefined,
-      removeEventListener: () => undefined,
-      addListener: () => undefined,
-      removeListener: () => undefined,
-      dispatchEvent: () => true
-    } as MediaQueryList));
+  [
+    { label: 'reduced motion', policy: { reducedMotion: true } },
+    { label: 'forced fallback', policy: { forcedFallback: true } },
+    { label: 'a coarse pointer', policy: { coarse: true } },
+    { label: 'a hidden document', policy: { visible: false } }
+  ].forEach(({ label, policy }) => {
+    it(`does not register pointer tracking for ${label}`, () => {
+      configureMotion(policy);
+      TestBed.inject(PointerGlowService).start();
 
+      expect(document.addEventListener).not.toHaveBeenCalledWith(
+        'pointermove', jasmine.any(Function), jasmine.anything()
+      );
+    });
+  });
+
+  it('cancels a queued frame and clears active CSS variables when policy disables tracking', () => {
+    const motion = configureMotion();
     const service = TestBed.inject(PointerGlowService);
     service.start();
 
-    expect(document.addEventListener).not.toHaveBeenCalledWith('pointermove', jasmine.any(Function), jasmine.anything());
+    const target = document.createElement('div');
+    target.className = 'glass-surface--live';
+    target.getBoundingClientRect = () => ({
+      x: 80, y: 80, left: 80, top: 80, right: 180, bottom: 180, width: 100, height: 100,
+      toJSON: () => ({})
+    } as DOMRect);
+    document.body.append(target);
+
+    listeners['pointermove'](new PointerEvent('pointermove', { clientX: 100, clientY: 100, pointerType: 'mouse' }));
+    (window.requestAnimationFrame as jasmine.Spy).calls.mostRecent().args[0](0);
+    listeners['pointermove'](new PointerEvent('pointermove', { clientX: 110, clientY: 110, pointerType: 'mouse' }));
+    const queuedFrame = nextFrame;
+
+    motion.visible.set(false);
+    TestBed.flushEffects();
+
+    expect(window.cancelAnimationFrame).toHaveBeenCalledWith(queuedFrame);
+    expect(document.removeEventListener).toHaveBeenCalledWith('pointermove', jasmine.any(Function));
+    expect(target.style.getPropertyValue('--pointer-active')).toBe('');
+    expect(target.style.getPropertyValue('--pointer-x')).toBe('');
+    expect(target.style.getPropertyValue('--pointer-y')).toBe('');
+  });
+
+  it('removes listener and queued work when its injector is destroyed', () => {
+    configureMotion();
+    const service = TestBed.inject(PointerGlowService);
+    service.start();
+    const target = document.createElement('div');
+    target.className = 'glass-surface--live';
+    target.getBoundingClientRect = () => ({
+      x: 80, y: 80, left: 80, top: 80, right: 180, bottom: 180, width: 100, height: 100,
+      toJSON: () => ({})
+    } as DOMRect);
+    document.body.append(target);
+    listeners['pointermove'](new PointerEvent('pointermove', { clientX: 100, clientY: 100, pointerType: 'mouse' }));
+    (window.requestAnimationFrame as jasmine.Spy).calls.mostRecent().args[0](0);
+    listeners['pointermove'](new PointerEvent('pointermove', { clientX: 110, clientY: 110, pointerType: 'mouse' }));
+    const queuedFrame = nextFrame;
+
+    TestBed.resetTestingModule();
+
+    expect(document.removeEventListener).toHaveBeenCalledWith('pointermove', jasmine.any(Function));
+    expect(window.cancelAnimationFrame).toHaveBeenCalledWith(queuedFrame);
+    expect(target.style.getPropertyValue('--pointer-active')).toBe('');
+    expect(target.style.getPropertyValue('--pointer-x')).toBe('');
+    expect(target.style.getPropertyValue('--pointer-y')).toBe('');
   });
 });

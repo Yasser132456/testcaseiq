@@ -1,7 +1,7 @@
 import { DatePipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { LucideBookOpenText } from '@lucide/angular';
 import { forkJoin, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
@@ -29,6 +29,7 @@ interface StoryListItem {
   imports: [
     DatePipe,
     FormsModule,
+    RouterLink,
     StateMessageComponent,
     EmptyStateComponent,
     SkeletonComponent,
@@ -131,7 +132,7 @@ export class StoriesListPageComponent implements OnInit {
     });
   }
 
-  private projectContextFor(project: Project) {
+  projectContextFor(project: Project) {
     const stories = this.storyItems().filter((item) => item.project.id === project.id).map((item) => item.story);
     const reviewed = stories.filter((story) => this.displayStatus(story) === 'ALL_REVIEWED').length;
     return {

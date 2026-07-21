@@ -12,6 +12,7 @@ import {
   StoryAnalysisResult
 } from '../../core/models/analysis.model';
 import { GeneratedTestCase, GeneratedTestSuiteResult } from '../../core/models/generated-test.model';
+import { MotionService } from '../../core/motion/motion.service';
 import { TestCaseResponse } from '../../core/models/review.model';
 import { STORY_TYPES, Story, StoryStatus, StoryType } from '../../core/models/story.model';
 import { AnalysisService } from '../../core/services/analysis.service';
@@ -62,6 +63,7 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
   private readonly toastService = inject(ToastService);
   private readonly authService = inject(AuthService);
   private readonly backgroundScene = inject(BackgroundSceneService);
+  private readonly motion = inject(MotionService);
   readonly onboardingProgress = inject(OnboardingProgressService);
   private readonly projectContext = (this.router.getCurrentNavigation()?.extras.state?.['projectContext'] ?? window.history.state?.projectContext) as { name?: string } | null;
   private storyId = '';
@@ -440,17 +442,13 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
   }
 
   private animateWorkflowStep(): void {
-    if (this.prefersReducedMotion()) return;
+    if (this.motion.reducedMotion()) return;
     queueMicrotask(() => {
       const circle = this.host.nativeElement.querySelector('.workflow-step.is-current .workflow-circle') as HTMLElement | null;
       const step = this.workflowSteps.find((item) => item.index === this.currentWorkflowStep());
       if (!circle || !step) return;
       gsap.to(circle, { backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim(), duration: 0.2, ease: 'power2.out' });
     });
-  }
-
-  private prefersReducedMotion(): boolean {
-    return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
   }
 
   private initStickyHeaderObserver(): void {

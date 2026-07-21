@@ -1,7 +1,9 @@
+import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { DashboardMetrics } from '../../core/models/dashboard.model';
+import { MotionService } from '../../core/motion/motion.service';
 import { AuthService } from '../../core/services/auth.service';
 import { DashboardService } from '../../core/services/dashboard.service';
 import { DashboardPageComponent } from './dashboard-page.component';
@@ -71,6 +73,8 @@ const ZERO_METRICS: DashboardMetrics = {
   recentActivity: []
 };
 
+const documentVisible = signal(true);
+
 function createComponent(role: string, metrics: DashboardMetrics | null = MOCK_METRICS, error = false) {
   TestBed.resetTestingModule();
   const dashboardSvc = jasmine.createSpyObj<DashboardService>('DashboardService', ['getMetrics']);
@@ -89,7 +93,15 @@ function createComponent(role: string, metrics: DashboardMetrics | null = MOCK_M
     providers: [
       provideRouter([]),
       { provide: DashboardService, useValue: dashboardSvc },
-      { provide: AuthService, useValue: authSvc }
+      { provide: AuthService, useValue: authSvc },
+      {
+        provide: MotionService,
+        useValue: {
+          cursorEffectsEnabled: () => false,
+          documentVisible,
+          reducedMotion: () => true
+        }
+      }
     ]
   });
 
@@ -101,6 +113,7 @@ function createComponent(role: string, metrics: DashboardMetrics | null = MOCK_M
 describe('DashboardPageComponent', () => {
   beforeEach(() => {
     localStorage.clear();
+    documentVisible.set(true);
     spyOn(window, 'matchMedia').and.returnValue({
       matches: true,
       media: '(prefers-reduced-motion: reduce)',
@@ -111,6 +124,16 @@ describe('DashboardPageComponent', () => {
       removeEventListener: () => undefined,
       dispatchEvent: () => true
     } as MediaQueryList);
+  });
+
+  it('pauses the pipeline from the shared document visibility policy', () => {
+    const { fixture, element } = createComponent('ADMIN');
+    expect(element.querySelector('.workflow-pipeline')?.classList).not.toContain('is-flow-paused');
+
+    documentVisible.set(false);
+    fixture.detectChanges();
+
+    expect(element.querySelector('.workflow-pipeline')?.classList).toContain('is-flow-paused');
   });
 
   it('renders the next action hero for pending review work', () => {

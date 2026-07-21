@@ -1,14 +1,15 @@
 import { AfterViewInit, Directive, ElementRef, OnDestroy, inject } from '@angular/core';
 import { gsap } from 'gsap';
+import { MotionService } from '../../core/motion/motion.service';
 
 @Directive({ selector: '[tableStagger]', standalone: true })
 export class TableStaggerDirective implements AfterViewInit, OnDestroy {
   private readonly el = inject(ElementRef<HTMLTableElement>);
+  private readonly motion = inject(MotionService);
   private observer?: MutationObserver;
 
   ngAfterViewInit(): void {
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReducedMotion) return;
+    if (this.motion.reducedMotion()) return;
     this.animateRows();
     const tbody = this.el.nativeElement.querySelector('tbody');
     if (!tbody) return;

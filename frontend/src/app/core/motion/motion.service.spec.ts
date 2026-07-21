@@ -1,5 +1,6 @@
+import { DOCUMENT } from '@angular/common';
 import { TestBed } from '@angular/core/testing';
-import { MotionService } from './motion.service';
+import { SCROLL_TRIGGER_LOADER, MotionService } from './motion.service';
 
 class MediaQueryListStub {
   readonly media: string;
@@ -43,21 +44,31 @@ class MediaQueryListStub {
 }
 
 interface MotionEnvironment {
+  coarse?: boolean;
   cores?: number;
+  fine?: boolean;
+  hover?: boolean;
   mobile?: boolean;
   reduced?: boolean;
 }
 
 describe('MotionService', () => {
   let reducedQuery: MediaQueryListStub;
+  let visibilityState: DocumentVisibilityState;
 
   function createService({
+    coarse = false,
     cores = 8,
+    fine = true,
+    hover = true,
     mobile = false,
     reduced = false
   }: MotionEnvironment = {}): MotionService {
     reducedQuery = new MediaQueryListStub('(prefers-reduced-motion: reduce)', reduced);
     const mobileQuery = new MediaQueryListStub('(max-width: 760px), (pointer: coarse)', mobile);
+    const fineQuery = new MediaQueryListStub('(pointer: fine)', fine);
+    const hoverQuery = new MediaQueryListStub('(hover: hover)', hover);
+    const coarseQuery = new MediaQueryListStub('(pointer: coarse)', coarse);
 
     spyOn(window, 'matchMedia').and.callFake((query: string) => {
       if (query === '(prefers-reduced-motion: reduce)') {
@@ -65,6 +76,15 @@ describe('MotionService', () => {
       }
       if (query === '(max-width: 760px), (pointer: coarse)') {
         return mobileQuery.asMediaQueryList();
+      }
+      if (query === '(pointer: fine)') {
+        return fineQuery.asMediaQueryList();
+      }
+      if (query === '(hover: hover)') {
+        return hoverQuery.asMediaQueryList();
+      }
+      if (query === '(pointer: coarse)') {
+        return coarseQuery.asMediaQueryList();
       }
       return new MediaQueryListStub(query, false).asMediaQueryList();
     });
@@ -77,6 +97,12 @@ describe('MotionService', () => {
   afterEach(() => {
     history.replaceState({}, '', location.pathname);
     TestBed.resetTestingModule();
+    document.documentElement.removeAttribute('data-motion-paused');
+  });
+
+  beforeEach(() => {
+    visibilityState = 'visible';
+    spyOnProperty(document, 'visibilityState', 'get').and.callFake(() => visibilityState);
   });
 
   it('selects high quality for a capable desktop device', () => {
@@ -97,6 +123,68 @@ describe('MotionService', () => {
     expect(createService({ cores: 8, mobile: false }).qualityTier()).toBe('static');
   });
 
+  it('disables cursor and scene effects when fallback is forced', () => {
+    history.replaceState({}, '', '?bg=fallback');
+
+    const service = createService();
+
+    expect(service.forcedFallback()).toBeTrue();
+    expect(service.cursorEffectsEnabled()).toBeFalse();
+    expect(service.sceneEffectsEnabled()).toBeFalse();
+  });
+
+  it('enables cursor effects only for a fine pointer that supports hover', () => {
+    expect(createService({ fine: true, hover: true, coarse: false }).cursorEffectsEnabled()).toBeTrue();
+  });
+
+  it('pauses motion while the document is hidden and restores it when visible', () => {
+    const service = createService();
+
+    visibilityState = 'hidden';
+    document.dispatchEvent(new Event('visibilitychange'));
+
+    expect(service.documentVisible()).toBeFalse();
+    expect(service.motionEnabled()).toBeFalse();
+    expect(document.documentElement.dataset['motionPaused']).toBe('true');
+
+    visibilityState = 'visible';
+    document.dispatchEvent(new Event('visibilitychange'));
+
+    expect(service.documentVisible()).toBeTrue();
+    expect(service.motionEnabled()).toBeTrue();
+    expect(document.documentElement.dataset['motionPaused']).toBe('false');
+  });
+
+  it('removes its visibility listener when destroyed', () => {
+    const removeListener = spyOn(document, 'removeEventListener').and.callThrough();
+    createService();
+
+    TestBed.resetTestingModule();
+
+    expect(removeListener).toHaveBeenCalledWith('visibilitychange', jasmine.any(Function));
+  });
+
+  it('supports a partial browser environment without matchMedia', () => {
+    const partialDocument = {
+      defaultView: {
+        location: { search: '' },
+        navigator: { hardwareConcurrency: 8 }
+      },
+      visibilityState: 'visible',
+      documentElement: document.documentElement,
+      addEventListener: jasmine.createSpy('addEventListener'),
+      removeEventListener: jasmine.createSpy('removeEventListener')
+    } as unknown as Document;
+    TestBed.configureTestingModule({
+      providers: [
+        MotionService,
+        { provide: DOCUMENT, useValue: partialDocument }
+      ]
+    });
+
+    expect(() => TestBed.inject(MotionService)).not.toThrow();
+  });
+
   it('updates reduced motion when the media query changes', () => {
     const service = createService({ reduced: false });
 
@@ -105,12 +193,36 @@ describe('MotionService', () => {
     expect(service.reducedMotion()).toBeTrue();
   });
 
-  it('exposes shared GSAP and ScrollTrigger instances', () => {
+  it('exposes a shared GSAP core instance and memoized ScrollTrigger loader', async () => {
     const service = createService();
     const secondInjection = TestBed.inject(MotionService);
 
     expect(secondInjection.gsap).toBe(service.gsap);
-    expect(secondInjection.ScrollTrigger).toBe(service.ScrollTrigger);
+    const firstLoad = service.loadScrollTrigger();
+    const secondLoad = service.loadScrollTrigger();
+    expect(secondLoad).toBe(firstLoad);
+    expect(await firstLoad).toBe(await secondLoad);
+  });
+
+  it('clears a rejected ScrollTrigger load so a later call retries', async () => {
+    const retryLoad = new Promise<typeof import('gsap/ScrollTrigger').ScrollTrigger>(() => undefined);
+    const loader = jasmine.createSpy('scrollTriggerLoader').and.returnValues(
+      Promise.reject(new Error('chunk unavailable')),
+      retryLoad
+    );
+    reducedQuery = new MediaQueryListStub('(prefers-reduced-motion: reduce)', false);
+    spyOn(window, 'matchMedia').and.returnValue(reducedQuery.asMediaQueryList());
+    spyOnProperty(navigator, 'hardwareConcurrency', 'get').and.returnValue(8);
+    TestBed.configureTestingModule({
+      providers: [{ provide: SCROLL_TRIGGER_LOADER, useValue: loader }]
+    });
+    const service = TestBed.inject(MotionService);
+
+    await expectAsync(service.loadScrollTrigger()).toBeRejectedWithError('chunk unavailable');
+    service.loadScrollTrigger();
+    await Promise.resolve();
+
+    expect(loader).toHaveBeenCalledTimes(2);
   });
 });
 

@@ -1,14 +1,13 @@
 import { DOCUMENT } from '@angular/common';
-import { Injectable, NgZone, inject } from '@angular/core';
+import { DestroyRef, Injectable, NgZone, effect, inject } from '@angular/core';
+import { MotionService } from '../../core/motion/motion.service';
 
 @Injectable({ providedIn: 'root' })
 export class PointerGlowService {
   private readonly document = inject(DOCUMENT);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly motion = inject(MotionService);
   private readonly zone = inject(NgZone);
-  private readonly finePointer = window.matchMedia('(pointer: fine)');
-  private readonly hoverPointer = window.matchMedia('(hover: hover)');
-  private readonly coarsePointer = window.matchMedia('(pointer: coarse)');
-  private readonly reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   private readonly activeElements = new Set<HTMLElement>();
   private started = false;
   private listening = false;
@@ -24,25 +23,29 @@ export class PointerGlowService {
     this.frame = window.requestAnimationFrame(() => this.updateGlowTargets());
   };
 
-  private readonly mediaChange = () => this.syncListener();
+  private readonly policyEffect = effect(() => {
+    const enabled = this.motion.cursorEffectsEnabled();
+    if (this.started) {
+      this.syncListener(enabled);
+    }
+  });
+
+  constructor() {
+    this.destroyRef.onDestroy(() => {
+      this.policyEffect.destroy();
+      this.started = false;
+      this.syncListener(false);
+    });
+  }
 
   start(): void {
     if (this.started) return;
     this.started = true;
-    this.finePointer.addEventListener('change', this.mediaChange);
-    this.hoverPointer.addEventListener('change', this.mediaChange);
-    this.coarsePointer.addEventListener('change', this.mediaChange);
-    this.reducedMotion.addEventListener('change', this.mediaChange);
-    this.syncListener();
+    this.syncListener(this.motion.cursorEffectsEnabled());
   }
 
-  private syncListener(): void {
-    const canTrack = this.finePointer.matches
-      && this.hoverPointer.matches
-      && !this.coarsePointer.matches
-      && !this.reducedMotion.matches;
-
-    if (canTrack && !this.listening) {
+  private syncListener(enabled: boolean): void {
+    if (enabled && !this.listening) {
       this.zone.runOutsideAngular(() => {
         this.document.addEventListener('pointermove', this.pointerMove, { passive: true });
       });
@@ -50,11 +53,19 @@ export class PointerGlowService {
       return;
     }
 
-    if (!canTrack && this.listening) {
+    if (enabled) {
+      return;
+    }
+
+    if (this.listening) {
       this.document.removeEventListener('pointermove', this.pointerMove);
       this.listening = false;
-      this.clearActiveElements();
     }
+    if (this.frame) {
+      window.cancelAnimationFrame(this.frame);
+      this.frame = 0;
+    }
+    this.clearActiveElements();
   }
 
   private updateGlowTargets(): void {

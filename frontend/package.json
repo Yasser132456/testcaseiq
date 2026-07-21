@@ -6,8 +6,13 @@
     "start": "ng serve --proxy-config proxy.conf.json",
     "build": "ng build",
     "test": "ng test",
+    "test:unit": "ng test --watch=false --browsers=ChromeHeadless",
     "e2e": "playwright test",
-    "e2e:ui": "playwright test --ui"
+    "e2e:ui": "playwright test --ui",
+    "e2e:a11y": "playwright test e2e/accessibility.spec.ts",
+    "e2e:visual": "playwright test e2e/visual-regression.spec.ts",
+    "e2e:performance": "playwright test e2e/performance.spec.ts",
+    "bundle:compare": "node scripts/compare-bundle-stats.mjs --base ../artifacts/perf-audit/main-stats.json --candidate dist/testcaseiq-frontend/stats.json --max-growth 5 --report ../artifacts/perf-audit/bundle-size-report.md"
   },
   "dependencies": {
     "@angular/common": "^22.0.1",
@@ -32,6 +37,7 @@
     "@angular/build": "^22.0.1",
     "@angular/cli": "^22.0.1",
     "@angular/compiler-cli": "^22.0.1",
+    "@axe-core/playwright": "^4.12.1",
     "@playwright/test": "^1.61.1",
     "@types/jasmine": "~5.1.4",
     "jasmine-core": "~5.2.0",

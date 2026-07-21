@@ -6,6 +6,7 @@ import { LucideCheckSquare2, LucideDynamicIcon } from '@lucide/angular';
 import { Subscription, forkJoin, fromEvent } from 'rxjs';
 import { TestCaseSummary, TestSuiteDetail, TestSuitePage } from '../../core/models/test-suite.model';
 import { commitReviewVerdictMotion } from '../../core/motion/review-verdict-motion';
+import { MotionService } from '../../core/motion/motion.service';
 import { OnboardingProgressService } from '../../core/services/onboarding-progress.service';
 import { ReviewService } from '../../core/services/review.service';
 import { TestSuiteService } from '../../core/services/test-suite.service';
@@ -221,7 +222,7 @@ interface ReviewCaseItem {
     .review-case-list{display:grid;align-content:start;max-height:calc(100vh - 14rem);overflow-y:auto;border-right:var(--b);background:var(--glass-bg-1)}
     .review-case-item{display:grid;gap:var(--space-sm);width:100%;min-height:6.25rem;padding:var(--space-md) var(--space-base);border:0;border-bottom:var(--b);background:transparent;color:var(--color-text);text-align:left;cursor:pointer;transition:background var(--dur) var(--ease),color var(--dur) var(--ease),transform var(--dur) var(--ease)}
     .review-case-item:hover:not(:disabled){background:rgba(255,255,255,.03);transform:translateX(2px)}
-    .review-case-item:focus-visible{outline:2px solid var(--color-accent);outline-offset:-2px}
+    .review-case-item:focus-visible{outline:2px solid var(--color-accent);outline-offset:2px}
     .review-case-item:active:not(:disabled){transform:translateX(2px) scale(.97)}
     .review-case-item:disabled{cursor:not-allowed;opacity:.45}.review-case-item.is-error{color:var(--color-red)}.review-case-item.is-success{color:var(--color-green)}
     .review-case-item.is-active{background:var(--color-accent-bg);color:var(--color-accent);transform:translateX(2px)}
@@ -253,6 +254,7 @@ export class ReviewBoardPageComponent implements OnInit, OnDestroy {
   private readonly testSuiteService = inject(TestSuiteService);
   private readonly reviewService = inject(ReviewService);
   private readonly toastService = inject(ToastService);
+  private readonly motion = inject(MotionService);
   readonly onboardingProgress = inject(OnboardingProgressService);
   private keyboardSubscription: Subscription | null = null;
 
@@ -352,7 +354,7 @@ export class ReviewBoardPageComponent implements OnInit, OnDestroy {
   }
 
   onQualityMouseMove(event: MouseEvent): void {
-    if (this.prefersReducedMotion()) return;
+    if (this.motion.reducedMotion()) return;
     const panel = event.currentTarget as HTMLElement | null;
     const gauge = panel?.querySelector('.quality-gauge');
     if (!panel || !gauge) return;
@@ -363,7 +365,7 @@ export class ReviewBoardPageComponent implements OnInit, OnDestroy {
   }
 
   onQualityMouseLeave(): void {
-    if (this.prefersReducedMotion()) return;
+    if (this.motion.reducedMotion()) return;
     const gauge = this.host.nativeElement.querySelector('.quality-gauge');
     if (gauge) {
       gsap.to(gauge, { rotateX: 0, rotateY: 0, duration: 0.6 });
@@ -425,7 +427,7 @@ export class ReviewBoardPageComponent implements OnInit, OnDestroy {
       container: this.host.nativeElement,
       card: this.host.nativeElement.querySelector('.review-detail-panel'),
       verdict: status,
-      reducedMotion: this.prefersReducedMotion(),
+      reducedMotion: this.motion.reducedMotion(),
       commit: () => {
         this.suites.update((suites) => suites.map((suite) => ({
           ...suite,
@@ -495,7 +497,7 @@ export class ReviewBoardPageComponent implements OnInit, OnDestroy {
   }
 
   private animateDetailEntrance(): void {
-    if (this.prefersReducedMotion()) {
+    if (this.motion.reducedMotion()) {
       return;
     }
     queueMicrotask(() => {
@@ -507,7 +509,7 @@ export class ReviewBoardPageComponent implements OnInit, OnDestroy {
   }
 
   private animateQualityGauge(): void {
-    if (this.prefersReducedMotion()) {
+    if (this.motion.reducedMotion()) {
       return;
     }
     queueMicrotask(() => {
@@ -524,7 +526,4 @@ export class ReviewBoardPageComponent implements OnInit, OnDestroy {
     });
   }
 
-  private prefersReducedMotion(): boolean {
-    return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
-  }
 }

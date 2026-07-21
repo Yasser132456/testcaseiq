@@ -25,6 +25,7 @@
 .workflow-pipeline{display:flex;gap:.55rem;align-items:stretch}
 .pipeline-node{--node-color:var(--color-accent);--node-bg:var(--color-accent-bg);--node-border:var(--color-accent-border);--node-glow:var(--color-accent-glow);display:grid;align-content:center;justify-items:start;gap:.35rem;min-height:92px;padding:.85rem;color:var(--color-text);text-decoration:none;background:linear-gradient(135deg,var(--node-bg),var(--glass-bg-1) 58%);border:1px solid var(--node-border);border-radius:var(--radius-md);box-shadow:var(--glass-border-highlight),0 0 24px color-mix(in oklch,var(--node-glow) 68%,transparent)}
 .pipeline-node:hover{border-color:var(--node-color);box-shadow:var(--glass-border-highlight),0 0 32px color-mix(in oklch,var(--node-glow) 86%,transparent)}
+.pipeline-node:focus-visible{outline:2px solid var(--node-color);outline-offset:2px}
 .pipeline-node[data-tone="violet"]{--node-color:var(--color-violet);--node-bg:var(--color-violet-glass);--node-border:var(--color-purple-border);--node-glow:var(--color-violet-glow)}
 .pipeline-node[data-tone="cyan"]{--node-color:var(--color-cyan);--node-bg:var(--color-cyan-bg);--node-border:var(--color-cyan-border);--node-glow:var(--color-cyan-glow)}
 .pipeline-node[data-tone="amber"]{--node-color:var(--color-amber);--node-bg:var(--color-amber-bg);--node-border:var(--color-amber-border);--node-glow:var(--color-amber-glow)}
@@ -34,11 +35,13 @@
 .pipeline-node{flex:1 1 0;min-width:0}
 .pipeline-connector{flex:0 0 1.35rem;align-self:center;height:2px;margin:0 -.55rem;border-radius:999px;background:repeating-linear-gradient(90deg,var(--color-phosphor) 0 12px,transparent 12px 22px);background-size:44px 100%;box-shadow:0 0 14px var(--color-phosphor-glow);animation:pipelineFlow 900ms linear infinite;pointer-events:none}
 .workflow-pipeline.is-flow-paused .pipeline-connector{animation-play-state:paused}
+:host-context(html[data-motion-paused='true']) .pipeline-connector{animation-play-state:paused}
 .dashboard-metrics-grid,.project-card-row{display:grid;gap:.75rem}
 .dashboard-metrics-grid{grid-template-columns:minmax(0,1.25fr) minmax(280px,.75fr);gap:1rem}
 .project-card-row{grid-template-columns:minmax(18rem,1.35fr) minmax(12rem,.85fr);grid-template-areas:"primary secondary" "primary tertiary";align-items:stretch}
 .project-card{color:var(--color-text);text-decoration:none;background:var(--glass-bg-1);border:1px solid var(--glass-edge);border-radius:var(--radius-md)}
 .project-card:hover{border-color:var(--color-accent)}
+.project-card:focus-visible{outline:2px solid var(--color-accent);outline-offset:2px}
 .pipeline-header span,.coverage-copy span,.project-card span:not(.project-key),.project-card time,.empty-note{color:var(--color-text-2);font-size:.82rem}
 .pipeline-header strong{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
 .section-header{display:flex;align-items:center;justify-content:space-between;gap:1rem}

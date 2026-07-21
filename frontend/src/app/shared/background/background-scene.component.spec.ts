@@ -1,11 +1,15 @@
-import { TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { signal } from '@angular/core';
+import { TestBed, fakeAsync, flushMicrotasks, tick } from '@angular/core/testing';
+import { MotionService } from '../../core/motion/motion.service';
 import { BackgroundSceneComponent } from './background-scene.component';
 import { BackgroundSceneService } from './background-scene.service';
 
 describe('BackgroundSceneComponent', () => {
   let service: jasmine.SpyObj<BackgroundSceneService>;
+  const documentVisible = signal(true);
 
   beforeEach(() => {
+    documentVisible.set(true);
     service = jasmine.createSpyObj('BackgroundSceneService', ['init', 'dispose'], {
       sceneAccent: () => ({
         name: 'phosphor',
@@ -16,12 +20,11 @@ describe('BackgroundSceneComponent', () => {
 
     service.init.and.returnValue(new Promise(() => undefined));
 
-    spyOn(window, 'matchMedia').and.returnValue({ matches: false } as MediaQueryList);
-
     TestBed.configureTestingModule({
       imports: [BackgroundSceneComponent],
       providers: [
-        { provide: BackgroundSceneService, useValue: service }
+        { provide: BackgroundSceneService, useValue: service },
+        { provide: MotionService, useValue: { documentVisible } }
       ]
     });
   });
@@ -52,11 +55,49 @@ describe('BackgroundSceneComponent', () => {
     fixture.detectChanges();
     tick();
 
-    expect(service.init).toHaveBeenCalledWith(
+    expect(service.init.calls.mostRecent().args as unknown[]).toEqual([
       jasmine.any(HTMLElement),
-      false,
       jasmine.any(AbortSignal),
       'welcome'
-    );
+    ]);
+  }));
+
+  it('aborts a pending boot and clears its timeout when destroyed', fakeAsync(() => {
+    let resolveBoot!: (mode: 'live') => void;
+    service.init.and.returnValue(new Promise((resolve) => {
+      resolveBoot = resolve;
+    }));
+    const fixture = TestBed.createComponent(BackgroundSceneComponent);
+    fixture.detectChanges();
+    tick();
+    const abortSignal = service.init.calls.mostRecent().args[1] as AbortSignal;
+
+    fixture.destroy();
+
+    expect(abortSignal.aborted).toBeTrue();
+    expect(service.dispose).toHaveBeenCalledTimes(1);
+    tick(8000);
+    expect(service.dispose).toHaveBeenCalledTimes(1);
+
+    resolveBoot('live');
+    flushMicrotasks();
+    expect(fixture.componentInstance.renderMode()).toBe('fallback');
+  }));
+
+  it('marks fallback rendering as static and reacts to hidden-document policy', fakeAsync(() => {
+    service.init.and.resolveTo('fallback');
+    const fixture = TestBed.createComponent(BackgroundSceneComponent);
+    fixture.componentRef.setInput('mode', 'welcome');
+    fixture.detectChanges();
+    tick();
+    fixture.detectChanges();
+    const stage = fixture.nativeElement.querySelector('.background-scene') as HTMLElement;
+
+    expect(stage.classList).toContain('is-fallback');
+    expect(getComputedStyle(stage, '::after').animationName).toBe('none');
+
+    documentVisible.set(false);
+    fixture.detectChanges();
+    expect(stage.classList).toContain('is-motion-paused');
   }));
 });

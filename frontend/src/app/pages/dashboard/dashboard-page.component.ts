@@ -1,11 +1,12 @@
 import {
-  Component, ElementRef, HostListener, Injector, OnInit, ViewChild,
+  Component, ElementRef, Injector, OnInit, ViewChild,
   afterNextRender, computed, inject, signal
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CountUp } from 'countup.js';
 import { gsap } from 'gsap';
 import { DashboardMetrics } from '../../core/models/dashboard.model';
+import { MotionService } from '../../core/motion/motion.service';
 import { AuthService } from '../../core/services/auth.service';
 import { DashboardService } from '../../core/services/dashboard.service';
 import { OnboardingProgressService } from '../../core/services/onboarding-progress.service';
@@ -208,7 +209,8 @@ export class DashboardPageComponent implements OnInit {
   readonly error = signal('');
   readonly metrics = signal<DashboardMetrics | null>(null);
   readonly hasAnimated = signal(false);
-  readonly flowPaused = signal(document.visibilityState === 'hidden');
+  private readonly motion = inject(MotionService);
+  readonly flowPaused = computed(() => !this.motion.documentVisible());
   readonly workflowPreview = [
     { index: '01', label: 'Analyze', copy: 'Extract requirements and risks from the story.', tone: 'analysis' },
     { index: '02', label: 'Generate', copy: 'Create draft test cases from the analysis.', tone: 'generate' },
@@ -317,11 +319,6 @@ export class DashboardPageComponent implements OnInit {
     this.loadMetrics();
   }
 
-  @HostListener('document:visibilitychange')
-  onVisibilityChange(): void {
-    this.flowPaused.set(document.visibilityState === 'hidden');
-  }
-
   loadMetrics(): void {
     this.loading.set(true);
     this.error.set('');
@@ -382,7 +379,7 @@ export class DashboardPageComponent implements OnInit {
   private runAnimations(m: DashboardMetrics): void {
     if (this.hasAnimated()) return;
     this.hasAnimated.set(true);
-    const rm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const rm = this.motion.reducedMotion();
     this.runCountUp(m, rm);
     this.staggerKpiChips(rm);
     this.animatePipeline(rm);

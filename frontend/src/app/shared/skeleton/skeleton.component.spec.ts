@@ -1,11 +1,18 @@
+import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { MotionService } from '../../core/motion/motion.service';
 import { SkeletonComponent } from './skeleton.component';
 
 describe('SkeletonComponent', () => {
   let fixture: ComponentFixture<SkeletonComponent>;
+  const documentVisible = signal(true);
 
   beforeEach(async () => {
-    await TestBed.configureTestingModule({ imports: [SkeletonComponent] }).compileComponents();
+    documentVisible.set(true);
+    await TestBed.configureTestingModule({
+      imports: [SkeletonComponent],
+      providers: [{ provide: MotionService, useValue: { documentVisible } }]
+    }).compileComponents();
     fixture = TestBed.createComponent(SkeletonComponent);
   });
 
@@ -22,5 +29,14 @@ describe('SkeletonComponent', () => {
     const status = fixture.nativeElement.querySelector('[role="status"]');
 
     expect(status.getAttribute('aria-label')).toBe('Loading');
+  });
+
+  it('pauses its shimmer host while the document is hidden', () => {
+    fixture.detectChanges();
+
+    documentVisible.set(false);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.classList).toContain('is-motion-paused');
   });
 });

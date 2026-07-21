@@ -1,6 +1,7 @@
 import { Component, ElementRef, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { gsap } from 'gsap';
+import { MotionService } from '../../core/motion/motion.service';
 import { AuthService } from '../../core/services/auth.service';
 import { SettingsService } from '../../core/services/settings.service';
 import { AppSettings, AppSettingsUpdate, AiProvider, GenerationMode } from '../../core/models/settings.model';
@@ -100,10 +101,11 @@ type SettingsTab = 'ai' | 'security' | 'system';
               <div class="settings-grid">
                 <div class="setting-row">
                   <div class="setting-label">
-                    <strong>Generation mode</strong>
+                    <strong id="generation-mode-label">Generation mode</strong>
                     <small>Controls creativity vs. coverage strictness during test case generation.</small>
                   </div>
                   <select
+                    aria-labelledby="generation-mode-label"
                     [(ngModel)]="draft.generationMode"
                     [disabled]="!canEdit()"
                     name="generationMode">
@@ -115,10 +117,11 @@ type SettingsTab = 'ai' | 'security' | 'system';
 
                 <div class="setting-row">
                   <div class="setting-label">
-                    <strong>Max test cases per story</strong>
+                    <strong id="max-test-cases-label">Max test cases per story</strong>
                     <small>Upper bound on test cases generated per story (1–50).</small>
                   </div>
                   <input
+                    aria-labelledby="max-test-cases-label"
                     type="number"
                     [(ngModel)]="draft.maxTestCasesPerStory"
                     [disabled]="!canEdit()"
@@ -303,6 +306,7 @@ export class SettingsPageComponent implements OnInit {
   private readonly host = inject(ElementRef<HTMLElement>);
   private readonly settingsService = inject(SettingsService);
   private readonly toastService = inject(ToastService);
+  private readonly motion = inject(MotionService);
   readonly authService = inject(AuthService);
 
   readonly settings = signal<AppSettings | null>(null);
@@ -419,7 +423,7 @@ export class SettingsPageComponent implements OnInit {
   }
 
   private animateOpenAiInput(): void {
-    if (this.prefersReducedMotion()) {
+    if (this.motion.reducedMotion()) {
       return;
     }
     queueMicrotask(() => {
@@ -428,10 +432,6 @@ export class SettingsPageComponent implements OnInit {
         gsap.from(input, { height: 0, opacity: 0, duration: 0.22, ease: 'power2.out' });
       }
     });
-  }
-
-  private prefersReducedMotion(): boolean {
-    return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
   }
 
 }
