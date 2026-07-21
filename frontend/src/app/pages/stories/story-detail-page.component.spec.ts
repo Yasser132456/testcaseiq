@@ -10,6 +10,7 @@ import { ReviewService } from '../../core/services/review.service';
 import { StoryService } from '../../core/services/story.service';
 import { TestGenerationService } from '../../core/services/test-generation.service';
 import { StoryAiOperationState } from '../../core/motion/async-operation-state';
+import { BackgroundSceneService } from '../../shared/background/background-scene.service';
 import { StoryDetailPageComponent } from './story-detail-page.component';
 
 describe('StoryDetailPageComponent tabs and review workflow', () => {
@@ -20,6 +21,7 @@ describe('StoryDetailPageComponent tabs and review workflow', () => {
   let testGenerationService: jasmine.SpyObj<TestGenerationService>;
   let analysisState: ReturnType<typeof signal<StoryAiOperationState>>;
   let generationState: ReturnType<typeof signal<StoryAiOperationState>>;
+  let backgroundScene: jasmine.SpyObj<BackgroundSceneService>;
 
   beforeEach(async () => {
     window.history.replaceState({ projectContext: { projectId: 'project-1', name: 'Commerce' } }, '', '/stories/story-1');
@@ -44,6 +46,7 @@ describe('StoryDetailPageComponent tabs and review workflow', () => {
     testGenerationService.getTestSuites.and.returnValue(of([suiteFixture()]));
     Object.defineProperty(analysisService, 'operationState', { value: analysisState.asReadonly() });
     Object.defineProperty(testGenerationService, 'operationState', { value: generationState.asReadonly() });
+    backgroundScene = jasmine.createSpyObj<BackgroundSceneService>('BackgroundSceneService', ['setOperationAccent']);
 
     await TestBed.configureTestingModule({
       imports: [StoryDetailPageComponent],
@@ -53,7 +56,8 @@ describe('StoryDetailPageComponent tabs and review workflow', () => {
         { provide: StoryService, useValue: storyService },
         { provide: AnalysisService, useValue: analysisService },
         { provide: TestGenerationService, useValue: testGenerationService },
-        { provide: ReviewService, useValue: reviewService }
+        { provide: ReviewService, useValue: reviewService },
+        { provide: BackgroundSceneService, useValue: backgroundScene }
       ]
     }).compileComponents();
 
@@ -170,6 +174,23 @@ describe('StoryDetailPageComponent tabs and review workflow', () => {
     expect(panel.classList).toContain('is-analyzing');
     expect(panel.getAttribute('aria-busy')).toBe('true');
     expect(panel.textContent).toContain('Analyzing...');
+  });
+
+  it('ties the scene accent to the active AI operation and restores it on settle', () => {
+    backgroundScene.setOperationAccent.calls.reset();
+
+    analysisState.set({ phase: 'running', storyId: 'story-1', sequence: 1 });
+    fixture.detectChanges();
+    expect(backgroundScene.setOperationAccent).toHaveBeenCalledWith('violet');
+
+    analysisState.set({ phase: 'success', storyId: 'story-1', sequence: 1 });
+    generationState.set({ phase: 'running', storyId: 'story-1', sequence: 1 });
+    fixture.detectChanges();
+    expect(backgroundScene.setOperationAccent).toHaveBeenCalledWith('cyan');
+
+    generationState.set({ phase: 'error', storyId: 'story-1', sequence: 1 });
+    fixture.detectChanges();
+    expect(backgroundScene.setOperationAccent).toHaveBeenCalledWith(null);
   });
 
   it('binds generation success and error treatments to settled service states', () => {

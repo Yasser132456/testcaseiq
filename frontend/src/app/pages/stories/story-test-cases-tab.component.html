@@ -27,7 +27,7 @@
     </div>
   } @else {
     <div class="suite-stack">
-      @for (suite of testSuites(); track suite.suiteName + suite.generatedAt) {
+      @for (suite of testSuites(); track suite.suiteName + suite.generatedAt; let suiteIndex = $index) {
         <article class="test-suite-card">
           <div class="suite-summary">
             <div>
@@ -57,8 +57,12 @@
             <app-state-message title="No test cases returned" message="The generation request completed, but this suite does not contain manual tests." />
           } @else {
             <div class="test-case-grid">
-              @for (testCase of suite.testCases; track testCase.id) {
-                <article class="test-case-card">
+              @for (testCase of suite.testCases; track testCase.id; let testCaseIndex = $index) {
+                <article
+                  class="test-case-card"
+                  [class.is-generated-arrival]="streamGeneratedRows()"
+                  [style.--generated-row-delay.ms]="generatedRowDelay(suiteIndex, testCaseIndex)"
+                >
                   <div class="test-case-header">
                     <div>
                       <p class="eyebrow generated-eyebrow">Manual test</p>

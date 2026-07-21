@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { AfterViewInit, Component, ElementRef, OnDestroy, WritableSignal, computed, inject, signal } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, WritableSignal, computed, effect, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { LucideCheck, LucideDynamicIcon } from '@lucide/angular';
@@ -22,6 +22,7 @@ import { TestGenerationService } from '../../core/services/test-generation.servi
 import { ToastService } from '../../core/services/toast.service';
 import { StoryStatusPillComponent } from '../../components/story-status-pill/story-status-pill.component';
 import { StateMessageComponent } from '../../shared/components/state-message.component';
+import { BackgroundSceneService } from '../../shared/background/background-scene.service';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
 import { VtNameDirective } from '../../shared/directives/vt-name.directive';
 import { RevealDirective } from '../../shared/directives/reveal.directive';
@@ -60,6 +61,7 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
   private readonly testGenerationService = inject(TestGenerationService);
   private readonly toastService = inject(ToastService);
   private readonly authService = inject(AuthService);
+  private readonly backgroundScene = inject(BackgroundSceneService);
   readonly onboardingProgress = inject(OnboardingProgressService);
   private readonly projectContext = (this.router.getCurrentNavigation()?.extras.state?.['projectContext'] ?? window.history.state?.projectContext) as { name?: string } | null;
   private storyId = '';
@@ -133,6 +135,14 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
   });
 
   constructor() {
+    effect(() => {
+      const accent = this.analysisOperationState().phase === 'running'
+        ? 'violet'
+        : this.generationOperationState().phase === 'running'
+          ? 'cyan'
+          : null;
+      this.backgroundScene.setOperationAccent(accent);
+    });
     this.storyId = this.route.snapshot.paramMap.get('storyId') ?? '';
     this.loadStory();
   }
@@ -145,6 +155,7 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.backgroundScene.setOperationAccent(null);
     this.analyzeTimer = this.stopTimer(this.analyzeTimer);
     this.generateTimer = this.stopTimer(this.generateTimer);
     this.stickyObserver?.disconnect();

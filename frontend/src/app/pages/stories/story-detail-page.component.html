@@ -384,6 +384,7 @@
             [error]="testGenerationError()"
             [canEdit]="canEdit()"
             [generatingTests]="generatingTests()"
+            [streamGeneratedRows]="generationOperationState().phase === 'success'"
             (generateRequested)="generateTestCases()"
             (testCaseUpdated)="onTestCaseUpdated($event)"
           />

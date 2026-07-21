@@ -5,7 +5,7 @@ import { NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs';
 import type * as Three from 'three';
 import { LenisService } from '../../core/motion/lenis.service';
-import { MotionService } from '../../core/motion/motion.service';
+import { MotionQualityTier, MotionService } from '../../core/motion/motion.service';
 
 export type BackgroundSceneMode = 'live' | 'static' | 'fallback';
 export type BackgroundSceneRenderMode = 'ambient' | 'welcome';
@@ -15,6 +15,10 @@ export interface BackgroundSceneAccent {
   name: BackgroundSceneAccentName;
   token: string;
   cssColor: string;
+}
+
+export function operationAccentEnabledForMotion(tier: MotionQualityTier, reducedMotion: boolean): boolean {
+  return tier === 'high' && !reducedMotion;
 }
 
 interface ParticleLayer {
@@ -100,6 +104,9 @@ export class BackgroundSceneService {
   private accentPalette?: Record<BackgroundSceneAccentName, Three.Color>;
   private handles?: SceneHandles;
   private pointerCleanup?: () => void;
+  private operationAccentName: Extract<BackgroundSceneAccentName, 'violet' | 'cyan'> | null = null;
+  private operationAccentTween?: { kill(): void };
+  private readonly operationAccentMix = { amount: 0 };
   private scrollParallaxY = 0;
   private readonly particleCount = 700;
   private readonly dprCap = 1.5;
@@ -140,6 +147,10 @@ export class BackgroundSceneService {
   }
 
   dispose(): void {
+    this.operationAccentTween?.kill();
+    this.operationAccentTween = undefined;
+    this.operationAccentMix.amount = 0;
+
     if (this.animationFrame) {
       cancelAnimationFrame(this.animationFrame);
       this.animationFrame = 0;
@@ -184,6 +195,25 @@ export class BackgroundSceneService {
     };
     this.sceneAccentState.set(accent);
     this.applyAccent(name);
+  }
+
+  setOperationAccent(name: Extract<BackgroundSceneAccentName, 'violet' | 'cyan'> | null): void {
+    const enabled = name !== null && operationAccentEnabledForMotion(
+      this.motion.qualityTier(),
+      this.motion.reducedMotion()
+    );
+
+    if (!enabled) {
+      this.stopOperationAccentPulse();
+      return;
+    }
+
+    if (this.operationAccentName === name && this.operationAccentTween) {
+      return;
+    }
+
+    this.operationAccentName = name;
+    this.startOperationAccentPulse();
   }
 
   private createScene(
@@ -249,6 +279,10 @@ export class BackgroundSceneService {
       welcome
     };
     resize();
+
+    if (this.operationAccentName) {
+      this.startOperationAccentPulse();
+    }
 
     if (reducedMotion) {
       renderer.render(scene, camera);
@@ -521,7 +555,63 @@ export class BackgroundSceneService {
   private setRouteAccent(url: string): void {
     const accent = this.resolveAccent(url);
     this.sceneAccentState.set(accent);
-    this.applyAccent(accent.name);
+    if (!this.operationAccentTween) {
+      this.applyAccent(accent.name);
+    }
+  }
+
+  private startOperationAccentPulse(): void {
+    this.operationAccentTween?.kill();
+    this.operationAccentTween = undefined;
+    this.operationAccentMix.amount = 0;
+
+    if (!this.handles || !this.operationAccentName) {
+      return;
+    }
+
+    this.operationAccentTween = this.motion.gsap.to(this.operationAccentMix, {
+      amount: 0.1,
+      duration: 0.7,
+      ease: 'sine.inOut',
+      repeat: -1,
+      yoyo: true,
+      onUpdate: () => this.renderOperationAccentMix()
+    });
+  }
+
+  private stopOperationAccentPulse(): void {
+    const hadPulse = this.operationAccentName !== null || !!this.operationAccentTween;
+    this.operationAccentTween?.kill();
+    this.operationAccentTween = undefined;
+    this.operationAccentName = null;
+    this.operationAccentMix.amount = 0;
+
+    if (hadPulse) {
+      this.applyAccent(this.sceneAccent().name);
+    }
+  }
+
+  private renderOperationAccentMix(): void {
+    if (!this.handles || !this.operationAccentName) {
+      return;
+    }
+
+    const base = this.currentAccentColor(undefined, this.sceneAccent().name);
+    const operation = this.currentAccentColor(undefined, this.operationAccentName);
+    const amount = this.operationAccentMix.amount;
+    const r = base.r + (operation.r - base.r) * amount;
+    const g = base.g + (operation.g - base.g) * amount;
+    const b = base.b + (operation.b - base.b) * amount;
+
+    Object.assign(this.handles.tint, { r, g, b });
+    Object.assign(this.handles.vignette, { r, g, b });
+    this.handles.layers.forEach(({ material }) => {
+      material.uniforms['uColor'].value.setRGB(r, g, b);
+      material.uniforms['uVignette'].value.setRGB(r, g, b);
+    });
+    if (this.handles.scene.fog) {
+      this.handles.scene.fog.color.setRGB(r, g, b);
+    }
   }
 
   private applyAccent(name: BackgroundSceneAccentName): void {

@@ -55,6 +55,23 @@
   font-weight: 700;
 }
 
+.test-case-card.is-generated-arrival {
+  animation: tcqGeneratedRow 320ms var(--ease-out) both;
+  animation-delay: var(--generated-row-delay, 0ms);
+}
+
+@keyframes tcqGeneratedRow {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @keyframes tcq-ai-scan {
   0% { top: 0; opacity: 0.35; }
   50% { opacity: 1; }
@@ -99,5 +116,9 @@
 
   .is-ai-error {
     border-color: var(--color-red-border);
+  }
+
+  .test-case-card.is-generated-arrival {
+    animation: none !important;
   }
 }
