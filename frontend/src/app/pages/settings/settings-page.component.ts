@@ -101,10 +101,11 @@ type SettingsTab = 'ai' | 'security' | 'system';
               <div class="settings-grid">
                 <div class="setting-row">
                   <div class="setting-label">
-                    <strong>Generation mode</strong>
+                    <strong id="generation-mode-label">Generation mode</strong>
                     <small>Controls creativity vs. coverage strictness during test case generation.</small>
                   </div>
                   <select
+                    aria-labelledby="generation-mode-label"
                     [(ngModel)]="draft.generationMode"
                     [disabled]="!canEdit()"
                     name="generationMode">
@@ -116,10 +117,11 @@ type SettingsTab = 'ai' | 'security' | 'system';
 
                 <div class="setting-row">
                   <div class="setting-label">
-                    <strong>Max test cases per story</strong>
+                    <strong id="max-test-cases-label">Max test cases per story</strong>
                     <small>Upper bound on test cases generated per story (1–50).</small>
                   </div>
                   <input
+                    aria-labelledby="max-test-cases-label"
                     type="number"
                     [(ngModel)]="draft.maxTestCasesPerStory"
                     [disabled]="!canEdit()"

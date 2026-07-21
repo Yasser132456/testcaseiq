@@ -1,32 +1,43 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type Locator } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import {
   QUALITY_STORY_ID,
+  assertNoUnexpectedApiRequests,
   authenticateQualityUser,
+  clearUnexpectedApiRequests,
   gotoStable,
   installDeterministicApi
 } from './support/quality-fixtures';
 
 const requiredRoutes = [
-  { name: 'welcome', path: '/' },
-  { name: 'login', path: '/login' },
-  { name: 'dashboard', path: '/dashboard' },
-  { name: 'stories list', path: '/stories' },
-  { name: 'story detail', path: `/stories/${QUALITY_STORY_ID}` },
-  { name: 'review board', path: '/review-board' },
-  { name: 'settings', path: '/settings' }
+  { name: 'welcome', path: '/', ready: (page: Page) => page.getByRole('heading', { name: 'AI drafts. Humans approve.' }) },
+  { name: 'login', path: '/login', ready: (page: Page) => page.getByRole('heading', { name: 'Sign in' }) },
+  { name: 'dashboard', path: '/dashboard', ready: (page: Page) => page.getByText('Test Generation Requested', { exact: true }) },
+  { name: 'stories list', path: '/stories', ready: (page: Page) => page.getByRole('heading', { name: 'Stories' }) },
+  { name: 'story detail', path: `/stories/${QUALITY_STORY_ID}`, ready: (page: Page) => page.getByRole('heading', { name: 'Buyer completes checkout' }) },
+  { name: 'review board', path: '/review-board', ready: (page: Page) => page.getByRole('heading', { name: 'Review Board' }) },
+  { name: 'settings', path: '/settings', ready: (page: Page) => page.getByRole('heading', { name: 'Settings' }) }
 ] as const;
 
 test.beforeEach(async ({ page }) => {
   await installDeterministicApi(page);
 });
 
+test.afterEach(async ({ page }) => {
+  assertNoUnexpectedApiRequests(page);
+});
+
 for (const route of requiredRoutes) {
   test(`${route.name} has no serious or critical accessibility violations`, async ({ page, request }, testInfo) => {
+    const pageErrors: string[] = [];
+    page.on('pageerror', (error) => pageErrors.push(error.message));
     if (route.path !== '/' && route.path !== '/login') {
       await authenticateQualityUser(page, request);
     }
-    await gotoStable(page, route.path);
+    await gotoRequiredRoute(page, route.path);
+    await expect(route.ready(page)).toBeVisible();
+    assertNoUnexpectedApiRequests(page);
+    expect(pageErrors, `${route.name} emitted page errors`).toEqual([]);
 
     const results = await new AxeBuilder({ page })
       .include('body')
@@ -41,6 +52,8 @@ for (const route of requiredRoutes) {
       contentType: 'application/json'
     });
     expect(violations).toEqual([]);
+    assertNoUnexpectedApiRequests(page);
+    expect(pageErrors, `${route.name} emitted page errors during axe`).toEqual([]);
   });
 }
 
@@ -91,11 +104,9 @@ test('AI failures announce assertively', async ({ page, request }) => {
   await gotoStable(page, `/stories/${QUALITY_STORY_ID}`);
 
   await page.getByRole('button', { name: 'Analyze Story' }).click();
-  const phaseError = page.getByText('Analysis failed.', { exact: true });
-  await expect(phaseError).toHaveAttribute('role', 'alert');
-  await expect(phaseError).toHaveAttribute('aria-live', 'assertive');
-
-  const messageError = page.getByRole('alert').filter({ hasText: 'Analysis unavailable' });
+  const alerts = page.getByRole('alert');
+  await expect(alerts).toHaveCount(1);
+  const messageError = alerts.filter({ hasText: 'Analysis unavailable' });
   await expect(messageError).toHaveAttribute('aria-live', 'assertive');
 });
 
@@ -111,11 +122,9 @@ test('AI generation failures announce assertively', async ({ page, request }) =>
 
   await page.getByRole('button', { name: /^Test Cases/ }).click();
   await page.getByRole('button', { name: 'Generate Test Cases' }).click();
-  const phaseError = page.getByText('Generation failed.', { exact: true });
-  await expect(phaseError).toHaveAttribute('role', 'alert');
-  await expect(phaseError).toHaveAttribute('aria-live', 'assertive');
-
-  const messageError = page.getByRole('alert').filter({ hasText: 'Test generation unavailable' });
+  const alerts = page.getByRole('alert');
+  await expect(alerts).toHaveCount(1);
+  const messageError = alerts.filter({ hasText: 'Test generation unavailable' });
   await expect(messageError).toHaveAttribute('aria-live', 'assertive');
 });
 
@@ -131,6 +140,11 @@ test('empty search results announce politely', async ({ page, request }) => {
   const empty = page.getByText(/No results for 'nothing matches'/);
   await expect(empty).toHaveAttribute('role', 'status');
   await expect(empty).toHaveAttribute('aria-live', 'polite');
+
+  const unknownStatus = await page.evaluate(async () => (await fetch('/api/quality-unknown')).status);
+  expect(unknownStatus).toBe(501);
+  expect(() => assertNoUnexpectedApiRequests(page)).toThrow(/quality-unknown/);
+  clearUnexpectedApiRequests(page);
 });
 
 test('welcome CTA and application navigation expose a two-pixel focus ring', async ({ page, request }) => {
@@ -142,6 +156,8 @@ test('welcome CTA and application navigation expose a two-pixel focus ring', asy
   await expectTwoPixelFocusRing(page.getByRole('navigation', { name: 'Primary navigation' })
     .getByRole('link', { name: 'Stories' }));
   await expectTwoPixelFocusRing(page.getByRole('button', { name: 'Open search' }));
+  await expectTwoPixelFocusRing(page.locator('.pipeline-node').first());
+  await expectTwoPixelFocusRing(page.locator('.project-card').first());
 });
 
 test('story card action exposes an accessible link and two-pixel focus ring', async ({ page, request }) => {
@@ -158,6 +174,10 @@ test('review cards and verdict actions expose a two-pixel focus ring', async ({ 
   await expectTwoPixelFocusRing(page.getByRole('button', { name: /Complete checkout with valid payment/ }));
   await expectTwoPixelFocusRing(page.getByRole('button', { name: 'Approve', exact: true }));
   await expectTwoPixelFocusRing(page.getByRole('button', { name: 'Reject', exact: true }));
+
+  await gotoStable(page, `/stories/${QUALITY_STORY_ID}`);
+  await page.getByRole('button', { name: /^History/ }).click();
+  await expectTwoPixelFocusRing(page.locator('app-story-review-tab .review-case-item').first());
 });
 
 test('search controls and results expose a two-pixel focus ring', async ({ page, request }) => {
@@ -170,19 +190,52 @@ test('search controls and results expose a two-pixel focus ring', async ({ page,
 });
 
 async function expectTwoPixelFocusRing(locator: Locator): Promise<void> {
-  await locator.page().keyboard.press('Tab');
-  await locator.focus();
+  await focusNaturallyWithTab(locator);
   const ring = await locator.evaluate((element) => {
     const style = getComputedStyle(element);
     return {
       focusVisible: element.matches(':focus-visible'),
+      outlineColor: style.outlineColor,
       outlineStyle: style.outlineStyle,
       outlineWidth: Number.parseFloat(style.outlineWidth),
       outlineOffset: Number.parseFloat(style.outlineOffset)
     };
   });
   expect(ring.focusVisible).toBe(true);
+  expect(isTransparent(ring.outlineColor), `transparent outline color: ${ring.outlineColor}`).toBe(false);
   expect(ring.outlineStyle).not.toBe('none');
   expect(ring.outlineWidth).toBeGreaterThanOrEqual(2);
   expect(ring.outlineOffset).toBeGreaterThanOrEqual(2);
+}
+
+async function focusNaturallyWithTab(locator: Locator): Promise<void> {
+  const page = locator.page();
+  await expect(locator).toBeVisible();
+  for (let attempt = 0; attempt < 80; attempt += 1) {
+    if (await locator.evaluate((element) => element === document.activeElement)) return;
+    await page.keyboard.press('Tab');
+  }
+  expect(await locator.evaluate((element) => element === document.activeElement), 'control was not reachable with Tab').toBe(true);
+}
+
+function isTransparent(color: string): boolean {
+  return color === 'transparent' || /^rgba\([^)]*,\s*0(?:\.0+)?\)$/.test(color);
+}
+
+async function gotoRequiredRoute(page: Page, path: string): Promise<void> {
+  if (path !== '/settings') {
+    await gotoStable(page, path);
+    return;
+  }
+
+  // Role-protected routes need the user signal hydrated before SPA navigation.
+  await gotoStable(page, '/dashboard');
+  await expect(page.getByRole('button', { name: 'User menu for Quality Engineer' })).toBeVisible();
+  await page.getByRole('link', { name: 'Settings', exact: true }).click();
+  await expect(page).toHaveURL(/\/settings(?:\?|$)/);
+  await page.evaluate(() => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('bg', 'fallback');
+    window.history.replaceState(window.history.state, '', url);
+  });
 }

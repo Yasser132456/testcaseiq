@@ -100,7 +100,7 @@ import { StateMessageComponent } from '../../shared/components/state-message.com
     .review-case-list{display:grid;align-content:start;max-height:calc(100vh - 20rem);overflow-y:auto;border-right:var(--b);background:var(--glass-bg-1)}
     .review-case-item{display:grid;gap:var(--space-sm);width:100%;min-height:5.5rem;padding:var(--space-md) var(--space-base);border:0;border-bottom:var(--b);background:transparent;color:var(--color-text);text-align:left;cursor:pointer;transition:background var(--dur) var(--ease),color var(--dur) var(--ease),transform var(--dur) var(--ease)}
     .review-case-item:hover{background:var(--glass-bg-1);transform:translateX(2px)}
-    .review-case-item:focus-visible{outline:2px solid var(--color-accent);outline-offset:-2px}
+    .review-case-item:focus-visible{outline:2px solid var(--color-accent);outline-offset:2px}
     .review-case-item.is-active{background:var(--color-accent-bg);color:var(--color-accent);transform:translateX(2px)}
     .review-case-title{min-width:0;font-weight:500;line-height:1.35}
     .case-meta-badge{display:inline-flex;align-items:center;min-height:1.65rem;padding:0 .55rem;border:var(--b);border-radius:var(--radius-sm);background:var(--glass-bg-1);color:var(--color-text-2);font-family:var(--font-mono);font-size:.72rem;font-weight:500}

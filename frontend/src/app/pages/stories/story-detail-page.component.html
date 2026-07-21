@@ -179,8 +179,6 @@
               <p class="ai-operation-label" role="status" aria-live="polite">Analyzing...</p>
             } @else if (analysisPhase() === 'success') {
               <p class="sr-only" role="status" aria-live="polite">Analysis complete.</p>
-            } @else if (analysisPhase() === 'error') {
-              <p class="sr-only" role="alert" aria-live="assertive">Analysis failed.</p>
             }
             @if (analysisLoading()) {
               <app-skeleton [rows]="3" [cols]="3" />
@@ -353,8 +351,6 @@
             <p class="ai-operation-label" role="status" aria-live="polite">Generating...</p>
           } @else if (generationPhase() === 'success') {
             <p class="sr-only" role="status" aria-live="polite">Generation complete.</p>
-          } @else if (generationPhase() === 'error') {
-            <p class="sr-only" role="alert" aria-live="assertive">Generation failed.</p>
           }
           @if (showReviewBoardNudge()) {
             <div class="activation-nudge" aria-live="polite">

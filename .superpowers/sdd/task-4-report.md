@@ -88,3 +88,50 @@ The build retains the repository's existing bundle/style budget warnings.
 
 - A real backend-backed E2E auth registration could not be re-verified locally because of the existing PostgreSQL password mismatch. The helper still prefers real registration/login when the backend is available and falls back only when it is unreachable.
 - `npm install` reported 13 dependency-audit findings (4 low, 8 high, 1 critical); dependency remediation was outside Task 4 scope.
+
+## Review hardening follow-up
+
+The review pass tightened the deterministic harness and added regression coverage for the fixture contracts themselves:
+
+- Production model interfaces now type the auth, dashboard, story, project, generated-test, review, settings, notification, and search fixtures with `satisfies`.
+- Dashboard activity now uses the real `timestamp`, `action`, and `resourceType` fields, and the route readiness check requires the rendered `Test Generation Requested` activity.
+- Unknown `/api/**` calls return `501`, are recorded, and fail the test in `afterEach`; the harness includes a regression proving this behavior.
+- Every axe route asserts meaningful route content and captures `pageerror` events before and during the scan.
+- Focus checks reach controls through natural `Tab` navigation, require a non-transparent outline color, and verify at least 2 px width and +2 px offset.
+- Dashboard pipeline/project links and story review items now expose authored 2 px/+2 px focus rings.
+- Story analysis and generation failures expose one assertive error announcement instead of duplicate alerts.
+- The Settings generation-mode select and maximum-test-cases input are associated with their visible labels.
+
+Focused review RED evidence (`7` selected tests) produced `4 failed, 3 passed`:
+
+- analysis and generation failures each exposed two alerts instead of one;
+- a dashboard application control exposed only a 1 px outline;
+- the story review item exposed `outline-offset: -2px`.
+
+After the role-protected Settings route was exercised through the authenticated SPA flow, axe also caught two critical missing-name violations (`select-name` and `label`). Both passed after associating the controls with their visible labels. Direct role-route reload timing remains an auth-hydration concern; this task tests the normal hydrated signed-in flow and does not change the application guard.
+
+The long-lived Angular development server degraded after repeated hot rebuilds and left navigation requests pending. A bounded, task-owned static SPA server (`frontend/scripts/serve-dist.mjs`) now serves the compiled bundle with index fallback, correct asset content types, path traversal protection, and no-store caching. All quality navigations use the lightweight background fallback and reduced motion.
+
+Final all-at-once accessibility verification on that stable host:
+
+```text
+npm.cmd run e2e:a11y -- --workers=1
+15 passed (1.5m)
+```
+
+Targeted component verification for dashboard, Settings, story detail, story review, review board, and search modal:
+
+```text
+TOTAL: 54 SUCCESS
+```
+
+Additional verification:
+
+```text
+npx.cmd tsc --ignoreConfig --noEmit --strict --target ES2022 --module ES2022 \
+  --moduleResolution bundler --skipLibCheck --types node e2e/support/quality-fixtures.ts
+node.exe --check scripts/serve-dist.mjs
+npx.cmd ng build --configuration development
+```
+
+All three passed. A fresh optimized production build could not inline Google Fonts because this environment could not resolve `fonts.googleapis.com` (`getaddrinfo ENOTFOUND`); the development bundle and targeted Angular test compilation both completed successfully with the current source.
