@@ -1,0 +1,103 @@
+[data-ai-state] {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+[data-ai-state='analysis'] {
+  --ai-state-color: var(--color-violet);
+  --ai-state-border: var(--color-purple-border);
+  --ai-state-glow: var(--color-violet-glow);
+}
+
+[data-ai-state='generation'] {
+  --ai-state-color: var(--color-cyan);
+  --ai-state-border: var(--color-cyan-border);
+  --ai-state-glow: var(--color-cyan-glow);
+}
+
+.is-analyzing,
+.is-generating {
+  border-color: var(--ai-state-border);
+  animation: tcq-ai-border-pulse 1.4s var(--ease-in-out) infinite;
+}
+
+.is-analyzing::after,
+.is-generating::after {
+  content: '';
+  position: absolute;
+  z-index: 3;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 2px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, var(--ai-state-color), transparent);
+  filter: drop-shadow(0 0 6px var(--ai-state-glow));
+  animation: tcq-ai-scan 1.4s var(--ease-in-out) infinite;
+}
+
+.is-ai-success {
+  animation: tcq-ai-edge-flash 360ms var(--ease-out-expo) 1;
+}
+
+.is-ai-error {
+  border-color: var(--color-red-border);
+  animation: tcq-ai-error-pulse 360ms var(--ease-out-expo) 1;
+}
+
+.ai-operation-label {
+  width: fit-content;
+  margin: 0;
+  color: var(--ai-state-color);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+@keyframes tcq-ai-scan {
+  0% { top: 0; opacity: 0.35; }
+  50% { opacity: 1; }
+  100% { top: calc(100% - 2px); opacity: 0.35; }
+}
+
+@keyframes tcq-ai-border-pulse {
+  0%, 100% { box-shadow: var(--glass-border-highlight), 0 0 0 0 transparent; }
+  50% { box-shadow: var(--glass-border-highlight), 0 0 14px color-mix(in srgb, var(--ai-state-color) 16%, transparent); }
+}
+
+@keyframes tcq-ai-edge-flash {
+  0% { border-color: var(--ai-state-border); box-shadow: 0 0 0 0 transparent; }
+  45% { border-color: var(--ai-state-color); box-shadow: 0 0 18px var(--ai-state-glow); }
+  100% { border-color: var(--glass-edge-strong); box-shadow: var(--glass-border-highlight); }
+}
+
+@keyframes tcq-ai-error-pulse {
+  0%, 100% { box-shadow: var(--glass-border-highlight); }
+  50% { box-shadow: var(--glass-border-highlight), 0 0 16px var(--color-red-glow); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .is-analyzing,
+  .is-generating,
+  .is-ai-success,
+  .is-ai-error,
+  .is-analyzing::after,
+  .is-generating::after {
+    animation: none !important;
+  }
+
+  .is-analyzing::after,
+  .is-generating::after {
+    display: none;
+  }
+
+  .is-analyzing,
+  .is-generating {
+    border-color: var(--ai-state-border);
+  }
+
+  .is-ai-error {
+    border-color: var(--color-red-border);
+  }
+}

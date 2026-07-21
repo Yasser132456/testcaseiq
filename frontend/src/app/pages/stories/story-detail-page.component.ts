@@ -24,6 +24,7 @@ import { StoryStatusPillComponent } from '../../components/story-status-pill/sto
 import { StateMessageComponent } from '../../shared/components/state-message.component';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
 import { VtNameDirective } from '../../shared/directives/vt-name.directive';
+import { RevealDirective } from '../../shared/directives/reveal.directive';
 import { StoryReviewTabComponent } from './story-review-tab.component';
 import { StoryTestCasesTabComponent } from './story-test-cases-tab.component';
 
@@ -42,6 +43,7 @@ type StoryDisplayStatus = 'DRAFT' | 'ANALYZED' | 'TESTS_GENERATED' | 'NEEDS_REVI
     StateMessageComponent,
     SkeletonComponent,
     VtNameDirective,
+    RevealDirective,
     StoryTestCasesTabComponent,
     StoryReviewTabComponent
   ],
@@ -86,8 +88,10 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
   readonly loading = signal(true);
   readonly analysisLoading = signal(false);
   readonly testSuitesLoading = signal(false);
-  readonly analyzing = signal(false);
-  readonly generatingTests = signal(false);
+  readonly analysisOperationState = this.analysisService.operationState;
+  readonly generationOperationState = this.testGenerationService.operationState;
+  readonly analyzing = computed(() => this.analysisOperationState().phase === 'running');
+  readonly generatingTests = computed(() => this.generationOperationState().phase === 'running');
   readonly analyzeElapsed = signal(0);
   readonly generateElapsed = signal(0);
   readonly saving = signal(false);
@@ -200,23 +204,21 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
   }
 
   analyzeStory(): void {
-    if (!this.storyId) return;
+    if (!this.storyId || this.analyzing()) return;
     this.analyzeTimer = this.startTimer(this.analyzeElapsed);
-    this.analyzing.set(true);
     this.analysisError.set('');
     this.analysisService.analyzeStory(this.storyId).subscribe({
       next: (analysis) => {
         this.analyzeTimer = this.stopTimer(this.analyzeTimer);
         this.analysis.set(analysis);
+        this.analysisExpanded.set(true);
         this.onboardingProgress.complete('analysis-completed');
         this.updateStoryStatus('ANALYZED');
-        this.analyzing.set(false);
         this.animateWorkflowStep();
       },
       error: () => {
         this.analyzeTimer = this.stopTimer(this.analyzeTimer);
         this.analysisError.set('The story could not be analyzed. Confirm the backend is running and try again.');
-        this.analyzing.set(false);
       }
     });
   }
@@ -224,7 +226,6 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
   generateTestCases(): void {
     if (!this.storyId || this.generatingTests()) return;
     this.generateTimer = this.startTimer(this.generateElapsed);
-    this.generatingTests.set(true);
     this.testGenerationError.set('');
     this.testGenerationService.generateTestCases(this.storyId).subscribe({
       next: (suite) => {
@@ -232,14 +233,12 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
         this.testSuites.set([suite, ...this.testSuites()]);
         this.onboardingProgress.complete('generation-completed');
         this.updateStoryStatus('TESTS_GENERATED');
-        this.generatingTests.set(false);
         this.activeTab.set('test-cases');
         this.animateWorkflowStep();
       },
       error: () => {
         this.generateTimer = this.stopTimer(this.generateTimer);
         this.testGenerationError.set('The test cases could not be generated. Confirm the backend is running and try again.');
-        this.generatingTests.set(false);
       }
     });
   }
