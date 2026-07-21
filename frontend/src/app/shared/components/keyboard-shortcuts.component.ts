@@ -1,5 +1,4 @@
-import { Component, ElementRef, HostListener, Injector, ViewChild, afterNextRender, inject, signal } from '@angular/core';
-import { gsap } from 'gsap';
+import { Component, HostListener, signal } from '@angular/core';
 import { LucideDynamicIcon, LucideX } from '@lucide/angular';
 
 @Component({
@@ -19,15 +18,15 @@ import { LucideDynamicIcon, LucideX } from '@lucide/angular';
         <div class="ks-body">
           <div class="ks-group">
             <div class="ks-group-label">Navigation</div>
-            <div class="ks-row"><span>Go to Dashboard</span><span class="ks-keys"><kbd>G</kbd><kbd>D</kbd></span></div>
-            <div class="ks-row"><span>Go to Stories</span><span class="ks-keys"><kbd>G</kbd><kbd>S</kbd></span></div>
-            <div class="ks-row"><span>Go to Projects</span><span class="ks-keys"><kbd>G</kbd><kbd>P</kbd></span></div>
+            <div class="ks-row"><span>Go to Dashboard</span><span class="ks-keys"><kbd class="ks-keycap">G</kbd><kbd class="ks-keycap">D</kbd></span></div>
+            <div class="ks-row"><span>Go to Stories</span><span class="ks-keys"><kbd class="ks-keycap">G</kbd><kbd class="ks-keycap">S</kbd></span></div>
+            <div class="ks-row"><span>Go to Projects</span><span class="ks-keys"><kbd class="ks-keycap">G</kbd><kbd class="ks-keycap">P</kbd></span></div>
           </div>
           <div class="ks-group">
             <div class="ks-group-label">Global</div>
-            <div class="ks-row"><span>Open search</span><span class="ks-keys"><kbd>Ctrl</kbd><kbd>K</kbd></span></div>
-            <div class="ks-row"><span>Show shortcuts</span><span class="ks-keys"><kbd>?</kbd></span></div>
-            <div class="ks-row"><span>Close / dismiss</span><span class="ks-keys"><kbd>Esc</kbd></span></div>
+            <div class="ks-row"><span>Open search</span><span class="ks-keys"><kbd class="ks-keycap">Ctrl</kbd><kbd class="ks-keycap">K</kbd></span></div>
+            <div class="ks-row"><span>Show shortcuts</span><span class="ks-keys"><kbd class="ks-keycap">?</kbd></span></div>
+            <div class="ks-row"><span>Close / dismiss</span><span class="ks-keys"><kbd class="ks-keycap">Esc</kbd></span></div>
           </div>
         </div>
       </div>
@@ -40,10 +39,12 @@ import { LucideDynamicIcon, LucideX } from '@lucide/angular';
       pointer-events: none;
     }
     .ks-backdrop {
+      --tcq-overlay-blur: 8px;
       position: fixed; inset: 0;
       background: rgba(0,0,0,0.65);
-      backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+      backdrop-filter: blur(var(--tcq-overlay-blur)); -webkit-backdrop-filter: blur(var(--tcq-overlay-blur));
       pointer-events: auto;
+      animation: tcq-overlay-backdrop-enter 240ms var(--ease-out-expo) both;
     }
     .ks-panel {
       position: relative; z-index: 1;
@@ -55,6 +56,8 @@ import { LucideDynamicIcon, LucideX } from '@lucide/angular';
       box-shadow: var(--glass-shadow);
       overflow: hidden;
       pointer-events: auto;
+      animation: tcq-overlay-enter 240ms var(--ease-out-expo) both;
+      transform-origin: 50% 18%;
     }
     .ks-header {
       display: flex; align-items: center; justify-content: space-between;
@@ -82,27 +85,48 @@ import { LucideDynamicIcon, LucideX } from '@lucide/angular';
       gap: 1rem; padding: 0.4rem 0; font-size: 0.875rem; color: var(--color-text-2);
     }
     .ks-keys { display: flex; gap: 0.3rem; }
-    kbd {
+    .ks-keycap {
+      position: relative;
       min-width: 1.55rem;
-      padding: 0.12rem 0.38rem;
+      padding: 0.16rem 0.42rem 0.2rem;
       border: 1px solid var(--glass-edge-strong);
       border-radius: var(--radius-xs);
-      background: var(--glass-bg-1);
+      background: linear-gradient(180deg, rgba(255,255,255,0.075), var(--glass-bg-1));
       color: var(--color-text);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.13),
+        0 2px 0 rgba(0,0,0,0.68),
+        0 3px 8px rgba(0,0,0,0.28);
       font-family: var(--font-mono);
       font-size: 0.72rem;
       text-align: center;
+      transform: translateY(0);
+      transition: transform var(--dur-micro) var(--ease-out-expo), box-shadow var(--dur-micro) var(--ease);
+      user-select: none;
+    }
+    .ks-keycap:active {
+      transform: translateY(1px);
+      box-shadow:
+        inset 0 1px 2px rgba(0,0,0,0.45),
+        0 1px 0 rgba(0,0,0,0.7);
     }
     @supports not (backdrop-filter: blur(1px)) {
       .ks-panel { background: var(--glass-bg-2); }
     }
+    @media (prefers-reduced-motion: reduce) {
+      .ks-backdrop,
+      .ks-panel {
+        animation: none;
+      }
+      .ks-keycap,
+      .ks-keycap:active {
+        transition: none;
+        transform: none;
+      }
+    }
   `]
 })
 export class KeyboardShortcutsComponent {
-  private readonly injector = inject(Injector);
-
-  @ViewChild('panel') private panel?: ElementRef<HTMLElement>;
-
   readonly LucideX = LucideX;
   readonly show = signal(false);
 
@@ -125,12 +149,6 @@ export class KeyboardShortcutsComponent {
   private open(): void {
     if (this.show()) return;
     this.show.set(true);
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    afterNextRender(() => {
-      const panel = this.panel?.nativeElement;
-      if (!panel) return;
-      gsap.fromTo(panel, { y: -8, opacity: 0 }, { y: 0, opacity: 1, duration: 0.2, ease: 'power2.out', clearProps: 'all' });
-    }, { injector: this.injector });
   }
 
   private isFormField(target: EventTarget | null): boolean {
