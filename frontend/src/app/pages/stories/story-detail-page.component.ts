@@ -285,6 +285,14 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
     this.animateWorkflowStep();
   }
 
+  onVerdictOptimistic(event: { original: GeneratedTestCase; status: 'APPROVED' | 'REJECTED' }): void {
+    this.setGeneratedTestCaseReviewStatus(event.original, event.status);
+  }
+
+  onVerdictRollback(event: { original: GeneratedTestCase }): void {
+    this.setGeneratedTestCaseReviewStatus(event.original, 'NEEDS_REVIEW');
+  }
+
   loadStory(): void {
     this.loading.set(true);
     this.error.set('');
@@ -382,6 +390,15 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
         testCases: suite.testCases.map((testCase) => testCase === originalTestCase ? this.mergeUpdatedTestCase(testCase, updatedTestCase) : testCase)
       })));
     }
+  }
+
+  private setGeneratedTestCaseReviewStatus(original: GeneratedTestCase, reviewStatus: GeneratedTestCase['reviewStatus']): void {
+    this.testSuites.update((suites) => suites.map((suite) => ({
+      ...suite,
+      testCases: suite.testCases.map((testCase) => (
+        testCase.id === original.id ? { ...testCase, reviewStatus } : testCase
+      ))
+    })));
   }
 
   private mergeUpdatedTestCase(currentTestCase: GeneratedTestCase, updatedTestCase: TestCaseResponse): GeneratedTestCase {

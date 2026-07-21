@@ -1,4 +1,5 @@
-import { Component, computed, inject, output, signal, input } from '@angular/core';
+import { Component, ElementRef, computed, inject, output, signal, input } from '@angular/core';
+import { commitReviewVerdictMotion } from '../../core/motion/review-verdict-motion';
 import { GeneratedTestCase, GeneratedTestSuiteResult } from '../../core/models/generated-test.model';
 import { TestCaseResponse } from '../../core/models/review.model';
 import { ReviewService } from '../../core/services/review.service';
@@ -46,14 +47,23 @@ import { StateMessageComponent } from '../../shared/components/state-message.com
           </aside>
 
           @if (selectedCase(); as testCase) {
-            <section class="review-detail-panel glass-readable-scrim glass-scrim--2">
+            <section
+              class="review-detail-panel glass-readable-scrim glass-scrim--2"
+              [class.is-verdict-approve]="activeVerdict() === 'APPROVED'"
+              [class.is-verdict-reject]="activeVerdict() === 'REJECTED'"
+            >
               <div class="review-detail-heading">
                 <div>
                   <p class="review-suite-name">Story queue</p>
                   <h3>{{ testCase.title }}</h3>
                 </div>
-                <span class="badge review-attention">Needs Review</span>
+                <span class="badge review-attention review-verdict-pill">
+                  {{ activeVerdict() === 'APPROVED' ? 'Approving...' : activeVerdict() === 'REJECTED' ? 'Rejecting...' : 'Needs Review' }}
+                </span>
               </div>
+              @if (activeVerdict(); as verdict) {
+                <span class="sr-only" role="status" aria-live="polite">{{ verdict === 'APPROVED' ? 'Approving test case.' : 'Rejecting test case.' }}</span>
+              }
               <dl class="review-detail-grid">
                 <div><dt>Type</dt><dd>{{ testCase.type }}</dd></div>
                 <div><dt>Priority</dt><dd>{{ testCase.priority ?? 'Not set' }}</dd></div>
@@ -94,6 +104,12 @@ import { StateMessageComponent } from '../../shared/components/state-message.com
     .review-case-title{min-width:0;font-weight:500;line-height:1.35}
     .case-meta-badge{display:inline-flex;align-items:center;min-height:1.65rem;padding:0 .55rem;border:var(--b);border-radius:var(--radius-sm);background:var(--glass-bg-1);color:var(--color-text-2);font-family:var(--font-mono);font-size:.72rem;font-weight:500}
     .review-detail-panel{position:relative;display:grid;align-content:start;gap:var(--space-lg);min-width:0;min-height:30rem;padding:var(--space-xl);background:var(--glass-bg-2)}
+    .review-detail-panel.is-verdict-approve{border-color:var(--color-green-border)}
+    .review-detail-panel.is-verdict-reject{border-color:var(--color-red-border)}
+    .review-verdict-pill{transition:background 140ms var(--ease),border-color 140ms var(--ease),color 140ms var(--ease)}
+    .is-verdict-approve .review-verdict-pill,.review-verdict-pill.is-approved{background:var(--color-green-bg);border-color:var(--color-green-border);color:var(--color-green)}
+    .is-verdict-reject .review-verdict-pill,.review-verdict-pill.is-rejected{background:var(--color-red-bg);border-color:var(--color-red-border);color:var(--color-red)}
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
     .review-detail-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--space-base)}
     .review-suite-name{color:var(--color-cyan);font-family:var(--font-mono);font-size:.75rem}
     .review-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-base);margin:0}
@@ -104,13 +120,22 @@ import { StateMessageComponent } from '../../shared/components/state-message.com
   `]
 })
 export class StoryReviewTabComponent {
+  private readonly host = inject(ElementRef<HTMLElement>);
   private readonly reviewService = inject(ReviewService);
   private readonly toastService = inject(ToastService);
 
   readonly testSuites = input.required<GeneratedTestSuiteResult[]>();
   readonly testCaseUpdated = output<{ original: GeneratedTestCase; updated: TestCaseResponse }>();
+  readonly verdictOptimistic = output<{ original: GeneratedTestCase; status: 'APPROVED' | 'REJECTED' }>();
+  readonly verdictRollback = output<{ original: GeneratedTestCase }>();
   readonly selectedCaseId = signal<string | null>(null);
   readonly reviewBusy = signal(false);
+  readonly reviewOperationState = this.reviewService.operationState;
+  readonly activeVerdict = computed(() => {
+    const operation = this.reviewOperationState();
+    const selected = this.selectedCase();
+    return operation.phase === 'running' && operation.testCaseId === selected?.id ? operation.verdict : null;
+  });
 
   readonly pendingCases = computed(() => this.testSuites().flatMap((suite) => suite.testCases).filter((testCase) => testCase.reviewStatus === 'NEEDS_REVIEW'));
   readonly selectedCase = computed(() => {
@@ -165,10 +190,22 @@ export class StoryReviewTabComponent {
         this.reviewBusy.set(false);
       },
       error: () => {
+        this.verdictRollback.emit({ original: testCase });
         this.toastService.show(status === 'APPROVED' ? 'The test case could not be approved.' : 'The test case could not be rejected.', 'error');
         this.reviewBusy.set(false);
       }
     });
+    commitReviewVerdictMotion({
+      container: this.host.nativeElement,
+      card: this.host.nativeElement.querySelector('.review-detail-panel'),
+      verdict: status,
+      reducedMotion: this.prefersReducedMotion(),
+      commit: () => this.verdictOptimistic.emit({ original: testCase, status })
+    });
+  }
+
+  private prefersReducedMotion(): boolean {
+    return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
   }
 
   private selectRelativeCase(delta: number): void {

@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { of } from 'rxjs';
+import { of, Subject } from 'rxjs';
 import { ReviewService } from '../../core/services/review.service';
 import { TestSuiteService } from '../../core/services/test-suite.service';
 import { ReviewBoardPageComponent } from './review-board-page.component';
@@ -140,6 +140,19 @@ describe('ReviewBoardPageComponent', () => {
       status: 'APPROVED',
       comment: null
     });
+  });
+
+  it('removes a rejection optimistically and exposes its verdict state without waiting for the API', () => {
+    reviewService.updateReviewStatus.and.returnValue(new Subject());
+    const rejectButton = Array.from(fixture.nativeElement.querySelectorAll('.review-sticky-actions button'))
+      .find((button) => (button as HTMLButtonElement).textContent?.includes('Reject')) as HTMLButtonElement;
+
+    rejectButton.click();
+    fixture.detectChanges();
+
+    expect(reviewService.updateReviewStatus).toHaveBeenCalledWith('tc-1', { status: 'REJECTED', comment: null });
+    expect(testCaseItems().length).toBe(2);
+    expect((fixture.nativeElement.querySelector('.review-detail-panel') as HTMLElement).classList).toContain('is-verdict-reject');
   });
 
   it('shows a session-complete empty state after the last review action succeeds', () => {

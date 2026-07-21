@@ -403,6 +403,8 @@
         <app-story-review-tab
           [testSuites]="testSuites()"
           (testCaseUpdated)="onTestCaseUpdated($event)"
+          (verdictOptimistic)="onVerdictOptimistic($event)"
+          (verdictRollback)="onVerdictRollback($event)"
         />
       }
     </div>
