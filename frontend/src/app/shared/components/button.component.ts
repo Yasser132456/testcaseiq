@@ -16,29 +16,37 @@ export type ButtonState = 'default' | 'loading' | 'error' | 'success';
       [type]="type()"
       [attr.aria-busy]="loading() ? 'true' : null"
     >
-      @if (loading()) {
-        <span class="btn-loading-skeleton" aria-hidden="true"></span>
-      } @else if (state() === 'success') {
-        <svg class="btn-icon" aria-hidden="true" viewBox="0 0 16 16" fill="none" width="14" height="14">
-          <path d="M3 8l3.5 3.5L13 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      } @else if (state() === 'error') {
-        <svg class="btn-icon" aria-hidden="true" viewBox="0 0 16 16" fill="none" width="14" height="14">
-          <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-      }
-      <ng-content />
+      <span class="btn-stack">
+        <span class="btn-content">
+          @if (state() === 'success') {
+            <svg class="btn-icon" aria-hidden="true" viewBox="0 0 16 16" fill="none" width="14" height="14">
+              <path d="M3 8l3.5 3.5L13 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          } @else if (state() === 'error') {
+            <svg class="btn-icon" aria-hidden="true" viewBox="0 0 16 16" fill="none" width="14" height="14">
+              <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          }
+          <ng-content />
+        </span>
+        <span class="btn-pending" aria-hidden="true">
+          <span class="btn-pending-dot"></span>
+          <span class="btn-pending-dot"></span>
+          <span class="btn-pending-dot"></span>
+        </span>
+      </span>
     </button>
   `,
   styles: [`
-    @keyframes btn-skeleton-sweep {
-      0% { background-position: 200% 0; }
-      100% { background-position: -200% 0; }
+    @keyframes btn-dot-shimmer {
+      0%, 70%, 100% { opacity: 0.24; transform: translateY(0) scale(0.82); }
+      35% { opacity: 1; transform: translateY(-1px) scale(1); }
     }
 
     :host { display: inline-flex; }
 
     button {
+      --btn-glow-duration: var(--dur);
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -58,7 +66,19 @@ export type ButtonState = 'default' | 'loading' | 'error' | 'success';
         border-color var(--dur) var(--ease),
         color var(--dur) var(--ease),
         transform var(--dur) var(--ease),
-        box-shadow  var(--dur) var(--ease);
+        box-shadow var(--btn-glow-duration) var(--ease);
+    }
+
+    button::after {
+      content: '';
+      position: absolute;
+      inset: 1px;
+      z-index: 2;
+      border: 1px solid color-mix(in srgb, currentColor 48%, transparent);
+      border-radius: calc(var(--radius-md) - 1px);
+      opacity: 0;
+      pointer-events: none;
+      transition: inset var(--dur-micro) var(--ease-out-expo), opacity var(--dur-micro) var(--ease);
     }
 
     button:focus-visible {
@@ -68,6 +88,7 @@ export type ButtonState = 'default' | 'loading' | 'error' | 'success';
     }
 
     button:active:not(:disabled) { transform: scale(0.97); }
+    button:active:not(:disabled)::after { inset: 2px; opacity: 0.9; }
 
     button:disabled {
       opacity: 0.4;
@@ -78,6 +99,7 @@ export type ButtonState = 'default' | 'loading' | 'error' | 'success';
     /* ── Variants ── */
 
     .btn--primary {
+      --btn-glow-duration: 180ms;
       background: var(--color-accent);
       color: var(--color-bg);
     }
@@ -166,6 +188,36 @@ export type ButtonState = 'default' | 'loading' | 'error' | 'success';
       cursor: progress;
     }
 
+    .btn-stack {
+      display: inline-grid;
+      align-items: center;
+      justify-items: center;
+    }
+
+    .btn-content,
+    .btn-pending {
+      grid-area: 1 / 1;
+      transition: opacity var(--dur) var(--ease);
+    }
+
+    .btn-content {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      opacity: 1;
+    }
+
+    .btn-pending {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.28rem;
+      opacity: 0;
+      color: var(--color-phosphor);
+    }
+
+    .btn--loading .btn-content { opacity: 0; }
+    .btn--loading .btn-pending { opacity: 1; }
+
     .btn--error {
       background: var(--color-red-bg);
       color: var(--color-red);
@@ -180,21 +232,32 @@ export type ButtonState = 'default' | 'loading' | 'error' | 'success';
 
     /* ── Spinner ── */
 
-    .btn-loading-skeleton {
-      width: 2.4rem;
-      height: 0.65rem;
-      border-radius: 9999px;
-      background: linear-gradient(90deg, currentColor 25%, color-mix(in srgb, currentColor 45%, transparent) 50%, currentColor 75%);
-      background-size: 200% 100%;
-      opacity: 0.45;
-      animation: btn-skeleton-sweep 1.2s ease-in-out infinite;
+    .btn-pending-dot {
+      width: 0.34rem;
+      height: 0.34rem;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 8px var(--color-phosphor-glow);
+      animation: btn-dot-shimmer 900ms var(--ease-in-out) infinite;
     }
+
+    .btn-pending-dot:nth-child(2) { animation-delay: 100ms; }
+    .btn-pending-dot:nth-child(3) { animation-delay: 200ms; }
 
     .btn-icon { flex-shrink: 0; }
 
     @media (prefers-reduced-motion: reduce) {
-      .btn-loading-skeleton {
+      button,
+      button::after,
+      .btn-content,
+      .btn-pending {
+        transition: none;
+      }
+
+      .btn-pending-dot {
         animation: none;
+        opacity: 0.78;
+        transform: none;
       }
     }
   `]
