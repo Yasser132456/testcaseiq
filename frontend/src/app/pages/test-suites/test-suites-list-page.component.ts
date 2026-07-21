@@ -9,11 +9,12 @@ import { StateMessageComponent } from '../../shared/components/state-message.com
 import { EmptyStateComponent } from '../../shared/empty-state/empty-state.component';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
 import { TableStaggerDirective } from '../../shared/directives/table-stagger.directive';
+import { VtNameDirective } from '../../shared/directives/vt-name.directive';
 
 @Component({
   selector: 'app-test-suites-list-page',
   standalone: true,
-  imports: [DatePipe, FormsModule, RouterLink, StateMessageComponent, SkeletonComponent, EmptyStateComponent, TableStaggerDirective],
+  imports: [DatePipe, FormsModule, RouterLink, StateMessageComponent, SkeletonComponent, EmptyStateComponent, TableStaggerDirective, VtNameDirective],
   template: `
     <section class="page-stack">
       <div class="section-header">
@@ -63,7 +64,7 @@ import { TableStaggerDirective } from '../../shared/directives/table-stagger.dir
             </thead>
             <tbody>
               @for (suite of page()?.content ?? []; track suite.id) {
-                <tr [routerLink]="['/test-suites', suite.id]">
+                <tr [routerLink]="['/test-suites', suite.id]" [vtName]="'test-suite-' + suite.id">
                   <td><div class="row-inner suite-name">{{ suite.name }}</div></td>
                   <td>
                     <div class="row-inner">

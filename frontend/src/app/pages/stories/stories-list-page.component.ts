@@ -14,6 +14,7 @@ import { StateMessageComponent } from '../../shared/components/state-message.com
 import { EmptyStateComponent } from '../../shared/empty-state/empty-state.component';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
 import { TableStaggerDirective } from '../../shared/directives/table-stagger.directive';
+import { VtNameDirective } from '../../shared/directives/vt-name.directive';
 
 type StoryDisplayStatus = 'DRAFT' | 'ANALYZED' | 'TESTS_GENERATED' | 'ALL_REVIEWED';
 
@@ -32,6 +33,7 @@ interface StoryListItem {
     EmptyStateComponent,
     SkeletonComponent,
     TableStaggerDirective,
+    VtNameDirective,
     StoryStatusPillComponent
   ],
   templateUrl: './stories-list-page.component.html',

@@ -10,6 +10,7 @@ import { ToastService } from '../../core/services/toast.service';
 import { StateMessageComponent } from '../../shared/components/state-message.component';
 import { DrawerComponent } from '../../shared/components/drawer.component';
 import { TiltDirective } from '../../shared/directives/tilt.directive';
+import { VtNameDirective } from '../../shared/directives/vt-name.directive';
 import { EmptyStateComponent } from '../../shared/empty-state/empty-state.component';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
 
@@ -23,7 +24,7 @@ type ProjectCard = Project & {
 @Component({
   selector: 'app-project-list-page',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, DrawerComponent, StateMessageComponent, SkeletonComponent, EmptyStateComponent, TiltDirective],
+  imports: [ReactiveFormsModule, RouterLink, DrawerComponent, StateMessageComponent, SkeletonComponent, EmptyStateComponent, TiltDirective, VtNameDirective],
   styles: [`
     .project-card-grid { display: grid; grid-template-columns: minmax(18rem, 1.2fr) minmax(15rem, 0.8fr); gap: var(--space-base); align-items: stretch; }
     .project-card { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 1rem; align-items: start; min-height: 10rem; padding: 1rem; border: 1px solid var(--glass-edge); border-radius: var(--radius-lg); background: var(--glass-bg-2); backdrop-filter: var(--glass-blur-md); -webkit-backdrop-filter: var(--glass-blur-md); box-shadow: var(--glass-border-highlight); transform-style: preserve-3d; transition: border-color var(--dur) var(--ease), transform var(--dur-slow) var(--ease), box-shadow var(--dur-slow) var(--ease); }
@@ -100,7 +101,7 @@ type ProjectCard = Project & {
           } @else {
             <div class="project-card-grid">
               @for (project of projects(); track project.id) {
-                <article class="project-card glass-surface glass-surface--2 glass-surface--interactive" glassTilt [glassTiltGlare]="true" [glassTiltMaxDeg]="4" [glassTiltMaxGlare]="0.06">
+                <article class="project-card glass-surface glass-surface--2 glass-surface--interactive" glassTilt [glassTiltGlare]="true" [glassTiltMaxDeg]="4" [glassTiltMaxGlare]="0.06" [vtName]="'project-' + project.id">
                   <svg class="coverage-ring" viewBox="0 0 56 56" role="img" [attr.aria-label]="'Coverage ' + coveragePercent(project) + '%'">
                     <circle class="coverage-ring-bg" cx="28" cy="28" r="22"></circle>
                     <circle
