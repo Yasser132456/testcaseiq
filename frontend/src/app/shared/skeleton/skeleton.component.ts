@@ -8,18 +8,13 @@ import { Component, computed, input } from '@angular/core';
       @for (_ of rowArr(); track $index) {
         <div class="skel-row">
           @for (__ of colArr(); track $index) {
-            <div class="skel-cell"><div class="skel-shimmer"></div></div>
+            <div class="skel-cell"><div class="skel-shimmer tcq-skeleton-shimmer"></div></div>
           }
         </div>
       }
     </div>
   `,
   styles: [`
-    @keyframes skel-sweep {
-      0%   { background-position: 200% 0; }
-      100% { background-position: -200% 0; }
-    }
-
     .skel-wrap {
       display: flex;
       flex-direction: column;
@@ -47,21 +42,6 @@ import { Component, computed, input } from '@angular/core';
     .skel-shimmer {
       height: 0.9rem;
       border-radius: 4px;
-      background: linear-gradient(
-        90deg,
-        var(--glass-bg-1) 25%,
-        var(--glass-sheen) 50%,
-        var(--glass-bg-2) 75%
-      );
-      background-size: 400% 100%;
-      animation: skel-sweep 1.6s ease-in-out infinite;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .skel-shimmer {
-        background: var(--glass-bg-2);
-        animation: none;
-      }
     }
   `]
 })
