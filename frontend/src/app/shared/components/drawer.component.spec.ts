@@ -24,6 +24,16 @@ describe('DrawerComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Filters');
   });
 
+  it('marks drawer content as staged reveal layers', () => {
+    const header = fixture.nativeElement.querySelector('.drawer-header') as HTMLElement;
+    const body = fixture.nativeElement.querySelector('.drawer-body') as HTMLElement;
+
+    expect(header.classList).toContain('drawer-reveal');
+    expect(header.style.getPropertyValue('--drawer-reveal-delay')).toBe('0ms');
+    expect(body.classList).toContain('drawer-reveal');
+    expect(body.style.getPropertyValue('--drawer-reveal-delay')).toBe('50ms');
+  });
+
   it('requests close on backdrop click', fakeAsync(() => {
     spyOn(component.closed, 'emit');
 
