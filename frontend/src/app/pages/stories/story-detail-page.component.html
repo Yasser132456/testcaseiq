@@ -159,9 +159,9 @@
           <section
             class="panel analysis-panel"
             data-ai-state="analysis"
-            [class.is-analyzing]="analysisOperationState().phase === 'running'"
-            [class.is-ai-success]="analysisOperationState().phase === 'success'"
-            [class.is-ai-error]="analysisOperationState().phase === 'error'"
+            [class.is-analyzing]="analysisPhase() === 'running'"
+            [class.is-ai-success]="analysisPhase() === 'success'"
+            [class.is-ai-error]="analysisPhase() === 'error'"
             [attr.aria-busy]="analyzing()"
           >
             <div class="section-header">
@@ -175,11 +175,11 @@
                 {{ analysisExpanded() ? 'Collapse' : 'Expand' }}
               </button>
             </div>
-            @if (analysisOperationState().phase === 'running') {
+            @if (analysisPhase() === 'running') {
               <p class="ai-operation-label" role="status" aria-live="polite">Analyzing...</p>
-            } @else if (analysisOperationState().phase === 'success') {
+            } @else if (analysisPhase() === 'success') {
               <p class="sr-only" role="status" aria-live="polite">Analysis complete.</p>
-            } @else if (analysisOperationState().phase === 'error') {
+            } @else if (analysisPhase() === 'error') {
               <p class="sr-only" role="status" aria-live="polite">Analysis failed.</p>
             }
             @if (analysisLoading()) {
@@ -216,12 +216,12 @@
                 }
               </div>
             } @else if (analysisExpanded()) {
-              <div class="score-grid" tcqReveal [tcqRevealActive]="analysisOperationState().phase === 'success'">
+              <div class="score-grid" tcqReveal [tcqRevealActive]="analysisPhase() === 'success'">
                 <article class="score-card"><span>Requirement quality</span><strong>{{ formatScore(analysis()?.qaValidation?.requirementQualityScore) }}</strong></article>
                 <article class="score-card"><span>Testability</span><strong>{{ formatScore(analysis()?.qaValidation?.testabilityScore) }}</strong></article>
                 <article class="score-card"><span>Confidence</span><strong>{{ formatScore(analysis()?.confidenceScore) }}</strong></article>
               </div>
-              <div class="analysis-grid" [tcqReveal]="0.04" [tcqRevealActive]="analysisOperationState().phase === 'success'">
+              <div class="analysis-grid" [tcqReveal]="0.04" [tcqRevealActive]="analysisPhase() === 'success'">
                 <section class="analysis-card">
                   <div class="analysis-card-header"><h4>Story understanding</h4></div>
                   <dl class="definition-list">
@@ -243,7 +243,7 @@
                   }
                 </section>
               </div>
-              <section class="analysis-card full-span" [tcqReveal]="0.08" [tcqRevealActive]="analysisOperationState().phase === 'success'">
+              <section class="analysis-card full-span" [tcqReveal]="0.08" [tcqRevealActive]="analysisPhase() === 'success'">
                 <div class="analysis-card-header"><h4>Extracted requirements</h4></div>
                 @if (requirementCount() === 0) {
                   <app-state-message title="No requirements extracted" message="Run analysis again after adding more story detail." />
@@ -281,7 +281,7 @@
                   </div>
                 }
               </section>
-              <div class="analysis-grid" [tcqReveal]="0.12" [tcqRevealActive]="analysisOperationState().phase === 'success'">
+              <div class="analysis-grid" [tcqReveal]="0.12" [tcqRevealActive]="analysisPhase() === 'success'">
                 <section class="analysis-card">
                   <div class="analysis-card-header"><h4>Questions and risks</h4></div>
                   @if ((analysis()?.ambiguities?.ambiguities?.length ?? 0) === 0) {
@@ -344,16 +344,16 @@
         <div
           class="test-cases-tab-panel"
           data-ai-state="generation"
-          [class.is-generating]="generationOperationState().phase === 'running'"
-          [class.is-ai-success]="generationOperationState().phase === 'success'"
-          [class.is-ai-error]="generationOperationState().phase === 'error'"
+          [class.is-generating]="generationPhase() === 'running'"
+          [class.is-ai-success]="generationPhase() === 'success'"
+          [class.is-ai-error]="generationPhase() === 'error'"
           [attr.aria-busy]="generatingTests()"
         >
-          @if (generationOperationState().phase === 'running') {
+          @if (generationPhase() === 'running') {
             <p class="ai-operation-label" role="status" aria-live="polite">Generating...</p>
-          } @else if (generationOperationState().phase === 'success') {
+          } @else if (generationPhase() === 'success') {
             <p class="sr-only" role="status" aria-live="polite">Generation complete.</p>
-          } @else if (generationOperationState().phase === 'error') {
+          } @else if (generationPhase() === 'error') {
             <p class="sr-only" role="status" aria-live="polite">Generation failed.</p>
           }
           @if (showReviewBoardNudge()) {
@@ -384,7 +384,7 @@
             [error]="testGenerationError()"
             [canEdit]="canEdit()"
             [generatingTests]="generatingTests()"
-            [streamGeneratedRows]="generationOperationState().phase === 'success'"
+            [streamGeneratedRows]="generationPhase() === 'success'"
             (generateRequested)="generateTestCases()"
             (testCaseUpdated)="onTestCaseUpdated($event)"
           />

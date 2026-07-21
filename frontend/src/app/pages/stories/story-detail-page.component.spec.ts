@@ -179,6 +179,16 @@ describe('StoryDetailPageComponent tabs and review workflow', () => {
     expect(panel.textContent).toContain('Analyzing...');
   });
 
+  it('does not animate this story for an operation owned by another story', () => {
+    analysisState.set({ phase: 'running', storyId: 'story-2', sequence: 1 });
+    generationState.set({ phase: 'success', storyId: 'story-2', sequence: 1 });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-ai-state="analysis"]').classList).not.toContain('is-analyzing');
+    clickTab('Test Cases');
+    expect(fixture.nativeElement.querySelector('[data-ai-state="generation"]').classList).not.toContain('is-ai-success');
+  });
+
   it('ties the scene accent to the active AI operation and restores it on settle', () => {
     backgroundScene.setOperationAccent.calls.reset();
 

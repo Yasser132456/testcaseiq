@@ -94,8 +94,14 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
   readonly testSuitesLoading = signal(false);
   readonly analysisOperationState = this.analysisService.operationState;
   readonly generationOperationState = this.testGenerationService.operationState;
-  readonly analyzing = computed(() => this.analysisOperationState().phase === 'running');
-  readonly generatingTests = computed(() => this.generationOperationState().phase === 'running');
+  readonly analysisPhase = computed(() => (
+    this.analysisOperationState().storyId === this.storyId ? this.analysisOperationState().phase : 'idle'
+  ));
+  readonly generationPhase = computed(() => (
+    this.generationOperationState().storyId === this.storyId ? this.generationOperationState().phase : 'idle'
+  ));
+  readonly analyzing = computed(() => this.analysisPhase() === 'running');
+  readonly generatingTests = computed(() => this.generationPhase() === 'running');
   readonly analyzeElapsed = signal(0);
   readonly generateElapsed = signal(0);
   readonly saving = signal(false);
@@ -137,15 +143,15 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
   });
 
   constructor() {
+    this.storyId = this.route.snapshot.paramMap.get('storyId') ?? '';
     effect(() => {
-      const accent = this.analysisOperationState().phase === 'running'
+      const accent = this.analysisPhase() === 'running'
         ? 'violet'
-        : this.generationOperationState().phase === 'running'
+        : this.generationPhase() === 'running'
           ? 'cyan'
           : null;
       this.backgroundScene.setOperationAccent(accent);
     });
-    this.storyId = this.route.snapshot.paramMap.get('storyId') ?? '';
     this.loadStory();
   }
 
