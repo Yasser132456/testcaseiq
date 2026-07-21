@@ -23,6 +23,7 @@ import { ToastService } from '../../core/services/toast.service';
 import { StoryStatusPillComponent } from '../../components/story-status-pill/story-status-pill.component';
 import { StateMessageComponent } from '../../shared/components/state-message.component';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
+import { VtNameDirective } from '../../shared/directives/vt-name.directive';
 import { StoryReviewTabComponent } from './story-review-tab.component';
 import { StoryTestCasesTabComponent } from './story-test-cases-tab.component';
 
@@ -40,6 +41,7 @@ type StoryDisplayStatus = 'DRAFT' | 'ANALYZED' | 'TESTS_GENERATED' | 'NEEDS_REVI
     StoryStatusPillComponent,
     StateMessageComponent,
     SkeletonComponent,
+    VtNameDirective,
     StoryTestCasesTabComponent,
     StoryReviewTabComponent
   ],

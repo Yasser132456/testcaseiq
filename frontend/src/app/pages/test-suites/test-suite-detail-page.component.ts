@@ -8,11 +8,12 @@ import { TestSuiteService } from '../../core/services/test-suite.service';
 import { ToastService } from '../../core/services/toast.service';
 import { StateMessageComponent } from '../../shared/components/state-message.component';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
+import { VtNameDirective } from '../../shared/directives/vt-name.directive';
 
 @Component({
   selector: 'app-test-suite-detail-page',
   standalone: true,
-  imports: [DatePipe, FormsModule, RouterLink, StateMessageComponent, SkeletonComponent],
+  imports: [DatePipe, FormsModule, RouterLink, StateMessageComponent, SkeletonComponent, VtNameDirective],
   template: `
     <section class="page-stack">
       @if (loading()) {
@@ -21,7 +22,7 @@ import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
         <app-state-message title="Could not load test suite" [message]="loadError()" tone="error" />
         <button class="button secondary" type="button" (click)="load()">Try again</button>
       } @else if (suite()) {
-        <div class="section-header">
+        <div class="section-header" [vtName]="'test-suite-' + suite()!.id" [vtNameSource]="false" [vtNameTarget]="true">
           <div>
             <h2>{{ suite()!.name }}</h2>
             <p class="breadcrumb">

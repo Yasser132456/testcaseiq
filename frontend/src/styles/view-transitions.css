@@ -1,0 +1,38 @@
+@keyframes vt-page-old {
+  to {
+    opacity: 0;
+    transform: scale(0.985);
+    filter: blur(4px);
+  }
+}
+
+@keyframes vt-page-new {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(root) {
+    animation: vt-page-old 320ms var(--ease-out-expo) both;
+    transform-origin: 50% 42%;
+  }
+
+  ::view-transition-new(root) {
+    animation: vt-page-new 320ms var(--ease-out-expo) both;
+  }
+
+  ::view-transition-group(nav-pill) {
+    animation-duration: 320ms;
+    animation-timing-function: var(--ease-out-expo);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root),
+  ::view-transition-group(*) {
+    animation: none !important;
+  }
+}

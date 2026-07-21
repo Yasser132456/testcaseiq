@@ -17,6 +17,7 @@ import { StoryStatusPillComponent } from '../../components/story-status-pill/sto
 import { DrawerComponent } from '../../shared/components/drawer.component';
 import { StateMessageComponent } from '../../shared/components/state-message.component';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
+import { VtNameDirective } from '../../shared/directives/vt-name.directive';
 
 type ProjectDetailTab = 'overview' | 'stories' | 'test-suites' | 'coverage';
 type StoryDisplayStatus = 'DRAFT' | 'ANALYZED' | 'TESTS_GENERATED' | 'ALL_REVIEWED';
@@ -24,7 +25,7 @@ type StoryDisplayStatus = 'DRAFT' | 'ANALYZED' | 'TESTS_GENERATED' | 'ALL_REVIEW
 @Component({
   selector: 'app-project-detail-page',
   standalone: true,
-  imports: [DatePipe, ReactiveFormsModule, RouterLink, StoryStatusPillComponent, DrawerComponent, StateMessageComponent, SkeletonComponent],
+  imports: [DatePipe, ReactiveFormsModule, RouterLink, StoryStatusPillComponent, DrawerComponent, StateMessageComponent, SkeletonComponent, VtNameDirective],
   template: `
     <section class="page-stack">
       @if (loading()) {
@@ -33,7 +34,7 @@ type StoryDisplayStatus = 'DRAFT' | 'ANALYZED' | 'TESTS_GENERATED' | 'ALL_REVIEW
         <app-state-message title="Project unavailable" [message]="error()" tone="error" />
         <button class="button secondary" type="button" (click)="loadProject()">Try again</button>
       } @else if (project()) {
-        <div class="detail-hero">
+        <div class="detail-hero" [vtName]="'project-' + project()!.id" [vtNameSource]="false" [vtNameTarget]="true">
           <div>
             <h2>{{ project()?.name }}</h2>
             <p>{{ project()?.description || 'No description added yet.' }}</p>
@@ -149,7 +150,7 @@ type StoryDisplayStatus = 'DRAFT' | 'ANALYZED' | 'TESTS_GENERATED' | 'ALL_REVIEW
             } @else {
               <div class="list-stack">
                 @for (story of stories(); track story.id) {
-                  <article class="list-row split">
+                  <article class="list-row split" [vtName]="'story-' + story.id">
                     <a [routerLink]="['/stories', story.id]" [state]="{ projectContext: projectContext() }">
                       <strong>{{ story.title }}</strong>
                       <span>{{ formatLabel(story.type) }} · {{ story.createdAt | date:'mediumDate' }}</span>
@@ -177,7 +178,7 @@ type StoryDisplayStatus = 'DRAFT' | 'ANALYZED' | 'TESTS_GENERATED' | 'ALL_REVIEW
             } @else {
               <div class="list-stack">
                 @for (suite of testSuites(); track suite.id) {
-                  <article class="list-row split">
+                  <article class="list-row split" [vtName]="'test-suite-' + suite.id">
                     <a [routerLink]="['/test-suites', suite.id]">
                       <strong>{{ suite.name }}</strong>
                       <span>{{ suite.storyTitle }} · {{ suite.totalCases }} cases · {{ suite.createdAt | date:'mediumDate' }}</span>

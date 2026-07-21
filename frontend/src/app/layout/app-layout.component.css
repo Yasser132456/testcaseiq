@@ -128,16 +128,34 @@
 
 .nav-label { white-space: nowrap; }
 
+.nav-item::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border: 1px solid transparent;
+  border-radius: inherit;
+  opacity: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
 .nav-item:hover { background: rgba(255,255,255,0.04); color: var(--color-text); }
 .nav-item:hover .nav-inner { transform: translateX(2px); }
 .nav-item:hover .nav-icon-wrap { opacity: 1; }
 
 .nav-item.active {
-  border: 1px solid var(--color-accent-border);
-  box-shadow: var(--glass-border-highlight);
-  background: var(--color-accent-bg);
+  border-color: transparent;
+  background: transparent;
   color: var(--color-accent);
   font-weight: 600;
+}
+.sidebar .nav-item.active::before {
+  view-transition-name: nav-pill;
+  border-color: var(--color-accent-border);
+  opacity: 1;
+  background: var(--color-accent-bg);
+  box-shadow: var(--glass-border-highlight);
 }
 .nav-item.active .nav-inner { transform: translateX(2px); }
 .nav-item.active .nav-icon-wrap { opacity: 1; color: var(--color-accent); }

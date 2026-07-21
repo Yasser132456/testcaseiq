@@ -5,7 +5,7 @@
     <app-state-message title="Story unavailable" [message]="error()" tone="error" />
     <button class="button secondary" type="button" (click)="loadStory()">Try again</button>
   } @else if (story()) {
-    <header class="story-sticky-header">
+    <header class="story-sticky-header" [vtName]="'story-' + story()!.id" [vtNameSource]="false" [vtNameTarget]="true">
       <div class="story-header-row breadcrumb-row">
         <a class="story-breadcrumb" [routerLink]="['/projects', story()?.projectId]">← {{ projectName() }}</a>
       </div>
