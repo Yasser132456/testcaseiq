@@ -88,7 +88,12 @@ export type ButtonState = 'default' | 'loading' | 'error' | 'success';
     }
 
     button:active:not(:disabled) { transform: scale(0.97); }
-    button:active:not(:disabled)::after { inset: 2px; opacity: 0.9; }
+    button.btn--primary:active:not(:disabled)::after,
+    button.btn--secondary:active:not(:disabled)::after,
+    button.btn--danger:active:not(:disabled)::after {
+      inset: 2px;
+      opacity: 0.9;
+    }
 
     button:disabled {
       opacity: 0.4;

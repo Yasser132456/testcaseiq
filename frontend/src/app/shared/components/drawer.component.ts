@@ -1,22 +1,23 @@
 import { Component, ElementRef, HostListener, OnChanges, OnDestroy, output, input, inject, signal } from '@angular/core';
 import { gsap } from 'gsap';
 import { LucideX, LucideDynamicIcon } from '@lucide/angular';
+import { RevealDirective } from '../directives/reveal.directive';
 
 @Component({
   selector: 'app-drawer',
   standalone: true,
-  imports: [LucideDynamicIcon],
+  imports: [LucideDynamicIcon, RevealDirective],
   template: `
     @if (isVisible()) {
       <div class="drawer-backdrop" aria-hidden="true" (click)="requestClose()"></div>
       <aside class="drawer-panel glass-surface glass-surface--3 glass-scrim glass-scrim--3" role="dialog" aria-modal="true" [attr.aria-label]="title()">
-        <header class="drawer-header drawer-reveal" style="--drawer-reveal-delay: 0ms">
+        <header class="drawer-header" tcqReveal>
           <h3>{{ title() }}</h3>
           <button class="drawer-close glass-surface glass-surface--interactive" type="button" (click)="requestClose()" aria-label="Close drawer">
             <svg [lucideIcon]="LucideX" [size]="16" [strokeWidth]="2" aria-hidden="true"></svg>
           </button>
         </header>
-        <div class="drawer-body drawer-reveal" style="--drawer-reveal-delay: 50ms">
+        <div class="drawer-body" [tcqReveal]="0.05">
           <ng-content />
         </div>
       </aside>
@@ -66,16 +67,6 @@ import { LucideX, LucideDynamicIcon } from '@lucide/angular';
     .drawer-body {
       overflow: auto;
       padding: var(--space-lg);
-    }
-
-    .drawer-reveal {
-      animation: drawer-content-reveal 320ms var(--ease-out-expo) both;
-      animation-delay: var(--drawer-reveal-delay, 0ms);
-    }
-
-    @keyframes drawer-content-reveal {
-      from { opacity: 0; transform: translateY(12px); }
-      to { opacity: 1; transform: translateY(0); }
     }
 
     .drawer-close {
@@ -135,8 +126,7 @@ import { LucideX, LucideDynamicIcon } from '@lucide/angular';
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .drawer-backdrop,
-      .drawer-reveal {
+      .drawer-backdrop {
         animation: none;
       }
     }
