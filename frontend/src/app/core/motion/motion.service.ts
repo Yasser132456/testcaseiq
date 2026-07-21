@@ -11,11 +11,11 @@ export class MotionService {
   private readonly document = inject(DOCUMENT);
   private readonly destroyRef = inject(DestroyRef);
   private readonly browserWindow = this.document.defaultView;
-  private readonly reducedMotionQuery = this.browserWindow?.matchMedia('(prefers-reduced-motion: reduce)');
-  private readonly mobileQuery = this.browserWindow?.matchMedia('(max-width: 760px), (pointer: coarse)');
-  private readonly finePointerQuery = this.browserWindow?.matchMedia('(pointer: fine)');
-  private readonly hoverQuery = this.browserWindow?.matchMedia('(hover: hover)');
-  private readonly coarsePointerQuery = this.browserWindow?.matchMedia('(pointer: coarse)');
+  private readonly reducedMotionQuery = this.browserWindow?.matchMedia?.('(prefers-reduced-motion: reduce)');
+  private readonly mobileQuery = this.browserWindow?.matchMedia?.('(max-width: 760px), (pointer: coarse)');
+  private readonly finePointerQuery = this.browserWindow?.matchMedia?.('(pointer: fine)');
+  private readonly hoverQuery = this.browserWindow?.matchMedia?.('(hover: hover)');
+  private readonly coarsePointerQuery = this.browserWindow?.matchMedia?.('(pointer: coarse)');
   private readonly reducedMotionState = signal(this.reducedMotionQuery?.matches ?? false);
   private readonly mobileState = signal(this.mobileQuery?.matches ?? false);
   private readonly finePointerState = signal(this.finePointerQuery?.matches ?? false);

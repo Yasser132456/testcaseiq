@@ -1,3 +1,4 @@
+import { DOCUMENT } from '@angular/common';
 import { TestBed } from '@angular/core/testing';
 import { MotionService } from './motion.service';
 
@@ -161,6 +162,27 @@ describe('MotionService', () => {
     TestBed.resetTestingModule();
 
     expect(removeListener).toHaveBeenCalledWith('visibilitychange', jasmine.any(Function));
+  });
+
+  it('supports a partial browser environment without matchMedia', () => {
+    const partialDocument = {
+      defaultView: {
+        location: { search: '' },
+        navigator: { hardwareConcurrency: 8 }
+      },
+      visibilityState: 'visible',
+      documentElement: document.documentElement,
+      addEventListener: jasmine.createSpy('addEventListener'),
+      removeEventListener: jasmine.createSpy('removeEventListener')
+    } as unknown as Document;
+    TestBed.configureTestingModule({
+      providers: [
+        MotionService,
+        { provide: DOCUMENT, useValue: partialDocument }
+      ]
+    });
+
+    expect(() => TestBed.inject(MotionService)).not.toThrow();
   });
 
   it('updates reduced motion when the media query changes', () => {

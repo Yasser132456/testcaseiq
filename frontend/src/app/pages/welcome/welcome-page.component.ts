@@ -1,4 +1,14 @@
-import { Component, ElementRef, Injector, OnDestroy, OnInit, afterNextRender, inject } from '@angular/core';
+import {
+  Component,
+  EffectRef,
+  ElementRef,
+  Injector,
+  OnDestroy,
+  OnInit,
+  afterNextRender,
+  effect,
+  inject
+} from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import type { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { MotionService } from '../../core/motion/motion.service';
@@ -20,8 +30,11 @@ export class WelcomePageComponent implements OnInit, OnDestroy {
   private readonly motion = inject(MotionService);
   private readonly background = inject(BackgroundSceneService);
 
-  private cleanupFns: Array<() => void> = [];
+  private cursorPolicyEffect?: EffectRef;
+  private magneticCleanupFns: Array<() => void> = [];
   private readonly narrativeAbort = new AbortController();
+  private narrativePolicyEffect?: EffectRef;
+  private narrativeRevision = 0;
   private scrollTrigger?: ScrollTrigger;
   private activeBeatIndex = -1;
 
@@ -33,8 +46,14 @@ export class WelcomePageComponent implements OnInit, OnDestroy {
 
     afterNextRender(() => {
       this.runEntrance();
-      this.bindMagneticCtas();
-      void this.setupScrollNarrative(this.narrativeAbort.signal);
+      this.cursorPolicyEffect = effect(
+        () => this.reconcileMagneticCtas(this.motion.cursorEffectsEnabled()),
+        { injector: this.injector }
+      );
+      this.narrativePolicyEffect = effect(
+        () => this.reconcileScrollNarrative(this.motion.sceneEffectsEnabled()),
+        { injector: this.injector }
+      );
     }, { injector: this.injector });
   }
 
@@ -65,39 +84,67 @@ export class WelcomePageComponent implements OnInit, OnDestroy {
     });
   }
 
-  private async setupScrollNarrative(signal: AbortSignal): Promise<void> {
+  private reconcileScrollNarrative(enabled: boolean): void {
+    const revision = ++this.narrativeRevision;
+    this.killScrollNarrative();
+
     const element = this.host.nativeElement as HTMLElement;
     const root = element.querySelector('.wl-cinema') as HTMLElement | null;
     const pin = element.querySelector('.wl-cinema-pin') as HTMLElement | null;
     const beats = Array.from(element.querySelectorAll('[data-cinematic-beat]')) as HTMLElement[];
 
-    if (!root || !pin || beats.length === 0 || !this.motion.sceneEffectsEnabled() || signal.aborted) {
-      beats.forEach((beat) => beat.classList.add('is-active'));
-      this.background.setWelcomeProgress(1);
+    if (!root || !pin || beats.length === 0 || !enabled || this.narrativeAbort.signal.aborted) {
+      this.showStaticNarrative(beats);
       return;
     }
 
-    const ScrollTrigger = await this.motion.loadScrollTrigger();
-    if (signal.aborted || !this.motion.sceneEffectsEnabled()) {
-      return;
-    }
+    void this.setupScrollNarrative(root, pin, beats, revision);
+  }
 
-    this.scrollTrigger = ScrollTrigger.create({
-      trigger: root,
-      start: 'top top',
-      end: '+=300%',
-      pin,
-      scrub: 0.6,
-      onUpdate: (self) => {
-        this.background.setWelcomeProgress(self.progress);
-        this.activateBeat(beats, self.progress);
+  private async setupScrollNarrative(
+    root: HTMLElement,
+    pin: HTMLElement,
+    beats: HTMLElement[],
+    revision: number
+  ): Promise<void> {
+    try {
+      const ScrollTrigger = await this.motion.loadScrollTrigger();
+      if (!this.narrativeIsCurrent(revision) || !this.motion.sceneEffectsEnabled()) {
+        return;
       }
-    });
-    this.cleanupFns.push(() => {
-      this.scrollTrigger?.kill();
-      this.scrollTrigger = undefined;
-    });
-    this.activateBeat(beats, 0);
+
+      this.scrollTrigger = ScrollTrigger.create({
+        trigger: root,
+        start: 'top top',
+        end: '+=300%',
+        pin,
+        scrub: 0.6,
+        onUpdate: (self) => {
+          this.background.setWelcomeProgress(self.progress);
+          this.activateBeat(beats, self.progress);
+        }
+      });
+      this.activateBeat(beats, 0);
+    } catch {
+      if (this.narrativeIsCurrent(revision)) {
+        this.showStaticNarrative(beats);
+      }
+    }
+  }
+
+  private narrativeIsCurrent(revision: number): boolean {
+    return !this.narrativeAbort.signal.aborted && revision === this.narrativeRevision;
+  }
+
+  private killScrollNarrative(): void {
+    this.scrollTrigger?.kill();
+    this.scrollTrigger = undefined;
+    this.activeBeatIndex = -1;
+  }
+
+  private showStaticNarrative(beats: HTMLElement[]): void {
+    beats.forEach((beat) => beat.classList.add('is-active'));
+    this.background.setWelcomeProgress(1);
   }
 
   private activateBeat(beats: HTMLElement[], progress: number): void {
@@ -122,8 +169,9 @@ export class WelcomePageComponent implements OnInit, OnDestroy {
     this.background.setSceneAccent(accent);
   }
 
-  private bindMagneticCtas(): void {
-    if (!this.motion.cursorEffectsEnabled()) {
+  private reconcileMagneticCtas(enabled: boolean): void {
+    this.clearMagneticCtas();
+    if (!enabled) {
       return;
     }
 
@@ -145,7 +193,8 @@ export class WelcomePageComponent implements OnInit, OnDestroy {
       button.addEventListener('pointermove', onMove, { passive: true });
       button.addEventListener('pointerleave', onLeave);
       button.addEventListener('blur', onLeave);
-      this.cleanupFns.push(() => {
+      this.magneticCleanupFns.push(() => {
+        onLeave();
         button.removeEventListener('pointermove', onMove);
         button.removeEventListener('pointerleave', onLeave);
         button.removeEventListener('blur', onLeave);
@@ -153,10 +202,18 @@ export class WelcomePageComponent implements OnInit, OnDestroy {
     });
   }
 
+  private clearMagneticCtas(): void {
+    this.magneticCleanupFns.forEach((cleanup) => cleanup());
+    this.magneticCleanupFns = [];
+  }
+
   ngOnDestroy(): void {
+    this.cursorPolicyEffect?.destroy();
+    this.narrativePolicyEffect?.destroy();
     this.narrativeAbort.abort();
-    this.cleanupFns.forEach((cleanup) => cleanup());
-    this.cleanupFns = [];
+    this.narrativeRevision++;
+    this.killScrollNarrative();
+    this.clearMagneticCtas();
     this.background.setWelcomeProgress(0);
     this.background.setSceneAccent('phosphor');
   }

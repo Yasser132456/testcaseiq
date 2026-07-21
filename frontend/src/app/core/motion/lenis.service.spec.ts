@@ -144,13 +144,20 @@ describe('LenisService', () => {
     TestBed.flushEffects();
     factory.calls.reset();
 
+    expect(motion.gsap.ticker.add).toHaveBeenCalledTimes(1);
+    expect(motion.gsap.ticker.remove).toHaveBeenCalledTimes(1);
+
     documentVisible.set(true);
     TestBed.flushEffects();
     expect(factory).not.toHaveBeenCalled();
+    expect(motion.gsap.ticker.add).toHaveBeenCalledTimes(1);
+    expect(motion.gsap.ticker.remove).toHaveBeenCalledTimes(1);
 
     motionEnabled.set(true);
     TestBed.flushEffects();
     expect(factory).toHaveBeenCalledTimes(1);
+    expect(motion.gsap.ticker.add).toHaveBeenCalledTimes(2);
+    expect(motion.gsap.ticker.remove).toHaveBeenCalledTimes(1);
   });
 
   it('cleans up synchronization when detached', () => {
