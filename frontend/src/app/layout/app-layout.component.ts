@@ -199,7 +199,7 @@ const PROJECT_CONTEXT_STORAGE_KEY = 'tciq_project_ctx';
               [attr.aria-expanded]="mobileNavOpen()">
               <svg [lucideIcon]="LucideMenu" [size]="18" aria-hidden="true"></svg>
             </button>
-            <button class="button secondary topbar-search-button" type="button" aria-label="Open search" (click)="openSearch()">
+            <button #searchTrigger class="button secondary topbar-search-button" [class.search-trigger-morph]="!searchOpen()" type="button" aria-label="Open search" (click)="openSearch()">
               <svg [lucideIcon]="LucideSearch" [size]="18" [strokeWidth]="1.8" aria-hidden="true"></svg>
             </button>
             <app-notification-center />
@@ -368,7 +368,7 @@ const PROJECT_CONTEXT_STORAGE_KEY = 'tciq_project_ctx';
     }
     @defer (when searchOpen()) {
       @if (searchOpen()) {
-        <app-search-modal (closed)="closeSearch()" />
+        <app-search-modal (closed)="closeSearch()" (navigating)="closeSearch(false)" />
       }
     }
     <app-keyboard-shortcuts />
@@ -395,6 +395,7 @@ export class AppLayoutComponent implements AfterViewInit, OnDestroy {
   @ViewChild('sidebarEl') private sidebarEl!: ElementRef<HTMLElement>;
   @ViewChild('scrollWrapper') private scrollWrapper!: ElementRef<HTMLElement>;
   @ViewChild('scrollContent') private scrollContent!: ElementRef<HTMLElement>;
+  @ViewChild('searchTrigger') private searchTrigger?: ElementRef<HTMLButtonElement>;
 
   readonly collapsed = signal(false);
   readonly pendingReviewCount = signal(0);
@@ -405,6 +406,7 @@ export class AppLayoutComponent implements AfterViewInit, OnDestroy {
   readonly searchOpen = signal(false);
   readonly mobileNavOpen = signal(false);
   private projectContextEffect: EffectRef | null = null;
+  private searchReturnFocusTarget: HTMLElement | null = null;
   private readonly handleDocumentKeydown = (event: KeyboardEvent): void => {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
       event.preventDefault();
@@ -494,11 +496,18 @@ export class AppLayoutComponent implements AfterViewInit, OnDestroy {
   }
 
   openSearch(): void {
-    this.searchOpen.set(true);
+    if (this.searchOpen()) return;
+    this.searchReturnFocusTarget = this.searchTrigger?.nativeElement ?? null;
+    this.runViewTransition(() => this.searchOpen.set(true));
   }
 
-  closeSearch(): void {
+  closeSearch(restoreFocus = true): void {
     this.searchOpen.set(false);
+    const returnTarget = this.searchReturnFocusTarget;
+    this.searchReturnFocusTarget = null;
+    if (restoreFocus && returnTarget) {
+      queueMicrotask(() => returnTarget.focus({ preventScroll: true }));
+    }
   }
 
   openMobileNav(): void {
@@ -629,5 +638,16 @@ export class AppLayoutComponent implements AfterViewInit, OnDestroy {
 
   private prefersReducedMotion(): boolean {
     return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+  }
+
+  private runViewTransition(update: () => void): void {
+    const transitionDocument = document as Document & {
+      startViewTransition?: (callback: () => void) => { finished: Promise<void> };
+    };
+    if (!transitionDocument.startViewTransition || this.prefersReducedMotion()) {
+      update();
+      return;
+    }
+    transitionDocument.startViewTransition(update);
   }
 }

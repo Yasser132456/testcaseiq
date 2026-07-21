@@ -128,6 +128,36 @@ describe('AppLayoutComponent mobile navigation', () => {
 
     expect(fixture.componentInstance.mobileNavOpen()).toBeFalse();
   });
+
+  it('restores focus to the search trigger after a dismissal', async () => {
+    const trigger = fixture.nativeElement.querySelector('.topbar-search-button') as HTMLButtonElement;
+    const other = fixture.nativeElement.querySelector('.notification-trigger') as HTMLButtonElement;
+    trigger.focus();
+    fixture.componentInstance.openSearch();
+    fixture.detectChanges();
+    other.focus();
+
+    fixture.componentInstance.closeSearch();
+    fixture.detectChanges();
+    await Promise.resolve();
+
+    expect(document.activeElement).toBe(trigger);
+  });
+
+  it('does not restore search-trigger focus during navigation handoff', async () => {
+    const trigger = fixture.nativeElement.querySelector('.topbar-search-button') as HTMLButtonElement;
+    const other = fixture.nativeElement.querySelector('.notification-trigger') as HTMLButtonElement;
+    trigger.focus();
+    fixture.componentInstance.openSearch();
+    fixture.detectChanges();
+    other.focus();
+
+    fixture.componentInstance.closeSearch(false);
+    fixture.detectChanges();
+    await Promise.resolve();
+
+    expect(document.activeElement).toBe(other);
+  });
 });
 
 @Component({
