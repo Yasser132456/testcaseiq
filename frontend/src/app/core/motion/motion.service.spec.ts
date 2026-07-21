@@ -1,6 +1,6 @@
 import { DOCUMENT } from '@angular/common';
 import { TestBed } from '@angular/core/testing';
-import { MotionService } from './motion.service';
+import { SCROLL_TRIGGER_LOADER, MotionService } from './motion.service';
 
 class MediaQueryListStub {
   readonly media: string;
@@ -202,6 +202,27 @@ describe('MotionService', () => {
     const secondLoad = service.loadScrollTrigger();
     expect(secondLoad).toBe(firstLoad);
     expect(await firstLoad).toBe(await secondLoad);
+  });
+
+  it('clears a rejected ScrollTrigger load so a later call retries', async () => {
+    const retryLoad = new Promise<typeof import('gsap/ScrollTrigger').ScrollTrigger>(() => undefined);
+    const loader = jasmine.createSpy('scrollTriggerLoader').and.returnValues(
+      Promise.reject(new Error('chunk unavailable')),
+      retryLoad
+    );
+    reducedQuery = new MediaQueryListStub('(prefers-reduced-motion: reduce)', false);
+    spyOn(window, 'matchMedia').and.returnValue(reducedQuery.asMediaQueryList());
+    spyOnProperty(navigator, 'hardwareConcurrency', 'get').and.returnValue(8);
+    TestBed.configureTestingModule({
+      providers: [{ provide: SCROLL_TRIGGER_LOADER, useValue: loader }]
+    });
+    const service = TestBed.inject(MotionService);
+
+    await expectAsync(service.loadScrollTrigger()).toBeRejectedWithError('chunk unavailable');
+    service.loadScrollTrigger();
+    await Promise.resolve();
+
+    expect(loader).toHaveBeenCalledTimes(2);
   });
 });
 

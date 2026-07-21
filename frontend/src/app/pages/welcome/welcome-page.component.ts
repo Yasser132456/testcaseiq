@@ -143,6 +143,8 @@ export class WelcomePageComponent implements OnInit, OnDestroy {
   }
 
   private showStaticNarrative(beats: HTMLElement[]): void {
+    this.motion.gsap.killTweensOf(beats);
+    this.motion.gsap.set(beats, { clearProps: 'opacity,transform' });
     beats.forEach((beat) => beat.classList.add('is-active'));
     this.background.setWelcomeProgress(1);
   }

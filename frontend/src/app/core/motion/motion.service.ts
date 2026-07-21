@@ -1,15 +1,22 @@
 import { DOCUMENT } from '@angular/common';
-import { DestroyRef, Injectable, Signal, computed, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, InjectionToken, Signal, computed, inject, signal } from '@angular/core';
 import { gsap } from 'gsap';
 
 export type MotionQualityTier = 'high' | 'medium' | 'static';
 
 type ScrollTriggerPlugin = typeof import('gsap/ScrollTrigger').ScrollTrigger;
+export type ScrollTriggerLoader = () => Promise<ScrollTriggerPlugin>;
+
+export const SCROLL_TRIGGER_LOADER = new InjectionToken<ScrollTriggerLoader>('SCROLL_TRIGGER_LOADER', {
+  providedIn: 'root',
+  factory: () => () => import('gsap/ScrollTrigger').then(({ ScrollTrigger }) => ScrollTrigger)
+});
 
 @Injectable({ providedIn: 'root' })
 export class MotionService {
   private readonly document = inject(DOCUMENT);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly scrollTriggerLoader = inject(SCROLL_TRIGGER_LOADER);
   private readonly browserWindow = this.document.defaultView;
   private readonly reducedMotionQuery = this.browserWindow?.matchMedia?.('(prefers-reduced-motion: reduce)');
   private readonly mobileQuery = this.browserWindow?.matchMedia?.('(max-width: 760px), (pointer: coarse)');
@@ -96,14 +103,25 @@ export class MotionService {
   }
 
   loadScrollTrigger(): Promise<ScrollTriggerPlugin> {
-    this.scrollTriggerPromise ??= import('gsap/ScrollTrigger').then(({ ScrollTrigger }) => {
-      const gsapPlugins = this.gsap.plugins as Record<string, unknown>;
-      if (!gsapPlugins['ScrollTrigger']) {
-        this.gsap.registerPlugin(ScrollTrigger);
-      }
-      this.scrollTrigger = ScrollTrigger;
-      return ScrollTrigger;
-    });
+    if (!this.scrollTriggerPromise) {
+      const load = Promise.resolve()
+        .then(() => this.scrollTriggerLoader())
+        .then((ScrollTrigger) => {
+          const gsapPlugins = this.gsap.plugins as Record<string, unknown>;
+          if (!gsapPlugins['ScrollTrigger']) {
+            this.gsap.registerPlugin(ScrollTrigger);
+          }
+          this.scrollTrigger = ScrollTrigger;
+          return ScrollTrigger;
+        });
+      const retryableLoad = load.catch((error: unknown) => {
+        if (this.scrollTriggerPromise === retryableLoad) {
+          this.scrollTriggerPromise = undefined;
+        }
+        throw error;
+      });
+      this.scrollTriggerPromise = retryableLoad;
+    }
 
     return this.scrollTriggerPromise;
   }

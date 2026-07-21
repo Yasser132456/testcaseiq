@@ -30,6 +30,8 @@ describe('WelcomePageComponent', () => {
   let sceneEffectsEnabled: ReturnType<typeof signal<boolean>>;
   let loadScrollTrigger: jasmine.Spy;
   let createScrollTrigger: jasmine.Spy;
+  let gsapSet: jasmine.Spy;
+  let killTweensOf: jasmine.Spy;
   let background: {
     setSceneAccent: jasmine.Spy;
     setWelcomeProgress: jasmine.Spy;
@@ -42,6 +44,18 @@ describe('WelcomePageComponent', () => {
     sceneEffectsEnabled = signal(false);
     loadScrollTrigger = jasmine.createSpy('loadScrollTrigger');
     createScrollTrigger = jasmine.createSpy('ScrollTrigger.create');
+    gsapSet = jasmine.createSpy('set').and.callFake((targets: unknown, vars: { clearProps?: string }) => {
+      if (vars.clearProps !== 'opacity,transform' || !Array.isArray(targets)) {
+        return;
+      }
+      targets.forEach((target) => {
+        if (target instanceof HTMLElement) {
+          target.style.removeProperty('opacity');
+          target.style.removeProperty('transform');
+        }
+      });
+    });
+    killTweensOf = jasmine.createSpy('killTweensOf');
     background = {
       setSceneAccent: jasmine.createSpy('setSceneAccent'),
       setWelcomeProgress: jasmine.createSpy('setWelcomeProgress')
@@ -60,9 +74,10 @@ describe('WelcomePageComponent', () => {
             sceneEffectsEnabled,
             loadScrollTrigger,
             gsap: {
-              set: jasmine.createSpy('set'),
+              set: gsapSet,
               from: jasmine.createSpy('from'),
-              to: jasmine.createSpy('to')
+              to: jasmine.createSpy('to'),
+              killTweensOf
             }
           }
         },
@@ -189,6 +204,25 @@ describe('WelcomePageComponent', () => {
     await flushAsyncPolicy();
 
     expect(createScrollTrigger).toHaveBeenCalledTimes(2);
+  });
+
+  it('clears live beat tweens and inline presentation styles in static mode', async () => {
+    createScrollTrigger.and.returnValue({ kill: jasmine.createSpy('kill') } as unknown as ScrollTrigger);
+    loadScrollTrigger.and.resolveTo(plugin());
+    sceneEffectsEnabled.set(true);
+    await flushAsyncPolicy();
+    const beats = narrativeBeats();
+    beats.forEach((beat) => {
+      beat.style.opacity = '0.25';
+      beat.style.transform = 'translate3d(0px, 18px, 0px)';
+    });
+
+    sceneEffectsEnabled.set(false);
+    TestBed.flushEffects();
+
+    expect(killTweensOf).toHaveBeenCalledWith(beats);
+    expect(gsapSet).toHaveBeenCalledWith(beats, { clearProps: 'opacity,transform' });
+    expect(beats.every((beat) => beat.style.opacity === '' && beat.style.transform === '')).toBeTrue();
   });
 
   it('removes and rebinds magnetic listeners as cursor policy changes', () => {
