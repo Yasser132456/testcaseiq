@@ -58,6 +58,10 @@ interface WelcomeSceneHandles {
   };
 }
 
+interface KillableTween {
+  kill(): void;
+}
+
 const SCENE_ACCENTS: Record<BackgroundSceneAccentName, Omit<BackgroundSceneAccent, 'cssColor'>> = {
   phosphor: { name: 'phosphor', token: '--color-phosphor-particle' },
   violet: { name: 'violet', token: '--color-violet-particle' },
@@ -110,6 +114,8 @@ export class BackgroundSceneService {
   private pointerCleanup?: () => void;
   private operationAccentName: Extract<BackgroundSceneAccentName, 'violet' | 'cyan'> | null = null;
   private operationAccentTween?: { kill(): void };
+  private readonly accentTweens: KillableTween[] = [];
+  private readonly pointerTweens: KillableTween[] = [];
   private readonly operationAccentMix = { amount: 0 };
   private scrollParallaxY = 0;
   private readonly particleCount = 700;
@@ -129,7 +135,8 @@ export class BackgroundSceneService {
     effect(() => {
       this.syncMotionPolicy(
         this.motion.sceneEffectsEnabled(),
-        this.motion.cursorEffectsEnabled()
+        this.motion.cursorEffectsEnabled(),
+        this.motion.qualityTier()
       );
     });
   }
@@ -161,14 +168,13 @@ export class BackgroundSceneService {
     this.operationAccentTween?.kill();
     this.operationAccentTween = undefined;
     this.operationAccentMix.amount = 0;
+    this.killAccentTweens();
+    this.stopPointerInteraction();
 
     if (this.animationFrame) {
       cancelAnimationFrame(this.animationFrame);
       this.animationFrame = 0;
     }
-
-    this.pointerCleanup?.();
-    this.pointerCleanup = undefined;
 
     if (!this.handles) {
       return;
@@ -300,7 +306,8 @@ export class BackgroundSceneService {
 
     this.syncMotionPolicy(
       this.motion.sceneEffectsEnabled(),
-      this.motion.cursorEffectsEnabled()
+      this.motion.cursorEffectsEnabled(),
+      this.motion.qualityTier()
     );
   }
 
@@ -349,6 +356,7 @@ export class BackgroundSceneService {
     const { cursorDrift, cursorLight } = this.handles;
     const moveX = this.motion.gsap.quickTo(cursorDrift, 'x', { duration: 0.42, ease: 'power3.out' });
     const moveY = this.motion.gsap.quickTo(cursorDrift, 'y', { duration: 0.42, ease: 'power3.out' });
+    this.pointerTweens.push(moveX.tween, moveY.tween);
 
     const onPointerMove = (event: PointerEvent) => {
       const x = event.clientX / Math.max(window.innerWidth, 1) - 0.5;
@@ -364,14 +372,18 @@ export class BackgroundSceneService {
     this.pointerCleanup = () => window.removeEventListener('pointermove', onPointerMove);
   }
 
-  private syncMotionPolicy(sceneEnabled: boolean, cursorEnabled: boolean): void {
+  private syncMotionPolicy(
+    sceneEnabled: boolean,
+    cursorEnabled: boolean,
+    qualityTier: MotionQualityTier
+  ): void {
     if (!sceneEnabled) {
       if (this.animationFrame) {
         cancelAnimationFrame(this.animationFrame);
         this.animationFrame = 0;
       }
-      this.pointerCleanup?.();
-      this.pointerCleanup = undefined;
+      this.stopPointerInteraction();
+      this.killAccentTweens();
       if (this.handles) {
         this.handles.cursorLight.enabled = 0;
       }
@@ -382,8 +394,7 @@ export class BackgroundSceneService {
     if (cursorEnabled) {
       this.bindPointerInteraction();
     } else {
-      this.pointerCleanup?.();
-      this.pointerCleanup = undefined;
+      this.stopPointerInteraction();
       if (this.handles) {
         this.handles.cursorLight.enabled = 0;
       }
@@ -392,9 +403,17 @@ export class BackgroundSceneService {
     if (this.handles && !this.animationFrame) {
       this.zone.runOutsideAngular(() => this.animate());
     }
-    if (this.operationAccentName) {
+    if (this.operationAccentName && qualityTier === 'high') {
       this.startOperationAccentPulse();
+    } else {
+      this.pauseOperationAccentPulse();
     }
+  }
+
+  private stopPointerInteraction(): void {
+    this.pointerCleanup?.();
+    this.pointerCleanup = undefined;
+    this.pointerTweens.splice(0).forEach((tween) => tween.kill());
   }
 
   private buildParticleLayers(THREE: typeof Three, color: Three.Color): ParticleLayer[] {
@@ -656,6 +675,7 @@ export class BackgroundSceneService {
       return;
     }
 
+    this.killAccentTweens();
     const color = this.currentAccentColor(undefined, name);
     Object.assign(this.handles.tint, { r: color.r, g: color.g, b: color.b });
     Object.assign(this.handles.vignette, { r: color.r, g: color.g, b: color.b });
@@ -703,11 +723,12 @@ export class BackgroundSceneService {
       return;
     }
 
+    this.killAccentTweens();
     const color = this.currentAccentColor(undefined, name);
     const duration = this.handles.staticRender ? 0 : this.sceneDurationSeconds();
     const target = { r: color.r, g: color.g, b: color.b };
 
-    this.motion.gsap.to(this.handles.tint, {
+    const tintTween = this.motion.gsap.to(this.handles.tint, {
       ...target,
       duration,
       ease: 'power2.out',
@@ -721,7 +742,7 @@ export class BackgroundSceneService {
       }
     });
 
-    this.motion.gsap.to(this.handles.vignette, {
+    const vignetteTween = this.motion.gsap.to(this.handles.vignette, {
       ...target,
       duration,
       ease: 'power2.out',
@@ -734,6 +755,11 @@ export class BackgroundSceneService {
         });
       }
     });
+    this.accentTweens.push(tintTween, vignetteTween);
+  }
+
+  private killAccentTweens(): void {
+    this.accentTweens.splice(0).forEach((tween) => tween.kill());
   }
 
   private sceneDurationSeconds(): number {

@@ -1,4 +1,4 @@
-import { signal } from '@angular/core';
+import { computed, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { LenisService } from '../../core/motion/lenis.service';
@@ -18,17 +18,27 @@ describe('BackgroundSceneService motion policy', () => {
     visible = true
   } = {}) {
     const documentVisible = signal(visible);
-    const cursorEffectsEnabled = signal(visible && !reducedMotion && !forcedFallback && qualityTier === 'high');
-    const sceneEffectsEnabled = signal(visible && !reducedMotion && !forcedFallback && qualityTier !== 'static');
+    const forcedFallbackState = signal(forcedFallback);
+    const qualityTierState = signal<MotionQualityTier>(qualityTier);
+    const reducedMotionState = signal(reducedMotion);
+    const sceneEffectsEnabled = computed(() =>
+      documentVisible()
+      && !reducedMotionState()
+      && !forcedFallbackState()
+      && qualityTierState() !== 'static'
+    );
+    const cursorEffectsEnabled = computed(() => sceneEffectsEnabled());
     const gsap = jasmine.createSpyObj('gsap', ['to', 'quickTo']);
-    gsap.quickTo.and.returnValue(() => undefined);
+    const quickTo = (() => undefined) as (() => void) & { tween: { kill(): void } };
+    quickTo.tween = { kill: () => undefined };
+    gsap.quickTo.and.returnValue(quickTo);
     const motion = {
       cursorEffectsEnabled,
       documentVisible,
-      forcedFallback: signal(forcedFallback),
+      forcedFallback: forcedFallbackState,
       gsap,
-      qualityTier: signal(qualityTier),
-      reducedMotion: signal(reducedMotion),
+      qualityTier: qualityTierState,
+      reducedMotion: reducedMotionState,
       sceneEffectsEnabled
     };
 
@@ -40,7 +50,13 @@ describe('BackgroundSceneService motion policy', () => {
       ]
     });
 
-    return { documentVisible, gsap, motion, service: TestBed.inject(BackgroundSceneService) };
+    return {
+      documentVisible,
+      gsap,
+      motion,
+      qualityTier: qualityTierState,
+      service: TestBed.inject(BackgroundSceneService)
+    };
   }
 
   function installMinimalHandles(service: BackgroundSceneService): void {
@@ -49,7 +65,11 @@ describe('BackgroundSceneService motion policy', () => {
       cursorDrift: { x: 0, y: 0 },
       cursorLight: { x: 0.5, y: 0.5, targetX: 0.5, targetY: 0.5, enabled: 0 },
       layers: [],
-      renderer: { render: jasmine.createSpy('render') },
+      renderer: {
+        dispose: jasmine.createSpy('dispose'),
+        domElement: { remove: jasmine.createSpy('remove') },
+        render: jasmine.createSpy('render')
+      },
       resizeObserver: { disconnect: () => undefined },
       scene: {},
       staticRender: false,
@@ -103,7 +123,6 @@ describe('BackgroundSceneService motion policy', () => {
     expect(requestFrame).toHaveBeenCalledTimes(1);
 
     documentVisible.set(false);
-    motion.sceneEffectsEnabled.set(false);
     TestBed.flushEffects();
 
     expect(cancelFrame).toHaveBeenCalledWith(41);
@@ -119,6 +138,54 @@ describe('BackgroundSceneService motion policy', () => {
     service.setSceneAccent('cyan');
 
     expect(gsap.to).not.toHaveBeenCalled();
+  });
+
+  it('kills a high-tier operation pulse when quality drops to medium without disabling the scene', () => {
+    const { gsap, motion, qualityTier, service } = createService();
+    installMinimalHandles(service);
+    const kill = jasmine.createSpy('killOperationPulse');
+    gsap.to.and.returnValue({ kill });
+
+    service.setOperationAccent('cyan');
+    expect(motion.sceneEffectsEnabled()).toBeTrue();
+
+    qualityTier.set('medium');
+    TestBed.flushEffects();
+
+    expect(motion.sceneEffectsEnabled()).toBeTrue();
+    expect(kill).toHaveBeenCalled();
+  });
+
+  it('kills pointer, accent, and operation GSAP activity on dispose', () => {
+    const { gsap, service } = createService();
+    installMinimalHandles(service);
+    const kills = Array.from({ length: 5 }, (_, index) => jasmine.createSpy(`killTween${index}`));
+    const quickX = (() => undefined) as (() => void) & { tween: { kill(): void } };
+    const quickY = (() => undefined) as (() => void) & { tween: { kill(): void } };
+    quickX.tween = { kill: kills[0] };
+    quickY.tween = { kill: kills[1] };
+    gsap.quickTo.and.returnValues(quickX, quickY);
+    gsap.to.and.returnValues(
+      { kill: kills[2] },
+      { kill: kills[3] },
+      { kill: kills[4] }
+    );
+
+    (service as unknown as { bindPointerInteraction(): void }).bindPointerInteraction();
+    service.setSceneAccent('violet');
+    service.setOperationAccent('cyan');
+    service.dispose();
+
+    kills.forEach((kill) => expect(kill).toHaveBeenCalled());
+  });
+
+  it('returns fallback before probing WebGL on the static quality tier', async () => {
+    const { service } = createService({ qualityTier: 'static' });
+    const host = document.createElement('div');
+    const createElement = spyOn(document, 'createElement').and.callThrough();
+
+    expect(await service.init(host)).toBe('fallback');
+    expect(createElement).not.toHaveBeenCalled();
   });
 });
 

@@ -123,4 +123,29 @@ describe('PointerGlowService', () => {
     expect(target.style.getPropertyValue('--pointer-x')).toBe('');
     expect(target.style.getPropertyValue('--pointer-y')).toBe('');
   });
+
+  it('removes listener and queued work when its injector is destroyed', () => {
+    configureMotion();
+    const service = TestBed.inject(PointerGlowService);
+    service.start();
+    const target = document.createElement('div');
+    target.className = 'glass-surface--live';
+    target.getBoundingClientRect = () => ({
+      x: 80, y: 80, left: 80, top: 80, right: 180, bottom: 180, width: 100, height: 100,
+      toJSON: () => ({})
+    } as DOMRect);
+    document.body.append(target);
+    listeners['pointermove'](new PointerEvent('pointermove', { clientX: 100, clientY: 100, pointerType: 'mouse' }));
+    (window.requestAnimationFrame as jasmine.Spy).calls.mostRecent().args[0](0);
+    listeners['pointermove'](new PointerEvent('pointermove', { clientX: 110, clientY: 110, pointerType: 'mouse' }));
+    const queuedFrame = nextFrame;
+
+    TestBed.resetTestingModule();
+
+    expect(document.removeEventListener).toHaveBeenCalledWith('pointermove', jasmine.any(Function));
+    expect(window.cancelAnimationFrame).toHaveBeenCalledWith(queuedFrame);
+    expect(target.style.getPropertyValue('--pointer-active')).toBe('');
+    expect(target.style.getPropertyValue('--pointer-x')).toBe('');
+    expect(target.style.getPropertyValue('--pointer-y')).toBe('');
+  });
 });

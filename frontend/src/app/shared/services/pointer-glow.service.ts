@@ -1,10 +1,11 @@
 import { DOCUMENT } from '@angular/common';
-import { Injectable, NgZone, effect, inject } from '@angular/core';
+import { DestroyRef, Injectable, NgZone, effect, inject } from '@angular/core';
 import { MotionService } from '../../core/motion/motion.service';
 
 @Injectable({ providedIn: 'root' })
 export class PointerGlowService {
   private readonly document = inject(DOCUMENT);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly motion = inject(MotionService);
   private readonly zone = inject(NgZone);
   private readonly activeElements = new Set<HTMLElement>();
@@ -28,6 +29,14 @@ export class PointerGlowService {
       this.syncListener(enabled);
     }
   });
+
+  constructor() {
+    this.destroyRef.onDestroy(() => {
+      this.policyEffect.destroy();
+      this.started = false;
+      this.syncListener(false);
+    });
+  }
 
   start(): void {
     if (this.started) return;

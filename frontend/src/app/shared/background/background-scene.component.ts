@@ -11,6 +11,7 @@ import {
   signal,
   viewChild
 } from '@angular/core';
+import { MotionService } from '../../core/motion/motion.service';
 import { BackgroundSceneMode, BackgroundSceneRenderMode, BackgroundSceneService } from './background-scene.service';
 
 /*
@@ -32,6 +33,7 @@ import { BackgroundSceneMode, BackgroundSceneRenderMode, BackgroundSceneService 
       [class.is-fallback]="renderMode() === 'fallback'"
       [class.is-static]="renderMode() === 'static'"
       [class.is-welcome]="mode() === 'welcome'"
+      [class.is-motion-paused]="!motion.documentVisible()"
       aria-hidden="true"
     ></div>
   `,
@@ -95,8 +97,12 @@ import { BackgroundSceneMode, BackgroundSceneRenderMode, BackgroundSceneService 
           color-mix(in oklch, var(--scene-accent-particle, var(--color-phosphor-particle)) 0%, transparent)
         );
       opacity: 0.42;
-      animation: welcome-conic 18s linear infinite;
+      animation: none;
       transform-origin: center;
+    }
+
+    .background-scene.is-motion-paused::after {
+      animation-play-state: paused;
     }
 
     @keyframes welcome-conic {
@@ -116,10 +122,13 @@ import { BackgroundSceneMode, BackgroundSceneRenderMode, BackgroundSceneService 
 })
 export class BackgroundSceneComponent implements OnDestroy {
   private readonly platformId = inject(PLATFORM_ID);
+  readonly motion = inject(MotionService);
   readonly scene = inject(BackgroundSceneService);
   private readonly stage = viewChild.required<ElementRef<HTMLElement>>('stage');
   readonly mode = input<BackgroundSceneRenderMode>('ambient');
   readonly renderMode = signal<BackgroundSceneMode>('fallback');
+  private bootController?: AbortController;
+  private bootTimeoutId = 0;
 
   constructor() {
     if (!isPlatformBrowser(this.platformId)) {
@@ -132,14 +141,18 @@ export class BackgroundSceneComponent implements OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.bootController?.abort();
+    this.bootController = undefined;
+    this.clearBootTimeout();
     this.scene.dispose();
   }
 
   private async boot(): Promise<void> {
     const controller = new AbortController();
-    let timeoutId = 0;
+    this.bootController = controller;
     const timeout = new Promise<BackgroundSceneMode>((resolve) => {
-      timeoutId = window.setTimeout(() => {
+      this.bootTimeoutId = window.setTimeout(() => {
+        this.bootTimeoutId = 0;
         controller.abort();
         this.scene.dispose();
         resolve('fallback');
@@ -151,13 +164,27 @@ export class BackgroundSceneComponent implements OnDestroy {
         this.scene.init(this.stage().nativeElement, controller.signal, this.mode()),
         timeout
       ]);
-      this.renderMode.set(result);
+      if (!controller.signal.aborted) {
+        this.renderMode.set(result);
+      }
     } catch {
-      this.scene.dispose();
-      this.renderMode.set('fallback');
+      if (!controller.signal.aborted) {
+        this.scene.dispose();
+        this.renderMode.set('fallback');
+      }
     } finally {
-      window.clearTimeout(timeoutId);
+      if (this.bootController === controller) {
+        this.bootController = undefined;
+      }
+      this.clearBootTimeout();
       document.documentElement.classList.add('app-boot-ready');
+    }
+  }
+
+  private clearBootTimeout(): void {
+    if (this.bootTimeoutId) {
+      window.clearTimeout(this.bootTimeoutId);
+      this.bootTimeoutId = 0;
     }
   }
 }
