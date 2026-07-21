@@ -409,3 +409,49 @@ test.describe('guards', () => {
     await expect(page.getByTestId('background-scene')).toHaveClass(/is-static/);
   });
 });
+
+test.describe('utility overlays', () => {
+  test('search focus continuity survives tabbing and Escape', async ({ page, request }) => {
+    const auth = await registerViaApi(request, 'search-focus');
+    await loginViaApi(page, auth);
+    await page.goto('/dashboard');
+
+    const trigger = page.getByRole('button', { name: 'Open search' });
+    await trigger.click();
+    const dialog = page.getByRole('dialog', { name: 'Global search' });
+    await expect(dialog).toBeVisible();
+    await expect(page.getByRole('searchbox', { name: 'Search' })).toBeFocused();
+
+    for (let index = 0; index < 4; index += 1) {
+      await page.keyboard.press('Tab');
+      await expect.poll(() => page.evaluate(() => {
+        const active = document.activeElement;
+        return active instanceof HTMLElement && Boolean(active.closest('[aria-label="Global search"]'));
+      })).toBe(true);
+    }
+
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await expect(trigger).toBeFocused();
+  });
+
+  test('reduced motion overlays open in static states', async ({ page, request }) => {
+    const auth = await registerViaApi(request, 'overlay-motion');
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await loginViaApi(page, auth);
+    await page.goto('/dashboard');
+
+    await page.getByRole('button', { name: 'Open search' }).click();
+    const search = page.getByRole('dialog', { name: 'Global search' });
+    await expect(search).toBeVisible();
+    await expect(search).toHaveCSS('animation-name', 'none');
+    await page.keyboard.press('Escape');
+
+    await page.keyboard.press('?');
+    const shortcuts = page.getByRole('dialog', { name: 'Keyboard shortcuts' });
+    await expect(shortcuts).toBeVisible();
+    await expect(shortcuts).toHaveCSS('animation-name', 'none');
+    await page.keyboard.press('Escape');
+    await expect(shortcuts).toBeHidden();
+  });
+});
