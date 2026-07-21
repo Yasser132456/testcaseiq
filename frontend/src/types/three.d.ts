@@ -6,6 +6,10 @@ declare module 'three' {
     dispose(): void;
   }
 
+  export class BoxGeometry extends BufferGeometry {
+    constructor(width?: number, height?: number, depth?: number);
+  }
+
   export class Color {
     constructor(hex: number);
     constructor(style: string);
@@ -25,6 +29,10 @@ declare module 'three' {
     constructor(array: number[], itemSize: number);
   }
 
+  export class CanvasTexture {
+    constructor(canvas: HTMLCanvasElement);
+  }
+
   export class PerspectiveCamera {
     constructor(fov: number, aspect: number, near: number, far: number);
     aspect: number;
@@ -35,6 +43,28 @@ declare module 'three' {
   export class Points {
     constructor(geometry: BufferGeometry, material: PointsMaterial | ShaderMaterial);
     rotation: { x: number; y: number; z: number };
+  }
+
+  export class Mesh {
+    constructor(geometry: BufferGeometry, material: MeshPhysicalMaterial);
+    rotation: { x: number; y: number; z: number };
+    position: { set(x: number, y: number, z: number): void; x: number; y: number; z: number };
+  }
+
+  export interface MeshPhysicalMaterialParameters {
+    color?: Color | number;
+    transmission?: number;
+    roughness?: number;
+    thickness?: number;
+    ior?: number;
+    transparent?: boolean;
+    opacity?: number;
+    envMap?: unknown;
+  }
+
+  export class MeshPhysicalMaterial {
+    constructor(parameters?: MeshPhysicalMaterialParameters);
+    dispose(): void;
   }
 
   export interface PointsMaterialParameters {
@@ -68,12 +98,18 @@ declare module 'three' {
 
   export class Scene {
     fog: FogExp2 | null;
-    add(object: Points): void;
+    add(object: Points | Mesh): void;
   }
 
   export class Vector2 {
     constructor(x?: number, y?: number);
     set(x: number, y: number): this;
+  }
+
+  export class PMREMGenerator {
+    constructor(renderer: WebGLRenderer);
+    fromEquirectangular(texture: CanvasTexture): { texture: unknown };
+    dispose(): void;
   }
 
   export interface WebGLRendererParameters {

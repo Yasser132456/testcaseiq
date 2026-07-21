@@ -7,10 +7,11 @@ import {
   PLATFORM_ID,
   afterNextRender,
   inject,
+  input,
   signal,
   viewChild
 } from '@angular/core';
-import { BackgroundSceneMode, BackgroundSceneService } from './background-scene.service';
+import { BackgroundSceneMode, BackgroundSceneRenderMode, BackgroundSceneService } from './background-scene.service';
 
 /*
  * Performance budget: target 60fps on desktop-class hardware with static CSS fallback.
@@ -28,8 +29,9 @@ import { BackgroundSceneMode, BackgroundSceneService } from './background-scene.
       class="background-scene"
       data-testid="background-scene"
       [style.--scene-accent-particle]="scene.sceneAccent().cssColor"
-      [class.is-fallback]="mode() === 'fallback'"
-      [class.is-static]="mode() === 'static'"
+      [class.is-fallback]="renderMode() === 'fallback'"
+      [class.is-static]="renderMode() === 'static'"
+      [class.is-welcome]="mode() === 'welcome'"
       aria-hidden="true"
     ></div>
   `,
@@ -78,9 +80,36 @@ import { BackgroundSceneMode, BackgroundSceneService } from './background-scene.
       opacity: 0.6;
     }
 
+    .background-scene.is-welcome.is-fallback::after,
+    .background-scene.is-welcome.is-static::after {
+      content: '';
+      position: absolute;
+      inset: -20%;
+      background:
+        conic-gradient(
+          from 0deg at 50% 50%,
+          color-mix(in oklch, var(--scene-accent-particle, var(--color-phosphor-particle)) 0%, transparent),
+          color-mix(in oklch, var(--scene-accent-particle, var(--color-phosphor-particle)) 18%, transparent),
+          color-mix(in oklch, var(--color-cyan-particle) 12%, transparent),
+          color-mix(in oklch, var(--color-violet-particle) 12%, transparent),
+          color-mix(in oklch, var(--scene-accent-particle, var(--color-phosphor-particle)) 0%, transparent)
+        );
+      opacity: 0.42;
+      animation: welcome-conic 18s linear infinite;
+      transform-origin: center;
+    }
+
+    @keyframes welcome-conic {
+      to { transform: rotate(1turn); }
+    }
+
     @media (prefers-reduced-motion: reduce) {
       .background-scene {
         transition: none;
+      }
+
+      .background-scene.is-welcome::after {
+        animation: none;
       }
     }
   `]
@@ -89,7 +118,8 @@ export class BackgroundSceneComponent implements OnDestroy {
   private readonly platformId = inject(PLATFORM_ID);
   readonly scene = inject(BackgroundSceneService);
   private readonly stage = viewChild.required<ElementRef<HTMLElement>>('stage');
-  readonly mode = signal<BackgroundSceneMode>('fallback');
+  readonly mode = input<BackgroundSceneRenderMode>('ambient');
+  readonly renderMode = signal<BackgroundSceneMode>('fallback');
 
   constructor() {
     if (!isPlatformBrowser(this.platformId)) {
@@ -120,13 +150,13 @@ export class BackgroundSceneComponent implements OnDestroy {
 
     try {
       const result = await Promise.race([
-        this.scene.init(this.stage().nativeElement, prefersReducedMotion, controller.signal),
+        this.scene.init(this.stage().nativeElement, prefersReducedMotion, controller.signal, this.mode()),
         timeout
       ]);
-      this.mode.set(result);
+      this.renderMode.set(result);
     } catch {
       this.scene.dispose();
-      this.mode.set('fallback');
+      this.renderMode.set('fallback');
     } finally {
       window.clearTimeout(timeoutId);
       document.documentElement.classList.add('app-boot-ready');
