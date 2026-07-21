@@ -1,8 +1,5 @@
 import { gsap } from 'gsap';
-import { Flip } from 'gsap/Flip';
 import { ReviewStatus } from '../models/generated-test.model';
-
-gsap.registerPlugin(Flip);
 
 type Verdict = Extract<ReviewStatus, 'APPROVED' | 'REJECTED'>;
 
@@ -22,17 +19,12 @@ export function commitReviewVerdictMotion(options: ReviewVerdictMotionOptions): 
   }
 
   const listItems = Array.from(container.querySelectorAll<HTMLElement>('.review-case-item'));
-  const flipState = Flip.getState(listItems);
+  const firstRects = new Map(listItems.map((item) => [item, item.getBoundingClientRect()]));
   const ghost = createVerdictGhost(card, verdict);
   commit();
 
   requestAnimationFrame(() => {
-    Flip.from(flipState, {
-      absolute: true,
-      duration: 0.32,
-      ease: 'power2.inOut',
-      prune: true
-    });
+    playListFlip(firstRects);
 
     if (verdict === 'APPROVED') {
       gsap.timeline({ onComplete: () => ghost.remove() })
@@ -50,6 +42,17 @@ export function commitReviewVerdictMotion(options: ReviewVerdictMotionOptions): 
       ease: 'power2.in',
       onComplete: () => ghost.remove()
     });
+  });
+}
+
+function playListFlip(firstRects: Map<HTMLElement, DOMRect>): void {
+  firstRects.forEach((first, item) => {
+    if (!item.isConnected) return;
+    const last = item.getBoundingClientRect();
+    const x = first.left - last.left;
+    const y = first.top - last.top;
+    if (x === 0 && y === 0) return;
+    gsap.fromTo(item, { x, y }, { x: 0, y: 0, duration: 0.32, ease: 'power2.inOut', clearProps: 'transform' });
   });
 }
 
