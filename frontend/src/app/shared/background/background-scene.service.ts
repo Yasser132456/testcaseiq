@@ -862,7 +862,16 @@ export class BackgroundSceneService {
     }
 
     const canvas = this.document.createElement('canvas');
-    return Boolean(canvas.getContext('webgl2') || canvas.getContext('webgl'));
+    const context = canvas.getContext('webgl2') || canvas.getContext('webgl');
+    if (!context) {
+      return false;
+    }
+
+    const rendererInfo = context.getExtension('WEBGL_debug_renderer_info');
+    const renderer = rendererInfo
+      ? String(context.getParameter(rendererInfo.UNMASKED_RENDERER_WEBGL) ?? '')
+      : '';
+    return !/(swiftshader|llvmpipe|software rasterizer)/i.test(renderer);
   }
 
   private isForcedNoWebGL(): boolean {
