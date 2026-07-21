@@ -31,6 +31,23 @@ describe('KeyboardShortcutsComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Keyboard Shortcuts');
   });
 
+  it('renders every shortcut key as a glass keycap', () => {
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: '?' }));
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelectorAll('kbd.ks-keycap').length).toBe(10);
+  });
+
+  it('preserves dialog semantics and accessible name', () => {
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: '?' }));
+    fixture.detectChanges();
+    const panel = fixture.nativeElement.querySelector('.ks-panel');
+
+    expect(panel.getAttribute('role')).toBe('dialog');
+    expect(panel.getAttribute('aria-modal')).toBe('true');
+    expect(panel.getAttribute('aria-label')).toBe('Keyboard shortcuts');
+  });
+
   it('ignores question mark while focus is in a form field', () => {
     const input = document.createElement('input');
     document.body.appendChild(input);

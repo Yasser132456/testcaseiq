@@ -1,22 +1,23 @@
 import { Component, ElementRef, HostListener, OnChanges, OnDestroy, output, input, inject, signal } from '@angular/core';
 import { gsap } from 'gsap';
 import { LucideX, LucideDynamicIcon } from '@lucide/angular';
+import { RevealDirective } from '../directives/reveal.directive';
 
 @Component({
   selector: 'app-drawer',
   standalone: true,
-  imports: [LucideDynamicIcon],
+  imports: [LucideDynamicIcon, RevealDirective],
   template: `
     @if (isVisible()) {
       <div class="drawer-backdrop" aria-hidden="true" (click)="requestClose()"></div>
       <aside class="drawer-panel glass-surface glass-surface--3 glass-scrim glass-scrim--3" role="dialog" aria-modal="true" [attr.aria-label]="title()">
-        <header class="drawer-header">
+        <header class="drawer-header" tcqReveal>
           <h3>{{ title() }}</h3>
           <button class="drawer-close glass-surface glass-surface--interactive" type="button" (click)="requestClose()" aria-label="Close drawer">
             <svg [lucideIcon]="LucideX" [size]="16" [strokeWidth]="2" aria-hidden="true"></svg>
           </button>
         </header>
-        <div class="drawer-body">
+        <div class="drawer-body" [tcqReveal]="0.05">
           <ng-content />
         </div>
       </aside>
@@ -24,10 +25,14 @@ import { LucideX, LucideDynamicIcon } from '@lucide/angular';
   `,
   styles: [`
     .drawer-backdrop {
+      --tcq-overlay-blur: 8px;
       position: fixed;
       inset: 0;
       z-index: var(--z-drawer-backdrop);
       background: rgba(0, 0, 0, 0.52);
+      backdrop-filter: blur(var(--tcq-overlay-blur));
+      -webkit-backdrop-filter: blur(var(--tcq-overlay-blur));
+      animation: tcq-overlay-backdrop-enter 280ms var(--ease-out-expo) both;
     }
 
     .drawer-panel {
@@ -119,6 +124,12 @@ import { LucideX, LucideDynamicIcon } from '@lucide/angular';
     @supports not (backdrop-filter: blur(1px)) {
       .drawer-panel { background: var(--glass-bg-3); }
     }
+
+    @media (prefers-reduced-motion: reduce) {
+      .drawer-backdrop {
+        animation: none;
+      }
+    }
   `]
 })
 export class DrawerComponent implements OnChanges, OnDestroy {
@@ -159,7 +170,7 @@ export class DrawerComponent implements OnChanges, OnDestroy {
       const drawer = this.host.nativeElement.querySelector('.drawer-panel');
       this.focusInitialElement();
       if (drawer && !this.prefersReducedMotion()) {
-        gsap.from(drawer, { x: 480, duration: 0.3, ease: 'power2.out' });
+        gsap.from(drawer, { x: 480, duration: 0.28, ease: 'expo.out' });
       }
     });
   }

@@ -27,6 +27,15 @@
     animation-duration: 320ms;
     animation-timing-function: var(--ease-out-expo);
   }
+
+  ::view-transition-group(search-palette) {
+    animation-duration: 240ms;
+    animation-timing-function: var(--ease-out-expo);
+  }
+}
+
+.search-trigger-morph {
+  view-transition-name: search-palette;
 }
 
 @media (prefers-reduced-motion: reduce) {

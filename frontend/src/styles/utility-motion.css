@@ -1,0 +1,53 @@
+@property --tcq-overlay-blur {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+@keyframes tcq-overlay-backdrop-enter {
+  from {
+    --tcq-overlay-blur: 0px;
+    opacity: 0;
+  }
+  to {
+    --tcq-overlay-blur: 8px;
+    opacity: 1;
+  }
+}
+
+@keyframes tcq-overlay-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes tcq-skeleton-sweep {
+  from { background-position: 160% 160%; }
+  to { background-position: -60% -60%; }
+}
+
+.tcq-skeleton-shimmer {
+  background-image: linear-gradient(
+    125deg,
+    var(--glass-bg-1) 30%,
+    var(--color-phosphor-glass) 44%,
+    color-mix(in srgb, var(--color-phosphor) 28%, transparent) 50%,
+    var(--color-phosphor-glass) 56%,
+    var(--glass-bg-2) 70%
+  );
+  background-size: 260% 260%;
+  animation: tcq-skeleton-sweep 1.6s linear infinite;
+  animation-delay: 0s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tcq-skeleton-shimmer {
+    animation: none;
+    background: color-mix(in srgb, var(--glass-bg-2) 82%, var(--color-phosphor-glass));
+  }
+}

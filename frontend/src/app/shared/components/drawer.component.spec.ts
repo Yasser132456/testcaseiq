@@ -1,5 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { RevealDirective } from '../directives/reveal.directive';
 import { DrawerComponent } from './drawer.component';
 
 describe('DrawerComponent', () => {
@@ -22,6 +24,10 @@ describe('DrawerComponent', () => {
     expect(fixture.nativeElement.querySelector('.drawer-backdrop')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('.drawer-panel')).not.toBeNull();
     expect(fixture.nativeElement.textContent).toContain('Filters');
+  });
+
+  it('marks drawer content as staged reveal layers', () => {
+    expect(fixture.debugElement.queryAll(By.directive(RevealDirective)).length).toBe(2);
   });
 
   it('requests close on backdrop click', fakeAsync(() => {

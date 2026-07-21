@@ -1,5 +1,5 @@
 import {
-  AfterViewInit, Component, ElementRef, EventEmitter, OnDestroy, Output, ViewChild, computed, inject, signal
+  AfterViewInit, Component, ElementRef, EventEmitter, OnDestroy, Output, ViewChild, computed, inject, output, signal
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, debounceTime, distinctUntilChanged, finalize, of, switchMap, Subject, takeUntil } from 'rxjs';
@@ -29,6 +29,7 @@ const EMPTY_RESULTS: SearchResultsResponse = { projects: [], stories: [], testSu
 })
 export class SearchModalComponent implements AfterViewInit, OnDestroy {
   @Output() readonly closed = new EventEmitter<void>();
+  readonly navigating = output<void>();
   @ViewChild('searchInput') private searchInput?: ElementRef<HTMLInputElement>;
   @ViewChild('panel') private panel?: ElementRef<HTMLElement>;
 
@@ -122,8 +123,16 @@ export class SearchModalComponent implements AfterViewInit, OnDestroy {
   select(row: RecentSearchItem): void {
     this.saveSearch(this.query());
     this.saveRecent(row);
-    this.close();
+    this.navigating.emit();
     void this.router.navigateByUrl(row.route);
+  }
+
+  rowDelay(index: number): string {
+    return `${Math.min(index * 30, 300)}ms`;
+  }
+
+  rowIndex(row: SearchRow): number {
+    return this.rows().findIndex(candidate => candidate.id === row.id && candidate.type === row.type);
   }
 
   setQuery(term: string): void {

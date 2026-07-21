@@ -1,5 +1,5 @@
 <div class="search-backdrop" (click)="onBackdropClick($event)" (keydown)="onKeydown($event)">
-  <section #panel class="search-panel" role="dialog" aria-modal="true" aria-label="Global search">
+  <section #panel class="search-panel search-panel-morph" role="dialog" aria-modal="true" aria-label="Global search">
     <div class="search-field">
       <svg [lucideIcon]="LucideSearch" [size]="18" [strokeWidth]="1.8" aria-hidden="true"></svg>
       <input
@@ -17,8 +17,8 @@
     <div class="search-content">
       @if (loading()) {
         <div class="search-state search-state--loading" role="status" aria-live="polite">
-          <span class="search-skeleton search-skeleton--wide" aria-hidden="true"></span>
-          <span class="search-skeleton search-skeleton--short" aria-hidden="true"></span>
+          <span class="search-skeleton search-skeleton--wide tcq-skeleton-shimmer" aria-hidden="true"></span>
+          <span class="search-skeleton search-skeleton--short tcq-skeleton-shimmer" aria-hidden="true"></span>
           <span>Searching</span>
         </div>
       } @else if (isEmpty()) {
@@ -34,7 +34,7 @@
               </button>
             </div>
             @for (term of recentSearches(); track term) {
-              <button class="result-row" type="button" (click)="setQuery(term)">
+              <button class="result-row result-row--reveal" type="button" [style.--result-delay]="rowDelay($index)" (click)="setQuery(term)">
                 <svg [lucideIcon]="LucideHistory" [size]="14" aria-hidden="true"></svg>
                 <span>{{ term }}</span>
               </button>
@@ -50,7 +50,8 @@
             @for (row of group.rows; track row.type + row.id) {
               <button
                 type="button"
-                class="result-row"
+                class="result-row result-row--reveal"
+                [style.--result-delay]="rowDelay(rowIndex(row))"
                 [class.active]="rows()[activeIndex()]?.id === row.id && rows()[activeIndex()]?.type === row.type"
                 (click)="select(row)">
                 <svg [lucideIcon]="row.icon" [size]="16" [strokeWidth]="1.8" aria-hidden="true"></svg>

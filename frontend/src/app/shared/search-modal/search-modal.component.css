@@ -5,13 +5,15 @@
 }
 
 .search-backdrop {
+  --tcq-overlay-blur: 8px;
   min-height: 100vh;
   display: grid;
   place-items: start center;
   padding: 12vh 1rem 1rem;
   background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(3px);
-  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(var(--tcq-overlay-blur));
+  -webkit-backdrop-filter: blur(var(--tcq-overlay-blur));
+  animation: tcq-overlay-backdrop-enter 240ms var(--ease-out-expo) both;
 }
 
 .search-panel {
@@ -27,6 +29,12 @@
   -webkit-backdrop-filter: var(--glass-blur-lg);
   color: var(--color-text);
   box-shadow: var(--glass-shadow);
+  animation: tcq-overlay-enter 240ms var(--ease-out-expo) both;
+  transform-origin: 50% 14%;
+}
+
+.search-panel-morph {
+  view-transition-name: search-palette;
 }
 
 .search-field {
@@ -69,6 +77,11 @@
   background: transparent;
   color: inherit;
   cursor: pointer;
+}
+
+.result-row--reveal {
+  animation: search-result-enter 220ms var(--ease-out-expo) both;
+  animation-delay: var(--result-delay, 0ms);
 }
 
 .icon-button {
@@ -154,13 +167,24 @@
   white-space: nowrap;
 }
 
-.result-row:hover,
-.result-row.active {
+.result-row:hover {
   background: var(--color-accent-bg);
   border-color: var(--color-accent-border);
   box-shadow: var(--glass-border-highlight), 0 0 0 1px var(--color-accent-border);
   color: var(--color-accent);
   transform: translateX(2px);
+}
+
+.result-row.active {
+  background: var(--color-accent-bg);
+  border-color: var(--color-phosphor);
+  box-shadow:
+    var(--glass-border-highlight),
+    0 0 0 1px var(--color-phosphor),
+    0 0 18px var(--color-phosphor-glow);
+  color: var(--color-accent);
+  transform: translateX(2px);
+  transition: none;
 }
 
 .result-row:focus-visible {
@@ -185,21 +209,22 @@
   display: block;
   height: 0.75rem;
   border-radius: 9999px;
-  background: linear-gradient(90deg, var(--glass-bg-1) 25%, var(--glass-sheen) 50%, var(--glass-bg-2) 75%);
-  background-size: 200% 100%;
-  animation: search-skeleton-sweep 1.4s ease-in-out infinite;
 }
 
 .search-skeleton--wide { width: min(18rem, 70%); }
 .search-skeleton--short { width: min(11rem, 48%); }
 
-@keyframes search-skeleton-sweep {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+@keyframes search-result-enter {
+  from { opacity: 0; transform: translateY(7px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .search-skeleton { animation: none; }
+  .search-backdrop,
+  .search-panel,
+  .result-row--reveal {
+    animation: none;
+  }
   .result-row { transition: none; }
   .result-row:hover,
   .result-row.active { transform: none; }
