@@ -68,6 +68,8 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
   private stickyObserver?: IntersectionObserver;
   private analyzeTimer: ReturnType<typeof setInterval> | null = null;
   private generateTimer: ReturnType<typeof setInterval> | null = null;
+  private analysisToastId: number | null = null;
+  private generationToastId: number | null = null;
 
   readonly LucideCheck = LucideCheck;
   readonly storyTypes = STORY_TYPES;
@@ -217,11 +219,14 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
   analyzeStory(): void {
     if (!this.storyId || this.analyzing()) return;
     this.analyzeTimer = this.startTimer(this.analyzeElapsed);
+    this.analysisToastId = this.toastService.showProgress('Analyzing story...');
     this.analysisError.set('');
     this.analysisService.analyzeStory(this.storyId).subscribe({
       next: (analysis) => {
         this.analyzeTimer = this.stopTimer(this.analyzeTimer);
         this.analysis.set(analysis);
+        if (this.analysisToastId !== null) this.toastService.settleProgress(this.analysisToastId, 'Story analysis complete.', 'success');
+        this.analysisToastId = null;
         this.analysisExpanded.set(true);
         this.onboardingProgress.complete('analysis-completed');
         this.updateStoryStatus('ANALYZED');
@@ -230,6 +235,8 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
       error: () => {
         this.analyzeTimer = this.stopTimer(this.analyzeTimer);
         this.analysisError.set('The story could not be analyzed. Confirm the backend is running and try again.');
+        if (this.analysisToastId !== null) this.toastService.settleProgress(this.analysisToastId, 'Story analysis failed.', 'error');
+        this.analysisToastId = null;
       }
     });
   }
@@ -237,11 +244,14 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
   generateTestCases(): void {
     if (!this.storyId || this.generatingTests()) return;
     this.generateTimer = this.startTimer(this.generateElapsed);
+    this.generationToastId = this.toastService.showProgress('Generating test cases...');
     this.testGenerationError.set('');
     this.testGenerationService.generateTestCases(this.storyId).subscribe({
       next: (suite) => {
         this.generateTimer = this.stopTimer(this.generateTimer);
         this.testSuites.set([suite, ...this.testSuites()]);
+        if (this.generationToastId !== null) this.toastService.settleProgress(this.generationToastId, 'Test cases generated.', 'success');
+        this.generationToastId = null;
         this.onboardingProgress.complete('generation-completed');
         this.updateStoryStatus('TESTS_GENERATED');
         this.activeTab.set('test-cases');
@@ -250,6 +260,8 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
       error: () => {
         this.generateTimer = this.stopTimer(this.generateTimer);
         this.testGenerationError.set('The test cases could not be generated. Confirm the backend is running and try again.');
+        if (this.generationToastId !== null) this.toastService.settleProgress(this.generationToastId, 'Test generation failed.', 'error');
+        this.generationToastId = null;
       }
     });
   }

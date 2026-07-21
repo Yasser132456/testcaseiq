@@ -16,10 +16,16 @@ import { ToastItem, ToastService, ToastType } from '../../core/services/toast.se
           [class.toast--error]="toast.type === 'error'"
           [class.toast--warning]="toast.type === 'warning'"
           [class.toast--info]="toast.type === 'info'"
+          [class.toast--progress]="toast.progress"
           [attr.data-toast-id]="toast.id"
+          [attr.role]="toast.progress ? 'status' : null"
+          [attr.aria-busy]="toast.progress ? 'true' : null"
         >
           <svg [lucideIcon]="icon(toast.type)" [size]="16" [strokeWidth]="2" aria-hidden="true"></svg>
           <span>{{ toast.message }}</span>
+          @if (toast.progress) {
+            <span class="toast-progress" aria-hidden="true"><span></span></span>
+          }
         </article>
       }
     </section>
@@ -56,6 +62,36 @@ import { ToastItem, ToastService, ToastType } from '../../core/services/toast.se
       box-shadow: var(--glass-shadow);
     }
 
+    .toast--progress {
+      position: relative;
+      overflow: hidden;
+      padding-bottom: calc(var(--space-md) + 3px);
+    }
+
+    .toast-progress {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      height: 2px;
+      overflow: hidden;
+      background: color-mix(in srgb, var(--color-cyan) 16%, transparent);
+    }
+
+    .toast-progress span {
+      display: block;
+      width: 42%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, var(--color-cyan), transparent);
+      filter: drop-shadow(0 0 5px var(--color-cyan-glow));
+      animation: toast-phosphor-shimmer 1.2s var(--ease-in-out) infinite;
+    }
+
+    @keyframes toast-phosphor-shimmer {
+      from { transform: translateX(-110%); }
+      to { transform: translateX(340%); }
+    }
+
     .toast--success {
       border-color: var(--color-green-border);
       background: linear-gradient(var(--color-green-bg), var(--color-green-bg)), var(--glass-bg-3);
@@ -81,6 +117,13 @@ import { ToastItem, ToastService, ToastType } from '../../core/services/toast.se
 
     @supports not (backdrop-filter: blur(1px)) {
       .toast { background: var(--glass-bg-3); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .toast-progress span {
+        width: 100%;
+        animation: none;
+      }
     }
   `]
 })
@@ -117,7 +160,11 @@ export class ToastContainerComponent {
     queueMicrotask(() => {
       const el = this.toastElement(toast.id);
       if (el) {
-        gsap.fromTo(el, { y: 8, opacity: 0 }, { y: 0, opacity: 1, duration: 0.22, ease: 'power2.out' });
+        gsap.fromTo(
+          el,
+          { x: 18, y: 18, scale: 0.96, opacity: 0 },
+          { x: 0, y: 0, scale: 1, opacity: 1, duration: 0.38, ease: 'back.out(1.55)' }
+        );
       }
     });
   }
@@ -134,7 +181,8 @@ export class ToastContainerComponent {
         return;
       }
       gsap.to(el, {
-        y: 8,
+        y: 6,
+        scale: 0.96,
         opacity: 0,
         duration: 0.18,
         ease: 'power2.in',
