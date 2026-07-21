@@ -135,3 +135,26 @@ npx.cmd ng build --configuration development
 ```
 
 All three passed. A fresh optimized production build could not inline Google Fonts because this environment could not resolve `fonts.googleapis.com` (`getaddrinfo ENOTFOUND`); the development bundle and targeted Angular test compilation both completed successfully with the current source.
+
+## Mounted-content readiness follow-up
+
+Route readiness now proves the deterministic fixture has mounted before Axe runs instead of accepting an always-visible page heading:
+
+- Stories list waits for the `Buyer completes checkout` story link.
+- Story detail waits for the fixture's full user-story text.
+- Review Board waits for the `Complete checkout with valid payment` case action.
+- Settings waits for the labeled `Generation mode` select and separately asserts the labeled `Max test cases per story` input before creating `AxeBuilder`.
+
+Focused route verification:
+
+```text
+npm.cmd run e2e:a11y -- --workers=1 --grep "settings has|stories list has|story detail has|review board has"
+4 passed (1.4m)
+```
+
+Final all-at-once verification on the static SPA host:
+
+```text
+npm.cmd run e2e:a11y -- --workers=1
+15 passed (2.1m)
+```

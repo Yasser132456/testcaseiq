@@ -13,10 +13,10 @@ const requiredRoutes = [
   { name: 'welcome', path: '/', ready: (page: Page) => page.getByRole('heading', { name: 'AI drafts. Humans approve.' }) },
   { name: 'login', path: '/login', ready: (page: Page) => page.getByRole('heading', { name: 'Sign in' }) },
   { name: 'dashboard', path: '/dashboard', ready: (page: Page) => page.getByText('Test Generation Requested', { exact: true }) },
-  { name: 'stories list', path: '/stories', ready: (page: Page) => page.getByRole('heading', { name: 'Stories' }) },
-  { name: 'story detail', path: `/stories/${QUALITY_STORY_ID}`, ready: (page: Page) => page.getByRole('heading', { name: 'Buyer completes checkout' }) },
-  { name: 'review board', path: '/review-board', ready: (page: Page) => page.getByRole('heading', { name: 'Review Board' }) },
-  { name: 'settings', path: '/settings', ready: (page: Page) => page.getByRole('heading', { name: 'Settings' }) }
+  { name: 'stories list', path: '/stories', ready: (page: Page) => page.getByRole('link', { name: 'Buyer completes checkout' }) },
+  { name: 'story detail', path: `/stories/${QUALITY_STORY_ID}`, ready: (page: Page) => page.getByText('As a buyer, I want to complete checkout so that my order is confirmed.', { exact: true }) },
+  { name: 'review board', path: '/review-board', ready: (page: Page) => page.getByRole('button', { name: /Complete checkout with valid payment/ }) },
+  { name: 'settings', path: '/settings', ready: (page: Page) => page.getByRole('combobox', { name: 'Generation mode' }) }
 ] as const;
 
 test.beforeEach(async ({ page }) => {
@@ -36,6 +36,9 @@ for (const route of requiredRoutes) {
     }
     await gotoRequiredRoute(page, route.path);
     await expect(route.ready(page)).toBeVisible();
+    if (route.path === '/settings') {
+      await expect(page.getByRole('spinbutton', { name: 'Max test cases per story' })).toBeVisible();
+    }
     assertNoUnexpectedApiRequests(page);
     expect(pageErrors, `${route.name} emitted page errors`).toEqual([]);
 
