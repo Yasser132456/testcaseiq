@@ -1,7 +1,7 @@
-import { fakeAsync, TestBed, tick } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { ToastService } from './toast.service';
 
-describe('ToastService', () => {
+describe('ToastService progress lifecycle', () => {
   let service: ToastService;
 
   beforeEach(() => {
@@ -9,25 +9,21 @@ describe('ToastService', () => {
     service = TestBed.inject(ToastService);
   });
 
-  it('adds a typed toast and auto-marks it for dismissal after four seconds', fakeAsync(() => {
-    service.show('AI provider updated', 'success');
+  it('creates an explicit persistent progress toast', () => {
+    const id = service.showProgress('Generating tests...');
 
-    expect(service.toasts().length).toBe(1);
-    expect(service.toasts()[0].message).toBe('AI provider updated');
-    expect(service.toasts()[0].type).toBe('success');
+    expect(service.toasts()).toEqual([
+      jasmine.objectContaining({ id, message: 'Generating tests...', type: 'info', progress: true, exiting: false })
+    ]);
+  });
 
-    tick(4000);
+  it('settles a progress toast into an ordinary notification', () => {
+    const id = service.showProgress('Generating tests...');
 
-    expect(service.toasts()[0].exiting).toBeTrue();
-  }));
+    service.settleProgress(id, 'Tests generated.', 'success');
 
-  it('removes a toast after dismissal animation completes', () => {
-    service.show('Could not save settings', 'error');
-    const id = service.toasts()[0].id;
-
-    service.dismiss(id);
-    service.remove(id);
-
-    expect(service.toasts()).toEqual([]);
+    expect(service.toasts()[0]).toEqual(jasmine.objectContaining({
+      id, message: 'Tests generated.', type: 'success', progress: false
+    }));
   });
 });

@@ -1,3 +1,4 @@
+import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
@@ -8,12 +9,20 @@ import { Story, StoryStatus } from '../../core/models/story.model';
 import { ReviewService } from '../../core/services/review.service';
 import { StoryService } from '../../core/services/story.service';
 import { TestGenerationService } from '../../core/services/test-generation.service';
+import { ReviewOperationState, StoryAiOperationState } from '../../core/motion/async-operation-state';
+import { BackgroundSceneService } from '../../shared/background/background-scene.service';
 import { StoryDetailPageComponent } from './story-detail-page.component';
 
 describe('StoryDetailPageComponent tabs and review workflow', () => {
   let fixture: ComponentFixture<StoryDetailPageComponent>;
   let storyService: jasmine.SpyObj<StoryService>;
   let reviewService: jasmine.SpyObj<ReviewService>;
+  let analysisService: jasmine.SpyObj<AnalysisService>;
+  let testGenerationService: jasmine.SpyObj<TestGenerationService>;
+  let analysisState: ReturnType<typeof signal<StoryAiOperationState>>;
+  let generationState: ReturnType<typeof signal<StoryAiOperationState>>;
+  let reviewOperationState: ReturnType<typeof signal<ReviewOperationState>>;
+  let backgroundScene: jasmine.SpyObj<BackgroundSceneService>;
 
   beforeEach(async () => {
     window.history.replaceState({ projectContext: { projectId: 'project-1', name: 'Commerce' } }, '', '/stories/story-1');
@@ -30,6 +39,17 @@ describe('StoryDetailPageComponent tabs and review workflow', () => {
     storyService.update.and.callFake((_id, request) => of(storyFixture(request.status ?? 'TESTS_GENERATED')));
     reviewService.updateReviewStatus.and.returnValue(of(updatedTestCase('APPROVED')));
     reviewService.getReviewEvents.and.returnValue(of([]));
+    analysisState = signal({ phase: 'idle', storyId: null, sequence: 0 });
+    generationState = signal({ phase: 'idle', storyId: null, sequence: 0 });
+    reviewOperationState = signal({ phase: 'idle', testCaseId: null, verdict: null, sequence: 0 });
+    analysisService = jasmine.createSpyObj<AnalysisService>('AnalysisService', ['getAnalysis', 'analyzeStory']);
+    testGenerationService = jasmine.createSpyObj<TestGenerationService>('TestGenerationService', ['getTestSuites', 'generateTestCases']);
+    analysisService.getAnalysis.and.returnValue(throwError(() => new Error('No analysis yet.')));
+    testGenerationService.getTestSuites.and.returnValue(of([suiteFixture()]));
+    Object.defineProperty(analysisService, 'operationState', { value: analysisState.asReadonly() });
+    Object.defineProperty(testGenerationService, 'operationState', { value: generationState.asReadonly() });
+    Object.defineProperty(reviewService, 'operationState', { value: reviewOperationState.asReadonly() });
+    backgroundScene = jasmine.createSpyObj<BackgroundSceneService>('BackgroundSceneService', ['setOperationAccent']);
 
     await TestBed.configureTestingModule({
       imports: [StoryDetailPageComponent],
@@ -37,13 +57,10 @@ describe('StoryDetailPageComponent tabs and review workflow', () => {
         provideRouter([]),
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'story-1' } } } },
         { provide: StoryService, useValue: storyService },
-        { provide: AnalysisService, useValue: jasmine.createSpyObj<AnalysisService>('AnalysisService', {
-          getAnalysis: throwError(() => new Error('No analysis yet.'))
-        }) },
-        { provide: TestGenerationService, useValue: jasmine.createSpyObj<TestGenerationService>('TestGenerationService', {
-          getTestSuites: of([suiteFixture()])
-        }) },
-        { provide: ReviewService, useValue: reviewService }
+        { provide: AnalysisService, useValue: analysisService },
+        { provide: TestGenerationService, useValue: testGenerationService },
+        { provide: ReviewService, useValue: reviewService },
+        { provide: BackgroundSceneService, useValue: backgroundScene }
       ]
     }).compileComponents();
 
@@ -150,6 +167,57 @@ describe('StoryDetailPageComponent tabs and review workflow', () => {
       comment: null
     });
     expect(tabButton('History')?.textContent).toContain('History (0 pending)');
+  });
+
+  it('binds the analysis panel motion and status label to the service running state', () => {
+    analysisState.set({ phase: 'running', storyId: 'story-1', sequence: 1 });
+    fixture.detectChanges();
+
+    const panel = fixture.nativeElement.querySelector('[data-ai-state="analysis"]') as HTMLElement;
+    expect(panel.classList).toContain('is-analyzing');
+    expect(panel.getAttribute('aria-busy')).toBe('true');
+    expect(panel.textContent).toContain('Analyzing...');
+  });
+
+  it('does not animate this story for an operation owned by another story', () => {
+    analysisState.set({ phase: 'running', storyId: 'story-2', sequence: 1 });
+    generationState.set({ phase: 'success', storyId: 'story-2', sequence: 1 });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-ai-state="analysis"]').classList).not.toContain('is-analyzing');
+    clickTab('Test Cases');
+    expect(fixture.nativeElement.querySelector('[data-ai-state="generation"]').classList).not.toContain('is-ai-success');
+  });
+
+  it('ties the scene accent to the active AI operation and restores it on settle', () => {
+    backgroundScene.setOperationAccent.calls.reset();
+
+    analysisState.set({ phase: 'running', storyId: 'story-1', sequence: 1 });
+    fixture.detectChanges();
+    expect(backgroundScene.setOperationAccent).toHaveBeenCalledWith('violet');
+
+    analysisState.set({ phase: 'success', storyId: 'story-1', sequence: 1 });
+    generationState.set({ phase: 'running', storyId: 'story-1', sequence: 1 });
+    fixture.detectChanges();
+    expect(backgroundScene.setOperationAccent).toHaveBeenCalledWith('cyan');
+
+    generationState.set({ phase: 'error', storyId: 'story-1', sequence: 1 });
+    fixture.detectChanges();
+    expect(backgroundScene.setOperationAccent).toHaveBeenCalledWith(null);
+  });
+
+  it('binds generation success and error treatments to settled service states', () => {
+    clickTab('Test Cases');
+    generationState.set({ phase: 'success', storyId: 'story-1', sequence: 1 });
+    fixture.detectChanges();
+
+    const panel = fixture.nativeElement.querySelector('[data-ai-state="generation"]') as HTMLElement;
+    expect(panel.classList).toContain('is-ai-success');
+
+    generationState.set({ phase: 'error', storyId: 'story-1', sequence: 2 });
+    fixture.detectChanges();
+    expect(panel.classList).toContain('is-ai-error');
+    expect(panel.getAttribute('aria-busy')).toBe('false');
   });
 
   function clickTab(label: string): void {

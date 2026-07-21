@@ -35,15 +35,39 @@ describe('TestGenerationService', () => {
   });
 
   it('generates test cases for a story', () => {
+    expect(service.operationState().phase).toBe('idle');
+
     service.generateTestCases('story-1').subscribe((suite) => {
       expect(suite.suiteName).toBe('Mock AI Regression Suite');
       expect(suite.testCases[0].automationCandidate).toBeTrue();
     });
 
+    expect(service.operationState()).toEqual(jasmine.objectContaining({
+      phase: 'running',
+      storyId: 'story-1'
+    }));
+
     const request = http.expectOne('/api/stories/story-1/generate-tests');
     expect(request.request.method).toBe('POST');
     expect(request.request.body).toEqual({});
     request.flush(suiteResponse());
+
+    expect(service.operationState()).toEqual(jasmine.objectContaining({
+      phase: 'success',
+      storyId: 'story-1'
+    }));
+  });
+
+  it('exposes a settled error state when generation fails', () => {
+    service.generateTestCases('story-2').subscribe({ error: () => undefined });
+
+    const request = http.expectOne('/api/stories/story-2/generate-tests');
+    request.flush({ message: 'failed' }, { status: 500, statusText: 'Server Error' });
+
+    expect(service.operationState()).toEqual(jasmine.objectContaining({
+      phase: 'error',
+      storyId: 'story-2'
+    }));
   });
 
   function suiteResponse() {

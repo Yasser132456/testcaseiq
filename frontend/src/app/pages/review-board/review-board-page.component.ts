@@ -5,6 +5,7 @@ import { gsap } from 'gsap';
 import { LucideCheckSquare2, LucideDynamicIcon } from '@lucide/angular';
 import { Subscription, forkJoin, fromEvent } from 'rxjs';
 import { TestCaseSummary, TestSuiteDetail, TestSuitePage } from '../../core/models/test-suite.model';
+import { commitReviewVerdictMotion } from '../../core/motion/review-verdict-motion';
 import { OnboardingProgressService } from '../../core/services/onboarding-progress.service';
 import { ReviewService } from '../../core/services/review.service';
 import { TestSuiteService } from '../../core/services/test-suite.service';
@@ -98,7 +99,11 @@ interface ReviewCaseItem {
           </aside>
 
           @if (selectedCase(); as item) {
-            <section class="review-detail-panel glass-readable-scrim glass-scrim--2">
+            <section
+              class="review-detail-panel glass-readable-scrim glass-scrim--2"
+              [class.is-verdict-approve]="pendingAction() === 'APPROVED'"
+              [class.is-verdict-reject]="pendingAction() === 'REJECTED'"
+            >
               <div class="quality-readout" aria-label="Quality score" (mousemove)="onQualityMouseMove($event)" (mouseleave)="onQualityMouseLeave()">
                 <svg class="quality-gauge" viewBox="0 0 80 80" role="img" [attr.aria-label]="'Quality score ' + qualityScore(item.testCase)">
                   <circle class="quality-gauge-track" cx="40" cy="40" r="32"></circle>
@@ -122,8 +127,13 @@ interface ReviewCaseItem {
                     <p class="review-suite-name">{{ item.suite.name }}</p>
                     <h3>{{ item.testCase.title }}</h3>
                   </div>
-                  <app-badge [status]="statusForBadge(item.testCase)" />
+                  <span class="review-verdict-pill">
+                    <app-badge [status]="statusForBadge(item.testCase)" />
+                  </span>
                 </div>
+                @if (pendingAction(); as verdict) {
+                  <span class="sr-only" role="status" aria-live="polite">{{ verdict === 'APPROVED' ? 'Approving test case.' : 'Rejecting test case.' }}</span>
+                }
 
                 <dl class="review-detail-grid">
                   <div>
@@ -218,6 +228,8 @@ interface ReviewCaseItem {
     .review-case-title{min-width:0;font-weight:500;line-height:1.35}.review-case-story{min-width:0;overflow:hidden;color:var(--color-text-2);font-family:var(--font-mono);font-size:.72rem;line-height:1.35;text-overflow:ellipsis;white-space:nowrap}.review-case-meta,.shortcut-group,.review-action-buttons{display:flex;align-items:center;gap:var(--space-xs);flex-wrap:wrap}
     .case-meta-badge,.confidence-badge{display:inline-flex;align-items:center;min-height:1.65rem;padding:0 .55rem;border:var(--b);border-radius:var(--radius-sm);background:var(--glass-bg-1);color:var(--color-text-2);font-family:var(--font-mono);font-size:.72rem;font-weight:500}
     .review-detail-panel{position:relative;display:grid;align-content:start;min-width:0;min-height:34rem;background:var(--glass-bg-2)}
+    .review-detail-panel.is-verdict-approve{border-color:var(--color-green-border)}
+    .review-detail-panel.is-verdict-reject{border-color:var(--color-red-border)}
     .review-detail-main{display:grid;gap:var(--space-lg);padding:var(--space-xl);padding-right:8rem}.review-detail-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--space-base)}
     .review-detail-heading h3,.review-suite-name{margin:0}.review-suite-name{color:var(--color-cyan);font-family:var(--font-mono);font-size:.75rem}
     .review-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-base);margin:0}.review-detail-grid div{display:grid;gap:.25rem;padding:var(--space-md);border:var(--b);border-radius:var(--radius-md);background:var(--glass-bg-1);box-shadow:var(--glass-border-highlight)}
@@ -407,14 +419,23 @@ export class ReviewBoardPageComponent implements OnInit, OnDestroy {
     this.rejectState.set('default');
     this.reviewMessage.set('');
     this.reviewError.set('');
-    this.reviewService.updateReviewStatus(item.testCase.id, { status, comment: null }).subscribe({
-      next: (updated) => {
+    const previousSuites = this.suites();
+    const previousSelectedCaseId = this.selectedCaseId();
+    commitReviewVerdictMotion({
+      container: this.host.nativeElement,
+      card: this.host.nativeElement.querySelector('.review-detail-panel'),
+      verdict: status,
+      reducedMotion: this.prefersReducedMotion(),
+      commit: () => {
         this.suites.update((suites) => suites.map((suite) => ({
           ...suite,
-          testCases: suite.testCases
-            .filter((testCase) => testCase.id !== updated.id)
-            .map((testCase) => ({ ...testCase }))
+          testCases: suite.testCases.filter((testCase) => testCase.id !== item.testCase.id)
         })));
+        this.selectedCaseId.set(this.reviewCases()[0]?.testCase.id ?? null);
+      }
+    });
+    this.reviewService.updateReviewStatus(item.testCase.id, { status, comment: null }).subscribe({
+      next: () => {
         this.sessionReviewCount.update((count) => count + 1);
         if (status === 'APPROVED') {
           this.onboardingProgress.complete('first-approval');
@@ -429,6 +450,8 @@ export class ReviewBoardPageComponent implements OnInit, OnDestroy {
         this.pendingAction.set(null);
       },
       error: () => {
+        this.suites.set(previousSuites);
+        this.selectedCaseId.set(previousSelectedCaseId);
         const message = status === 'APPROVED' ? 'The test case could not be approved.' : 'The test case could not be rejected.';
         this.reviewError.set(message);
         this.toastService.show(message, 'error');

@@ -1,4 +1,8 @@
-import { backgroundSceneAccentNameForRoute, backgroundSceneModeForRoute } from './background-scene.service';
+import {
+  backgroundSceneAccentNameForRoute,
+  backgroundSceneModeForRoute,
+  operationAccentEnabledForMotion
+} from './background-scene.service';
 
 describe('backgroundSceneAccentNameForRoute', () => {
   it('maps primary route contexts to scene accents', () => {
@@ -21,5 +25,17 @@ describe('backgroundSceneModeForRoute', () => {
     expect(backgroundSceneModeForRoute('/login')).toBe('ambient');
     expect(backgroundSceneModeForRoute('/register')).toBe('ambient');
     expect(backgroundSceneModeForRoute('/dashboard')).toBe('ambient');
+  });
+});
+
+describe('operationAccentEnabledForMotion', () => {
+  it('allows an operation pulse only on the high motion tier', () => {
+    expect(operationAccentEnabledForMotion('high', false)).toBeTrue();
+    expect(operationAccentEnabledForMotion('medium', false)).toBeFalse();
+    expect(operationAccentEnabledForMotion('static', false)).toBeFalse();
+  });
+
+  it('disables the operation pulse for reduced motion', () => {
+    expect(operationAccentEnabledForMotion('high', true)).toBeFalse();
   });
 });

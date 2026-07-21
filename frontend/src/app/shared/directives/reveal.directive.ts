@@ -1,4 +1,4 @@
-import { AfterViewInit, Directive, ElementRef, Input, OnDestroy, inject, numberAttribute } from '@angular/core';
+import { AfterViewInit, Directive, ElementRef, Input, OnDestroy, booleanAttribute, inject, numberAttribute } from '@angular/core';
 import { MotionService } from '../../core/motion/motion.service';
 
 interface RevealTween {
@@ -14,6 +14,7 @@ export class RevealDirective implements AfterViewInit, OnDestroy {
   private readonly motion = inject(MotionService);
 
   @Input({ transform: numberAttribute }) tcqReveal = 0;
+  @Input({ transform: booleanAttribute }) tcqRevealActive = true;
 
   private observer?: IntersectionObserver;
   private tween?: RevealTween;
@@ -24,7 +25,7 @@ export class RevealDirective implements AfterViewInit, OnDestroy {
   ngAfterViewInit(): void {
     const host = this.element.nativeElement;
 
-    if (this.motion.reducedMotion() || typeof window.IntersectionObserver !== 'function') {
+    if (!this.tcqRevealActive || this.motion.reducedMotion() || typeof window.IntersectionObserver !== 'function') {
       return;
     }
 

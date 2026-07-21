@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { AfterViewInit, Component, ElementRef, OnDestroy, WritableSignal, computed, inject, signal } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, WritableSignal, computed, effect, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { LucideCheck, LucideDynamicIcon } from '@lucide/angular';
@@ -22,8 +22,10 @@ import { TestGenerationService } from '../../core/services/test-generation.servi
 import { ToastService } from '../../core/services/toast.service';
 import { StoryStatusPillComponent } from '../../components/story-status-pill/story-status-pill.component';
 import { StateMessageComponent } from '../../shared/components/state-message.component';
+import { BackgroundSceneService } from '../../shared/background/background-scene.service';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
 import { VtNameDirective } from '../../shared/directives/vt-name.directive';
+import { RevealDirective } from '../../shared/directives/reveal.directive';
 import { StoryReviewTabComponent } from './story-review-tab.component';
 import { StoryTestCasesTabComponent } from './story-test-cases-tab.component';
 
@@ -42,6 +44,7 @@ type StoryDisplayStatus = 'DRAFT' | 'ANALYZED' | 'TESTS_GENERATED' | 'NEEDS_REVI
     StateMessageComponent,
     SkeletonComponent,
     VtNameDirective,
+    RevealDirective,
     StoryTestCasesTabComponent,
     StoryReviewTabComponent
   ],
@@ -58,12 +61,15 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
   private readonly testGenerationService = inject(TestGenerationService);
   private readonly toastService = inject(ToastService);
   private readonly authService = inject(AuthService);
+  private readonly backgroundScene = inject(BackgroundSceneService);
   readonly onboardingProgress = inject(OnboardingProgressService);
   private readonly projectContext = (this.router.getCurrentNavigation()?.extras.state?.['projectContext'] ?? window.history.state?.projectContext) as { name?: string } | null;
   private storyId = '';
   private stickyObserver?: IntersectionObserver;
   private analyzeTimer: ReturnType<typeof setInterval> | null = null;
   private generateTimer: ReturnType<typeof setInterval> | null = null;
+  private analysisToastId: number | null = null;
+  private generationToastId: number | null = null;
 
   readonly LucideCheck = LucideCheck;
   readonly storyTypes = STORY_TYPES;
@@ -86,8 +92,16 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
   readonly loading = signal(true);
   readonly analysisLoading = signal(false);
   readonly testSuitesLoading = signal(false);
-  readonly analyzing = signal(false);
-  readonly generatingTests = signal(false);
+  readonly analysisOperationState = this.analysisService.operationState;
+  readonly generationOperationState = this.testGenerationService.operationState;
+  readonly analysisPhase = computed(() => (
+    this.analysisOperationState().storyId === this.storyId ? this.analysisOperationState().phase : 'idle'
+  ));
+  readonly generationPhase = computed(() => (
+    this.generationOperationState().storyId === this.storyId ? this.generationOperationState().phase : 'idle'
+  ));
+  readonly analyzing = computed(() => this.analysisPhase() === 'running');
+  readonly generatingTests = computed(() => this.generationPhase() === 'running');
   readonly analyzeElapsed = signal(0);
   readonly generateElapsed = signal(0);
   readonly saving = signal(false);
@@ -130,6 +144,14 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
 
   constructor() {
     this.storyId = this.route.snapshot.paramMap.get('storyId') ?? '';
+    effect(() => {
+      const accent = this.analysisPhase() === 'running'
+        ? 'violet'
+        : this.generationPhase() === 'running'
+          ? 'cyan'
+          : null;
+      this.backgroundScene.setOperationAccent(accent);
+    });
     this.loadStory();
   }
 
@@ -141,6 +163,7 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.backgroundScene.setOperationAccent(null);
     this.analyzeTimer = this.stopTimer(this.analyzeTimer);
     this.generateTimer = this.stopTimer(this.generateTimer);
     this.stickyObserver?.disconnect();
@@ -200,23 +223,26 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
   }
 
   analyzeStory(): void {
-    if (!this.storyId) return;
+    if (!this.storyId || this.analyzing()) return;
     this.analyzeTimer = this.startTimer(this.analyzeElapsed);
-    this.analyzing.set(true);
+    this.analysisToastId = this.toastService.showProgress('Analyzing story...');
     this.analysisError.set('');
     this.analysisService.analyzeStory(this.storyId).subscribe({
       next: (analysis) => {
         this.analyzeTimer = this.stopTimer(this.analyzeTimer);
         this.analysis.set(analysis);
+        if (this.analysisToastId !== null) this.toastService.settleProgress(this.analysisToastId, 'Story analysis complete.', 'success');
+        this.analysisToastId = null;
+        this.analysisExpanded.set(true);
         this.onboardingProgress.complete('analysis-completed');
         this.updateStoryStatus('ANALYZED');
-        this.analyzing.set(false);
         this.animateWorkflowStep();
       },
       error: () => {
         this.analyzeTimer = this.stopTimer(this.analyzeTimer);
         this.analysisError.set('The story could not be analyzed. Confirm the backend is running and try again.');
-        this.analyzing.set(false);
+        if (this.analysisToastId !== null) this.toastService.settleProgress(this.analysisToastId, 'Story analysis failed.', 'error');
+        this.analysisToastId = null;
       }
     });
   }
@@ -224,22 +250,24 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
   generateTestCases(): void {
     if (!this.storyId || this.generatingTests()) return;
     this.generateTimer = this.startTimer(this.generateElapsed);
-    this.generatingTests.set(true);
+    this.generationToastId = this.toastService.showProgress('Generating test cases...');
     this.testGenerationError.set('');
     this.testGenerationService.generateTestCases(this.storyId).subscribe({
       next: (suite) => {
         this.generateTimer = this.stopTimer(this.generateTimer);
         this.testSuites.set([suite, ...this.testSuites()]);
+        if (this.generationToastId !== null) this.toastService.settleProgress(this.generationToastId, 'Test cases generated.', 'success');
+        this.generationToastId = null;
         this.onboardingProgress.complete('generation-completed');
         this.updateStoryStatus('TESTS_GENERATED');
-        this.generatingTests.set(false);
         this.activeTab.set('test-cases');
         this.animateWorkflowStep();
       },
       error: () => {
         this.generateTimer = this.stopTimer(this.generateTimer);
         this.testGenerationError.set('The test cases could not be generated. Confirm the backend is running and try again.');
-        this.generatingTests.set(false);
+        if (this.generationToastId !== null) this.toastService.settleProgress(this.generationToastId, 'Test generation failed.', 'error');
+        this.generationToastId = null;
       }
     });
   }
@@ -273,6 +301,14 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
   onTestCaseUpdated(event: { original: GeneratedTestCase; updated: TestCaseResponse }): void {
     this.replaceGeneratedTestCase(event.updated, event.original);
     this.animateWorkflowStep();
+  }
+
+  onVerdictOptimistic(event: { original: GeneratedTestCase; status: 'APPROVED' | 'REJECTED' }): void {
+    this.setGeneratedTestCaseReviewStatus(event.original, event.status);
+  }
+
+  onVerdictRollback(event: { original: GeneratedTestCase }): void {
+    this.setGeneratedTestCaseReviewStatus(event.original, 'NEEDS_REVIEW');
   }
 
   loadStory(): void {
@@ -372,6 +408,15 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
         testCases: suite.testCases.map((testCase) => testCase === originalTestCase ? this.mergeUpdatedTestCase(testCase, updatedTestCase) : testCase)
       })));
     }
+  }
+
+  private setGeneratedTestCaseReviewStatus(original: GeneratedTestCase, reviewStatus: GeneratedTestCase['reviewStatus']): void {
+    this.testSuites.update((suites) => suites.map((suite) => ({
+      ...suite,
+      testCases: suite.testCases.map((testCase) => (
+        testCase.id === original.id ? { ...testCase, reviewStatus } : testCase
+      ))
+    })));
   }
 
   private mergeUpdatedTestCase(currentTestCase: GeneratedTestCase, updatedTestCase: TestCaseResponse): GeneratedTestCase {

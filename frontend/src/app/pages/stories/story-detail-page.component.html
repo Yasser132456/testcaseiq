@@ -156,7 +156,14 @@
             </section>
           }
 
-          <section class="panel analysis-panel">
+          <section
+            class="panel analysis-panel"
+            data-ai-state="analysis"
+            [class.is-analyzing]="analysisPhase() === 'running'"
+            [class.is-ai-success]="analysisPhase() === 'success'"
+            [class.is-ai-error]="analysisPhase() === 'error'"
+            [attr.aria-busy]="analyzing()"
+          >
             <div class="section-header">
               <div>
                 <h3>Story analysis</h3>
@@ -168,6 +175,13 @@
                 {{ analysisExpanded() ? 'Collapse' : 'Expand' }}
               </button>
             </div>
+            @if (analysisPhase() === 'running') {
+              <p class="ai-operation-label" role="status" aria-live="polite">Analyzing...</p>
+            } @else if (analysisPhase() === 'success') {
+              <p class="sr-only" role="status" aria-live="polite">Analysis complete.</p>
+            } @else if (analysisPhase() === 'error') {
+              <p class="sr-only" role="status" aria-live="polite">Analysis failed.</p>
+            }
             @if (analysisLoading()) {
               <app-skeleton [rows]="3" [cols]="3" />
             } @else if (analysisError()) {
@@ -187,7 +201,6 @@
                   }
                   <button
                     class="button analysis-button"
-                    [class.phosphor-glow]="showAnalyzeNudge()"
                     type="button"
                     (click)="analyzeStory()"
                     [disabled]="analyzing()"
@@ -196,20 +209,19 @@
                     {{ analyzing() ? 'Analyzing...' : 'Analyze Story' }}
                   </button>
                   @if (analyzing()) {
-                    <div class="operation-progress" aria-live="polite">
-                      <div class="shimmer-bar" aria-hidden="true"></div>
+                    <div class="operation-progress">
                       <p class="muted-text">Analyzing story... {{ analyzeElapsed() }}s — extracting requirements and coverage plan.</p>
                     </div>
                   }
                 }
               </div>
             } @else if (analysisExpanded()) {
-              <div class="score-grid">
+              <div class="score-grid" tcqReveal [tcqRevealActive]="analysisPhase() === 'success'">
                 <article class="score-card"><span>Requirement quality</span><strong>{{ formatScore(analysis()?.qaValidation?.requirementQualityScore) }}</strong></article>
                 <article class="score-card"><span>Testability</span><strong>{{ formatScore(analysis()?.qaValidation?.testabilityScore) }}</strong></article>
                 <article class="score-card"><span>Confidence</span><strong>{{ formatScore(analysis()?.confidenceScore) }}</strong></article>
               </div>
-              <div class="analysis-grid">
+              <div class="analysis-grid" [tcqReveal]="0.04" [tcqRevealActive]="analysisPhase() === 'success'">
                 <section class="analysis-card">
                   <div class="analysis-card-header"><h4>Story understanding</h4></div>
                   <dl class="definition-list">
@@ -231,7 +243,7 @@
                   }
                 </section>
               </div>
-              <section class="analysis-card full-span">
+              <section class="analysis-card full-span" [tcqReveal]="0.08" [tcqRevealActive]="analysisPhase() === 'success'">
                 <div class="analysis-card-header"><h4>Extracted requirements</h4></div>
                 @if (requirementCount() === 0) {
                   <app-state-message title="No requirements extracted" message="Run analysis again after adding more story detail." />
@@ -269,7 +281,7 @@
                   </div>
                 }
               </section>
-              <div class="analysis-grid">
+              <div class="analysis-grid" [tcqReveal]="0.12" [tcqRevealActive]="analysisPhase() === 'success'">
                 <section class="analysis-card">
                   <div class="analysis-card-header"><h4>Questions and risks</h4></div>
                   @if ((analysis()?.ambiguities?.ambiguities?.length ?? 0) === 0) {
@@ -329,7 +341,21 @@
       }
 
       @if (activeTab() === 'test-cases') {
-        <div class="test-cases-tab-panel">
+        <div
+          class="test-cases-tab-panel"
+          data-ai-state="generation"
+          [class.is-generating]="generationPhase() === 'running'"
+          [class.is-ai-success]="generationPhase() === 'success'"
+          [class.is-ai-error]="generationPhase() === 'error'"
+          [attr.aria-busy]="generatingTests()"
+        >
+          @if (generationPhase() === 'running') {
+            <p class="ai-operation-label" role="status" aria-live="polite">Generating...</p>
+          } @else if (generationPhase() === 'success') {
+            <p class="sr-only" role="status" aria-live="polite">Generation complete.</p>
+          } @else if (generationPhase() === 'error') {
+            <p class="sr-only" role="status" aria-live="polite">Generation failed.</p>
+          }
           @if (showReviewBoardNudge()) {
             <div class="activation-nudge" aria-live="polite">
               <div>
@@ -358,6 +384,7 @@
             [error]="testGenerationError()"
             [canEdit]="canEdit()"
             [generatingTests]="generatingTests()"
+            [streamGeneratedRows]="generationPhase() === 'success'"
             (generateRequested)="generateTestCases()"
             (testCaseUpdated)="onTestCaseUpdated($event)"
           />
@@ -365,8 +392,7 @@
             <button class="button secondary" type="button" (click)="generateTestCases()">Try again</button>
           }
           @if (generatingTests()) {
-            <div class="operation-progress" aria-live="polite">
-              <div class="shimmer-bar" aria-hidden="true"></div>
+            <div class="operation-progress">
               <p class="muted-text">Generating test suite... {{ generateElapsed() }}s — this usually takes 10–20 seconds.</p>
             </div>
           }
@@ -377,6 +403,8 @@
         <app-story-review-tab
           [testSuites]="testSuites()"
           (testCaseUpdated)="onTestCaseUpdated($event)"
+          (verdictOptimistic)="onVerdictOptimistic($event)"
+          (verdictRollback)="onVerdictRollback($event)"
         />
       }
     </div>

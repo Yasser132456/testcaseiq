@@ -24,6 +24,11 @@ interface ReviewDraft {
   steps?: Record<number, Partial<GeneratedTestStep>>;
 }
 
+export function generatedRowDelayMs(index: number, total: number): number {
+  if (index <= 0 || total <= 1) return 0;
+  return Math.round(index * Math.min(40, 600 / (total - 1)));
+}
+
 @Component({
   selector: 'app-story-test-cases-tab',
   standalone: true,
@@ -40,6 +45,7 @@ export class StoryTestCasesTabComponent {
   readonly error = input('');
   readonly canEdit = input(false);
   readonly generatingTests = input(false);
+  readonly streamGeneratedRows = input(false);
   readonly generateRequested = output<void>();
   readonly testCaseUpdated = output<{ original: GeneratedTestCase; updated: TestCaseResponse }>();
   readonly LucideClipboardList = LucideClipboardList;
@@ -66,6 +72,16 @@ export class StoryTestCasesTabComponent {
 
   totalTestCases(): number {
     return this.testSuites().reduce((total, suite) => total + suite.testCases.length, 0);
+  }
+
+  generatedRowIndex(suiteIndex: number, testCaseIndex: number): number {
+    return this.testSuites()
+      .slice(0, suiteIndex)
+      .reduce((total, suite) => total + suite.testCases.length, testCaseIndex);
+  }
+
+  generatedRowDelay(suiteIndex: number, testCaseIndex: number): number {
+    return generatedRowDelayMs(this.generatedRowIndex(suiteIndex, testCaseIndex), this.totalTestCases());
   }
 
   suiteWarnings(suite: GeneratedTestSuiteResult): string[] {

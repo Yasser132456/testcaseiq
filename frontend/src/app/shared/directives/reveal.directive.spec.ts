@@ -6,10 +6,11 @@ import { RevealDirective } from './reveal.directive';
 @Component({
   standalone: true,
   imports: [RevealDirective],
-  template: '<div class="target" [tcqReveal]="delay">Visible content</div>'
+  template: '<div class="target" [tcqReveal]="delay" [tcqRevealActive]="active()">Visible content</div>'
 })
 class RevealHostComponent {
   delay = 0.15;
+  active = signal(true);
 }
 
 describe('RevealDirective', () => {
@@ -104,6 +105,17 @@ describe('RevealDirective', () => {
 
   it('applies no opacity or transform when reduced motion is enabled', () => {
     reducedMotion.set(true);
+
+    fixture.detectChanges();
+    const target = fixture.nativeElement.querySelector('.target') as HTMLElement;
+
+    expect(target.style.opacity).toBe('');
+    expect(target.style.transform).toBe('');
+    expect(observerCreations).toBe(0);
+  });
+
+  it('does not prepare or observe content when the reveal is inactive', () => {
+    fixture.componentInstance.active.set(false);
 
     fixture.detectChanges();
     const target = fixture.nativeElement.querySelector('.target') as HTMLElement;

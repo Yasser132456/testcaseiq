@@ -35,14 +35,38 @@ describe('AnalysisService', () => {
   });
 
   it('runs story analysis', () => {
+    expect(service.operationState().phase).toBe('idle');
+
     service.analyzeStory('story-1').subscribe((analysis) => {
       expect(analysis.provider).toBe('mock-ai-provider');
     });
+
+    expect(service.operationState()).toEqual(jasmine.objectContaining({
+      phase: 'running',
+      storyId: 'story-1'
+    }));
 
     const request = http.expectOne('/api/stories/story-1/analyze');
     expect(request.request.method).toBe('POST');
     expect(request.request.body).toEqual({});
     request.flush(analysisResponse());
+
+    expect(service.operationState()).toEqual(jasmine.objectContaining({
+      phase: 'success',
+      storyId: 'story-1'
+    }));
+  });
+
+  it('exposes a settled error state when analysis fails', () => {
+    service.analyzeStory('story-2').subscribe({ error: () => undefined });
+
+    const request = http.expectOne('/api/stories/story-2/analyze');
+    request.flush({ message: 'failed' }, { status: 500, statusText: 'Server Error' });
+
+    expect(service.operationState()).toEqual(jasmine.objectContaining({
+      phase: 'error',
+      storyId: 'story-2'
+    }));
   });
 
   function analysisResponse() {
