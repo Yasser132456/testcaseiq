@@ -13,6 +13,11 @@
 .table-panel { overflow-x: auto; }
 .selectable-row { cursor: pointer; }
 .story-title { font-weight: 600; }
+.story-title-link:focus-visible {
+  border-radius: var(--radius-xs);
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
 .project-name { color: var(--color-text-2); }
 .type-badge {
   display: inline-flex;

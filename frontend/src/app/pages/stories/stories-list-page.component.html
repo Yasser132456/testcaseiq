@@ -68,7 +68,16 @@
         <tbody>
           @for (item of pagedStories(); track item.story.id) {
             <tr class="selectable-row" [vtName]="'story-' + item.story.id" (click)="openStory(item)">
-              <td><div class="row-inner story-title">{{ item.story.title }}</div></td>
+              <td>
+                <div class="row-inner story-title">
+                  <a
+                    class="story-title-link"
+                    [routerLink]="['/stories', item.story.id]"
+                    [state]="{ projectContext: projectContextFor(item.project) }"
+                    (click)="$event.stopPropagation()"
+                  >{{ item.story.title }}</a>
+                </div>
+              </td>
               <td><div class="row-inner project-name">{{ item.project.name }}</div></td>
               <td><div class="row-inner"><span class="type-badge">{{ formatLabel(item.story.type) }}</span></div></td>
               <td><div class="row-inner"><app-story-status-pill [status]="displayStatus(item.story)" /></div></td>

@@ -22,7 +22,7 @@
           <span>Searching</span>
         </div>
       } @else if (isEmpty()) {
-        <div class="search-state">No results for '{{ query() }}'. Try a project key, story title, suite name, or test case phrase.</div>
+        <div class="search-state" role="status" aria-live="polite">No results for '{{ query() }}'. Try a project key, story title, suite name, or test case phrase.</div>
       } @else {
         @if (query().length === 0 && recentSearches().length > 0) {
           <div class="result-group">
@@ -60,7 +60,7 @@
             }
           </div>
         } @empty {
-          <div class="search-state">No recent searches yet. Search projects, stories, suites, or cases to build quick return paths.</div>
+          <div class="search-state" role="status" aria-live="polite">No recent searches yet. Search projects, stories, suites, or cases to build quick return paths.</div>
         }
       }
     </div>

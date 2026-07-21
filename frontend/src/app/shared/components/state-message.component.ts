@@ -11,7 +11,7 @@ import { Component, Input } from '@angular/core';
       [class.warning]="tone === 'warning'"
       [class.info]="tone === 'info'"
       [attr.role]="tone === 'error' ? 'alert' : 'status'"
-      aria-live="polite"
+      [attr.aria-live]="tone === 'error' ? 'assertive' : 'polite'"
     >
       <strong>{{ title }}</strong>
       <p>{{ message }}</p>

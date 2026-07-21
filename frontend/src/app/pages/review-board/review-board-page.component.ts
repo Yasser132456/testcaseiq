@@ -222,7 +222,7 @@ interface ReviewCaseItem {
     .review-case-list{display:grid;align-content:start;max-height:calc(100vh - 14rem);overflow-y:auto;border-right:var(--b);background:var(--glass-bg-1)}
     .review-case-item{display:grid;gap:var(--space-sm);width:100%;min-height:6.25rem;padding:var(--space-md) var(--space-base);border:0;border-bottom:var(--b);background:transparent;color:var(--color-text);text-align:left;cursor:pointer;transition:background var(--dur) var(--ease),color var(--dur) var(--ease),transform var(--dur) var(--ease)}
     .review-case-item:hover:not(:disabled){background:rgba(255,255,255,.03);transform:translateX(2px)}
-    .review-case-item:focus-visible{outline:2px solid var(--color-accent);outline-offset:-2px}
+    .review-case-item:focus-visible{outline:2px solid var(--color-accent);outline-offset:2px}
     .review-case-item:active:not(:disabled){transform:translateX(2px) scale(.97)}
     .review-case-item:disabled{cursor:not-allowed;opacity:.45}.review-case-item.is-error{color:var(--color-red)}.review-case-item.is-success{color:var(--color-green)}
     .review-case-item.is-active{background:var(--color-accent-bg);color:var(--color-accent);transform:translateX(2px)}
