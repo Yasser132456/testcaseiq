@@ -12,12 +12,14 @@ import {
 import { Router, RouterLink } from '@angular/router';
 import { MotionService } from '../../core/motion/motion.service';
 import { AuthService } from '../../core/services/auth.service';
+import { RevealDirective } from '../../shared/directives/reveal.directive';
 import { WelcomeBackgroundComponent } from './welcome-background.component';
+import { WelcomeReviewGateComponent } from './welcome-review-gate.component';
 
 @Component({
   selector: 'app-welcome-page',
   standalone: true,
-  imports: [RouterLink, WelcomeBackgroundComponent],
+  imports: [RouterLink, RevealDirective, WelcomeBackgroundComponent, WelcomeReviewGateComponent],
   templateUrl: './welcome-page.component.html',
   styleUrl: './welcome-page.component.css'
 })
@@ -47,20 +49,42 @@ export class WelcomePageComponent implements OnInit, OnDestroy {
   }
 
   private runEntrance(): void {
-    const headlineLines = this.host.nativeElement.querySelectorAll('.wl-headline span');
+    const headlineLines = this.host.nativeElement.querySelectorAll('.wl-headline-line');
+    const supportingElements = this.host.nativeElement.querySelectorAll('.wl-hero-support');
     if (!this.motion.motionEnabled()) {
-      this.motion.gsap.set(headlineLines, { opacity: 1, y: 0, clipPath: 'inset(0 0 0 0)' });
       return;
     }
 
-    this.motion.gsap.from(headlineLines, {
+    this.motion.gsap.set(headlineLines, {
       opacity: 0,
       y: '110%',
       clipPath: 'inset(0 0 100% 0)',
+      willChange: 'transform,opacity,clip-path'
+    });
+    this.motion.gsap.set(supportingElements, {
+      opacity: 0,
+      y: 12,
+      willChange: 'transform,opacity'
+    });
+
+    this.motion.gsap.timeline()
+      .to(headlineLines, {
+      opacity: 1,
+      y: '0%',
+      clipPath: 'inset(0 0 0% 0)',
       duration: 0.72,
       ease: 'power4.out',
-      stagger: 0.06
-    });
+      stagger: 0.06,
+      clearProps: 'opacity,transform,clipPath,willChange'
+    })
+      .to(supportingElements, {
+        opacity: 1,
+        y: 0,
+        duration: 0.5,
+        ease: 'expo.out',
+        stagger: 0.05,
+        clearProps: 'opacity,transform,willChange'
+      }, '-=0.42');
   }
 
   private reconcileMagneticCtas(enabled: boolean): void {

@@ -12,32 +12,26 @@
 <main class="wl-page" id="main-content">
   <section class="wl-hero" aria-labelledby="welcome-title">
     <div class="wl-hero-copy">
-      <p class="wl-system-line">Human-reviewed test generation</p>
-      <h1 id="welcome-title" class="wl-headline" aria-label="AI drafts. Humans approve."><span>AI drafts. </span><span>Humans approve.</span></h1>
-      <p class="wl-sub">TestCaseIQ turns user stories into traceable QA assets without hiding the craft. The system analyzes requirements, drafts BDD cases, and keeps approval in the hands of the people accountable for quality.</p>
-      <div class="wl-ctas"><a class="wl-btn-primary wl-magnetic" routerLink="/register">Create account</a><a class="wl-btn-secondary wl-magnetic" routerLink="/login">Open workspace</a></div>
+      <p class="wl-system-line wl-hero-support">Human-reviewed test generation</p>
+      <h1 id="welcome-title" class="wl-headline" aria-label="AI drafts. Humans approve."><span class="wl-headline-line">AI drafts. </span><span class="wl-headline-line">Humans approve.</span></h1>
+      <p class="wl-sub wl-hero-support">TestCaseIQ turns user stories into traceable QA assets without hiding the craft. The system analyzes requirements, drafts BDD cases, and keeps approval in the hands of the people accountable for quality.</p>
+      <div class="wl-ctas wl-hero-support"><a class="wl-btn-primary wl-magnetic" routerLink="/register">Create account</a><a class="wl-btn-secondary wl-magnetic" routerLink="/login">Open workspace</a></div>
     </div>
 
-    <aside class="wl-instrument-panel glass-surface glass-surface--3 glass-scrim glass-scrim--3" aria-label="Workflow preview">
-      <div class="wl-panel-topline"><span class="wl-panel-status wl-pulse"></span><strong>Review gate active</strong><span>US-014</span></div>
-      <div class="wl-story-block"><span>Story intake</span><p>As a customer, I need failed payments to explain the next step.</p></div>
-      <div class="wl-analysis-grid"><div class="wl-chip wl-chip-purple">intent mapped</div><div class="wl-chip wl-chip-cyan">edge cases found</div><div class="wl-chip wl-chip-amber">clarify copy</div></div>
-      <div class="wl-bdd-panel"><div><span>Given</span><p>a saved card is declined</p></div><div><span>When</span><p>the payment is submitted</p></div><div><span>Then</span><p>the customer sees a recoverable action</p></div></div>
-      <div class="wl-decision-row"><span>Human decision</span><strong>Approved for export</strong></div>
-    </aside>
+    <app-welcome-review-gate />
   </section>
 
   <section class="wl-flow-row" id="workflow" aria-labelledby="workflow-title">
     <h2 id="workflow-title" class="sr-only">TestCaseIQ workflow overview</h2>
-    <article class="wl-flow-card glass-surface glass-surface--2 glass-surface--flat"><span>01</span><strong>Analyze</strong><p>Requirements, risks, and acceptance criteria become reviewable structure.</p></article>
-    <article class="wl-flow-card glass-surface glass-surface--2 glass-surface--flat"><span>02</span><strong>Generate</strong><p>Draft BDD cases arrive in a format QA engineers can inspect and edit.</p></article>
-    <article class="wl-flow-card glass-surface glass-surface--2 glass-surface--flat"><span>03</span><strong>Approve</strong><p>The human review gate decides what can become part of the suite.</p></article>
-    <article class="wl-flow-card glass-surface glass-surface--2 glass-surface--flat"><span>04</span><strong>Export</strong><p>Approved assets leave as Markdown, CSV, JSON, Playwright, or Postman.</p></article>
+    <article class="wl-flow-card glass-surface glass-surface--2 glass-surface--flat" [tcqReveal]="0"><span>01</span><strong>Analyze</strong><p>Requirements, risks, and acceptance criteria become reviewable structure.</p></article>
+    <article class="wl-flow-card glass-surface glass-surface--2 glass-surface--flat" [tcqReveal]="0.04"><span>02</span><strong>Generate</strong><p>Draft BDD cases arrive in a format QA engineers can inspect and edit.</p></article>
+    <article class="wl-flow-card glass-surface glass-surface--2 glass-surface--flat" [tcqReveal]="0.08"><span>03</span><strong>Approve</strong><p>The human review gate decides what can become part of the suite.</p></article>
+    <article class="wl-flow-card glass-surface glass-surface--2 glass-surface--flat" [tcqReveal]="0.12"><span>04</span><strong>Export</strong><p>Approved assets leave as Markdown, CSV, JSON, Playwright, or Postman.</p></article>
   </section>
 
   <section class="wl-section wl-section--formats" id="formats" aria-labelledby="formats-title">
     <div class="wl-section-copy"><h2 id="formats-title">One suite, several exits.</h2><p>Keep the review workflow in TestCaseIQ, then export only what your team has accepted.</p></div>
-    <div class="wl-format-strip" aria-label="Supported export formats"><span class="wl-format wl-format--cyan">Playwright</span><span class="wl-format wl-format--cyan">Postman</span><span class="wl-format wl-format--green">CSV</span><span class="wl-format wl-format--green">JSON</span><span class="wl-format wl-format--purple">Markdown</span></div>
+    <div class="wl-format-strip" aria-label="Supported export formats"><span class="wl-format wl-format--cyan" [tcqReveal]="0">Playwright</span><span class="wl-format wl-format--cyan" [tcqReveal]="0.04">Postman</span><span class="wl-format wl-format--green" [tcqReveal]="0.08">CSV</span><span class="wl-format wl-format--green" [tcqReveal]="0.12">JSON</span><span class="wl-format wl-format--purple" [tcqReveal]="0.16">Markdown</span></div>
   </section>
 </main>
 
