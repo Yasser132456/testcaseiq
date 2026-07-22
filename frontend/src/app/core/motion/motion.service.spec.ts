@@ -129,6 +129,16 @@ describe('MotionService', () => {
     const service = createService();
 
     expect(service.forcedFallback()).toBeTrue();
+    expect(service.motionEnabled()).toBeFalse();
+    expect(service.cursorEffectsEnabled()).toBeFalse();
+    expect(service.sceneEffectsEnabled()).toBeFalse();
+  });
+
+  it('uses the same disabled policy for reduced motion', () => {
+    const service = createService({ reduced: true });
+
+    expect(service.reducedMotion()).toBeTrue();
+    expect(service.motionEnabled()).toBeFalse();
     expect(service.cursorEffectsEnabled()).toBeFalse();
     expect(service.sceneEffectsEnabled()).toBeFalse();
   });

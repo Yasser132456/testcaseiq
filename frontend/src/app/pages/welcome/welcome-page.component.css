@@ -4,10 +4,10 @@
 .wl-nav, .wl-page, .wl-footer { width: min(100% - 2rem, 1180px); margin-inline: auto; }
 .wl-nav { position: sticky; top: 0; z-index: var(--z-sticky); display: flex; align-items: center; justify-content: space-between; gap: var(--space-base); min-height: 4rem; padding: .7rem .85rem; border-top: 0; border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
 .wl-brand, .wl-footer-brand, .wl-nav-links, .wl-ctas { display: flex; align-items: center; gap: var(--space-sm); }
-.wl-brand, .wl-footer-brand { min-width: 0; color: var(--color-text); text-decoration: none; }
+.wl-brand, .wl-footer-brand { min-width: 0; min-height: 2.75rem; color: var(--color-text); text-decoration: none; }
 .wl-brand-mark { display: grid; width: 2rem; height: 2rem; place-items: center; flex: 0 0 auto; border: 1px solid var(--color-accent-border); border-radius: var(--radius-sm); background: var(--color-accent-bg); color: var(--color-accent); font-family: var(--font-mono); font-size: .72rem; font-weight: 800; }
 .wl-brand-name { overflow: hidden; color: var(--color-text); font-size: .9rem; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
-.wl-nav-link, .wl-btn-ghost-sm, .wl-btn-primary, .wl-btn-secondary { display: inline-flex; align-items: center; justify-content: center; min-height: 2.5rem; border-radius: var(--radius-md); text-decoration: none; white-space: nowrap; }
+.wl-nav-link, .wl-btn-ghost-sm, .wl-btn-primary, .wl-btn-secondary { display: inline-flex; align-items: center; justify-content: center; min-height: 2.75rem; border-radius: var(--radius-md); text-decoration: none; white-space: nowrap; }
 .wl-nav-link { padding: 0 .65rem; color: var(--color-text-2); font-size: .83rem; }
 .wl-nav-link:hover { color: var(--color-text); background: var(--glass-bg-1); }
 .wl-btn-ghost-sm, .wl-btn-secondary { border: 1px solid var(--glass-edge-strong); background: var(--glass-bg-1); color: var(--color-text); box-shadow: var(--glass-border-highlight); font-size: .84rem; font-weight: 700; }
@@ -15,7 +15,7 @@
 .wl-btn-primary { border: 1px solid transparent; background: var(--color-accent); color: var(--color-bg); box-shadow: 0 0 0 1px var(--color-accent-border), 0 10px 28px var(--color-accent-glow); font-size: .86rem; font-weight: 800; }
 .wl-magnetic { --magnetic-x: 0px; --magnetic-y: 0px; transform: translate3d(var(--magnetic-x), var(--magnetic-y), 0); transition: transform 420ms var(--ease-spring), box-shadow var(--dur-slow) var(--ease); }
 .wl-magnetic:hover, .wl-magnetic:focus-visible { box-shadow: 0 0 0 1px var(--color-accent-border), 0 0 28px color-mix(in oklch, var(--color-phosphor-glow) 72%, transparent), 0 14px 34px var(--color-accent-glow); }
-.wl-nav-link:focus-visible, .wl-btn-ghost-sm:focus-visible, .wl-btn-primary:focus-visible, .wl-btn-secondary:focus-visible, .wl-footer a:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 3px; }
+.wl-brand:focus-visible, .wl-nav-link:focus-visible, .wl-btn-ghost-sm:focus-visible, .wl-btn-primary:focus-visible, .wl-btn-secondary:focus-visible, .wl-footer a:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 3px; }
 .wl-page { display: grid; gap: clamp(3rem, 7vw, 5.5rem); padding-bottom: 4rem; }
 .wl-hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(21rem, .8fr); align-items: center; gap: clamp(2rem, 6vw, 6rem); min-height: min(90vh, 720px); padding-block: clamp(3rem, 8vw, 6rem); }
 .wl-hero-copy { display: grid; align-content: center; gap: var(--space-lg); }

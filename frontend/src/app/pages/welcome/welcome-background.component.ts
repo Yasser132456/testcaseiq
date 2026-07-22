@@ -37,6 +37,12 @@ interface MotionPolicy {
   forcedFallback: boolean;
 }
 
+declare global {
+  interface Window {
+    __welcomeFrameCosts?: number[];
+  }
+}
+
 const GRID_SPACING = 32;
 const CURSOR_RADIUS = 156;
 const MAX_FRAME_DELTA_SECONDS = 0.05;
@@ -53,9 +59,11 @@ const PARTICLE_FALLBACKS: ParticlePalette = {
   template: `
     <canvas
       #canvas
+      class="wl-grid-live"
       data-testid="welcome-background-canvas"
       aria-hidden="true"
     ></canvas>
+    <canvas #baseCanvas class="wl-grid-base" aria-hidden="true"></canvas>
   `,
   styles: [`
     :host {
@@ -70,11 +78,19 @@ const PARTICLE_FALLBACKS: ParticlePalette = {
       width: 100%;
       height: 100%;
       pointer-events: none;
+    }
+
+    .wl-grid-base {
+      z-index: 0;
       background:
         radial-gradient(ellipse 42% 58% at 24% 43%, color-mix(in oklch, var(--color-bg) 94%, transparent) 0 38%, transparent 76%),
         radial-gradient(circle at 18% 20%, color-mix(in oklch, var(--color-cyan-particle) 7%, transparent), transparent 34%),
         radial-gradient(circle at 82% 68%, color-mix(in oklch, var(--color-violet-particle) 8%, transparent), transparent 38%),
         linear-gradient(145deg, var(--color-bg), oklch(11% 0.018 220));
+    }
+
+    .wl-grid-live {
+      z-index: 1;
     }
   `]
 })
@@ -85,16 +101,31 @@ export class WelcomeBackgroundComponent implements OnDestroy {
   private readonly zone = inject(NgZone);
   private readonly motion = inject(MotionService);
   private readonly canvasRef = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
+  private readonly baseCanvasRef = viewChild.required<ElementRef<HTMLCanvasElement>>('baseCanvas');
   private readonly browserWindow = this.document.defaultView;
 
   private canvas?: HTMLCanvasElement;
   private context?: CanvasRenderingContext2D;
+  private baseCanvas?: HTMLCanvasElement;
+  private baseContext?: CanvasRenderingContext2D;
   private resizeObserver?: ResizeObserver;
   private policyEffect?: EffectRef;
   private dots: GridDot[] = [];
+  private activeDotIndices: number[] = [];
+  private candidateDotIndices: number[] = [];
+  private nextActiveDotIndices: number[] = [];
+  private candidateMarks = new Uint8Array(0);
+  private gridColumns = 0;
+  private gridRows = 0;
+  private gridOffsetX = 0;
+  private gridOffsetY = 0;
   private palette: ParticlePalette = PARTICLE_FALLBACKS;
   private viewportWidth = 0;
   private viewportHeight = 0;
+  private dirtyLeft = 0;
+  private dirtyTop = 0;
+  private dirtyWidth = 0;
+  private dirtyHeight = 0;
   private animationFrameId = 0;
   private lastFrameTime = 0;
   private shouldAnimate = false;
@@ -126,8 +157,13 @@ export class WelcomeBackgroundComponent implements OnDestroy {
       ? 1 / 60
       : Math.min((timestamp - this.lastFrameTime) / 1000, MAX_FRAME_DELTA_SECONDS);
     this.lastFrameTime = timestamp;
+    const frameCosts = this.browserWindow?.__welcomeFrameCosts;
+    const frameStartedAt = frameCosts ? this.browserWindow!.performance.now() : 0;
     this.updateInfluence(elapsed);
     this.drawFrame();
+    if (frameCosts && frameCosts.length < 180) {
+      frameCosts.push(this.browserWindow!.performance.now() - frameStartedAt);
+    }
     this.animationFrameId = this.browserWindow?.requestAnimationFrame(this.animate) ?? 0;
   };
 
@@ -160,8 +196,14 @@ export class WelcomeBackgroundComponent implements OnDestroy {
     this.resizeObserver?.disconnect();
     this.resizeObserver = undefined;
     this.dots = [];
+    this.activeDotIndices.length = 0;
+    this.candidateDotIndices.length = 0;
+    this.nextActiveDotIndices.length = 0;
+    this.candidateMarks = new Uint8Array(0);
     this.context = undefined;
     this.canvas = undefined;
+    this.baseContext = undefined;
+    this.baseCanvas = undefined;
   }
 
   private setup(): void {
@@ -173,6 +215,8 @@ export class WelcomeBackgroundComponent implements OnDestroy {
 
     this.canvas = canvas;
     this.context = context;
+    this.baseCanvas = this.baseCanvasRef().nativeElement;
+    this.baseContext = this.baseCanvas.getContext('2d') ?? undefined;
     this.palette = this.readPalette();
     this.resizeCanvas();
 
@@ -207,7 +251,7 @@ export class WelcomeBackgroundComponent implements OnDestroy {
   }
 
   private resizeCanvas(): void {
-    if (!this.canvas || !this.context || !this.browserWindow || this.destroyed) {
+    if (!this.canvas || !this.context || !this.baseCanvas || !this.baseContext || !this.browserWindow || this.destroyed) {
       return;
     }
 
@@ -219,10 +263,16 @@ export class WelcomeBackgroundComponent implements OnDestroy {
     this.viewportHeight = height;
     this.canvas.width = Math.round(width * dpr);
     this.canvas.height = Math.round(height * dpr);
+    this.baseCanvas.width = this.canvas.width;
+    this.baseCanvas.height = this.canvas.height;
     this.canvas.style.width = `${width}px`;
     this.canvas.style.height = `${height}px`;
     this.context.setTransform(dpr, 0, 0, dpr, 0, 0);
+    this.baseContext.setTransform(dpr, 0, 0, dpr, 0, 0);
+    this.dirtyWidth = 0;
+    this.dirtyHeight = 0;
     this.buildGrid();
+    this.drawBaseLayer();
     this.drawFrame();
   }
 
@@ -245,51 +295,121 @@ export class WelcomeBackgroundComponent implements OnDestroy {
     }
 
     this.dots = dots;
+    this.gridColumns = columns;
+    this.gridRows = rows;
+    this.gridOffsetX = offsetX;
+    this.gridOffsetY = offsetY;
+    this.activeDotIndices.length = 0;
+    this.candidateDotIndices.length = 0;
+    this.nextActiveDotIndices.length = 0;
+    this.candidateMarks = new Uint8Array(dots.length);
   }
 
   private updateInfluence(elapsedSeconds: number): void {
     const radiusSquared = CURSOR_RADIUS * CURSOR_RADIUS;
+    const attackEasing = 1 - Math.exp(-18 * elapsedSeconds);
+    const decayEasing = 1 - Math.exp(-8 * elapsedSeconds);
+    const candidates = this.candidateDotIndices;
+    candidates.length = 0;
+    for (const index of this.activeDotIndices) this.addCandidate(index);
+    if (this.pointer.active) {
+      const minColumn = Math.max(0, Math.floor((this.pointer.x - CURSOR_RADIUS - this.gridOffsetX) / GRID_SPACING));
+      const maxColumn = Math.min(this.gridColumns - 1, Math.ceil((this.pointer.x + CURSOR_RADIUS - this.gridOffsetX) / GRID_SPACING));
+      const minRow = Math.max(0, Math.floor((this.pointer.y - CURSOR_RADIUS - this.gridOffsetY) / GRID_SPACING));
+      const maxRow = Math.min(this.gridRows - 1, Math.ceil((this.pointer.y + CURSOR_RADIUS - this.gridOffsetY) / GRID_SPACING));
+      for (let row = minRow; row <= maxRow; row += 1) {
+        for (let column = minColumn; column <= maxColumn; column += 1) {
+          this.addCandidate(row * this.gridColumns + column);
+        }
+      }
+    }
 
-    for (const dot of this.dots) {
+    const nextActive = this.nextActiveDotIndices;
+    nextActive.length = 0;
+    for (const index of candidates) {
+      const dot = this.dots[index];
+      if (!dot) continue;
       const dx = dot.x - this.pointer.x;
       const dy = dot.y - this.pointer.y;
       const distanceSquared = dx * dx + dy * dy;
-      const target = this.pointer.active && distanceSquared < radiusSquared
-        ? Math.pow(1 - Math.sqrt(distanceSquared) / CURSOR_RADIUS, 2)
+      const falloff = this.pointer.active && distanceSquared < radiusSquared
+        ? 1 - Math.sqrt(distanceSquared) / CURSOR_RADIUS
         : 0;
-      const response = target > dot.influence ? 18 : 8;
-      const easing = 1 - Math.exp(-response * elapsedSeconds);
+      const target = falloff * falloff;
+      const easing = target > dot.influence ? attackEasing : decayEasing;
       dot.influence += (target - dot.influence) * easing;
+      if (dot.influence > 0.01) nextActive.push(index);
+      this.candidateMarks[index] = 0;
+    }
+    this.nextActiveDotIndices = this.activeDotIndices;
+    this.activeDotIndices = nextActive;
+  }
+
+  private addCandidate(index: number): void {
+    if (this.candidateMarks[index] === 0) {
+      this.candidateMarks[index] = 1;
+      this.candidateDotIndices.push(index);
     }
   }
 
+  private drawBaseLayer(): void {
+    if (!this.baseCanvas || !this.baseContext) return;
+    const context = this.baseContext;
+    context.save();
+    context.setTransform(1, 0, 0, 1, 0, 0);
+    context.clearRect(0, 0, this.baseCanvas.width, this.baseCanvas.height);
+    context.restore();
+    for (const dot of this.dots) {
+      context.beginPath();
+      context.arc(dot.x, dot.y, 0.72, 0, Math.PI * 2);
+      context.fillStyle = dot.baseColor;
+      context.globalAlpha = 0.14;
+      context.fill();
+    }
+    context.globalAlpha = 1;
+  }
+
   private drawFrame(): void {
-    if (!this.canvas || !this.context) {
+    if (!this.canvas || !this.context || !this.baseCanvas) {
       return;
     }
 
     const context = this.context;
-    context.save();
-    context.setTransform(1, 0, 0, 1, 0, 0);
-    context.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    context.restore();
-
-    for (const dot of this.dots) {
-      context.beginPath();
-      context.arc(dot.x, dot.y, 0.72 + dot.influence * 0.38, 0, Math.PI * 2);
-      context.fillStyle = dot.baseColor;
-      context.globalAlpha = 0.14 + dot.influence * 0.1;
-      context.fill();
-
-      if (dot.influence > 0.002) {
-        context.beginPath();
-        context.arc(dot.x, dot.y, 0.82 + dot.influence * 2.45, 0, Math.PI * 2);
-        context.fillStyle = this.palette.phosphor;
-        context.globalAlpha = 0.12 + dot.influence * 0.84;
-        context.fill();
-      }
+    if (this.dirtyWidth > 0 && this.dirtyHeight > 0) {
+      context.clearRect(this.dirtyLeft, this.dirtyTop, this.dirtyWidth, this.dirtyHeight);
     }
 
+    let minX = this.viewportWidth;
+    let minY = this.viewportHeight;
+    let maxX = 0;
+    let maxY = 0;
+
+    context.beginPath();
+    for (const index of this.activeDotIndices) {
+      const dot = this.dots[index];
+      if (!dot) continue;
+      const radius = 0.82 + dot.influence * 2.45;
+      context.moveTo(dot.x + radius, dot.y);
+      context.arc(dot.x, dot.y, radius, 0, Math.PI * 2);
+      minX = Math.min(minX, dot.x - radius);
+      minY = Math.min(minY, dot.y - radius);
+      maxX = Math.max(maxX, dot.x + radius);
+      maxY = Math.max(maxY, dot.y + radius);
+    }
+
+    if (minX <= maxX && minY <= maxY) {
+      context.fillStyle = this.palette.phosphor;
+      context.globalAlpha = 0.72;
+      context.fill();
+      const padding = 1;
+      this.dirtyLeft = minX - padding;
+      this.dirtyTop = minY - padding;
+      this.dirtyWidth = maxX - minX + padding * 2;
+      this.dirtyHeight = maxY - minY + padding * 2;
+    } else {
+      this.dirtyWidth = 0;
+      this.dirtyHeight = 0;
+    }
     context.globalAlpha = 1;
   }
 
@@ -318,6 +438,8 @@ export class WelcomeBackgroundComponent implements OnDestroy {
     this.dots.forEach((dot) => {
       dot.influence = 0;
     });
+    this.activeDotIndices.length = 0;
+    this.nextActiveDotIndices.length = 0;
     this.drawFrame();
   }
 
