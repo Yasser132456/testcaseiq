@@ -49,16 +49,14 @@ describe('BackgroundSceneComponent', () => {
     expect(fixture.componentInstance.renderMode()).toBe('fallback');
   }));
 
-  it('passes the requested welcome scene mode to the service', fakeAsync(() => {
+  it('boots the shared ambient scene service', fakeAsync(() => {
     const fixture = TestBed.createComponent(BackgroundSceneComponent);
-    fixture.componentRef.setInput('mode', 'welcome');
     fixture.detectChanges();
     tick();
 
     expect(service.init.calls.mostRecent().args as unknown[]).toEqual([
       jasmine.any(HTMLElement),
-      jasmine.any(AbortSignal),
-      'welcome'
+      jasmine.any(AbortSignal)
     ]);
   }));
 
@@ -87,15 +85,12 @@ describe('BackgroundSceneComponent', () => {
   it('marks fallback rendering as static and reacts to hidden-document policy', fakeAsync(() => {
     service.init.and.resolveTo('fallback');
     const fixture = TestBed.createComponent(BackgroundSceneComponent);
-    fixture.componentRef.setInput('mode', 'welcome');
     fixture.detectChanges();
     tick();
     fixture.detectChanges();
     const stage = fixture.nativeElement.querySelector('.background-scene') as HTMLElement;
 
     expect(stage.classList).toContain('is-fallback');
-    expect(getComputedStyle(stage, '::after').animationName).toBe('none');
-
     documentVisible.set(false);
     fixture.detectChanges();
     expect(stage.classList).toContain('is-motion-paused');

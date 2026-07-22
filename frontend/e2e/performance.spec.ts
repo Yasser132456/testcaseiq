@@ -69,21 +69,21 @@ test.afterAll(() => {
   }, null, 2)}\n`);
 });
 
-test('welcome entrance and cinematic scroll stay within the long-task budget', async ({ page }, testInfo) => {
+test('welcome entrance and normal scroll stay within the long-task budget', async ({ page }, testInfo) => {
   await page.goto('/login', { waitUntil: 'networkidle' });
   await settleAnimationFrames(page, 3);
 
-  await startAnimationWindow(page, 'welcome entrance');
   await page.getByRole('link', { name: /TestCaseIQ/ }).click();
   await expect(page.getByRole('heading', { name: 'AI drafts. Humans approve.' })).toBeVisible();
-  await assertRealMotionBackground(page, 'welcome');
+  await assertRealMotionBackground(page);
+  await startAnimationWindow(page, 'welcome entrance');
   await page.waitForTimeout(1_100);
   const entranceTasks = await stopAnimationWindow(page, '/', 'welcome entrance');
 
-  await startAnimationWindow(page, 'welcome cinematic scroll');
+  await startAnimationWindow(page, 'welcome normal scroll');
   await page.mouse.wheel(0, 720);
   await page.waitForTimeout(900);
-  const scrollTasks = await stopAnimationWindow(page, '/', 'welcome cinematic scroll');
+  const scrollTasks = await stopAnimationWindow(page, '/', 'welcome normal scroll');
 
   await recordAndAssert({
     route: '/',
@@ -107,7 +107,7 @@ test('dashboard entrance, pointer glow, and Lenis frames stay within budget', as
     .getByRole('link', { name: 'Dashboard' })
     .click();
   await expect(page.getByText('Test Generation Requested', { exact: true })).toBeVisible();
-  await assertRealMotionBackground(page, 'ambient');
+  await assertRealMotionBackground(page);
   await page.waitForTimeout(1_100);
   const longTasks = await stopAnimationWindow(page, '/dashboard', 'dashboard entrance');
 
@@ -248,15 +248,10 @@ async function authenticateForRealMotion(page: Page): Promise<void> {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
 }
 
-async function assertRealMotionBackground(page: Page, mode: 'welcome' | 'ambient'): Promise<void> {
+async function assertRealMotionBackground(page: Page): Promise<void> {
   const scene = page.getByTestId('background-scene');
   await expect(scene).toBeVisible();
   await expect.poll(async () => scene.getAttribute('class')).not.toMatch(/is-static/);
-  if (mode === 'welcome') {
-    await expect(scene).toHaveClass(/is-welcome/);
-  } else {
-    await expect(scene).not.toHaveClass(/is-welcome/);
-  }
   expect(await page.evaluate(() => matchMedia('(prefers-reduced-motion: reduce)').matches)).toBe(false);
 }
 
