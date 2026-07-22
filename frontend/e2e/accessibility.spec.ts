@@ -150,9 +150,19 @@ test('empty search results announce politely', async ({ page, request }) => {
   clearUnexpectedApiRequests(page);
 });
 
-test('welcome CTA and application navigation expose a two-pixel focus ring', async ({ page, request }) => {
+test('welcome navigation, CTAs, and footer expose a two-pixel focus ring', async ({ page, request }) => {
   await gotoStable(page, '/');
-  await expectTwoPixelFocusRing(page.locator('.wl-btn-primary').first());
+  for (const target of [
+    page.locator('.wl-brand'),
+    page.getByRole('link', { name: 'Workflow' }),
+    page.getByRole('link', { name: 'Exports' }),
+    page.locator('.wl-nav').getByRole('link', { name: 'Sign in' }),
+    page.getByRole('link', { name: 'Create account' }),
+    page.getByRole('link', { name: 'Open workspace' }),
+    page.locator('.wl-footer-brand')
+  ]) {
+    await expectTwoPixelFocusRing(target);
+  }
 
   await authenticateQualityUser(page, request);
   await gotoStable(page, '/dashboard');

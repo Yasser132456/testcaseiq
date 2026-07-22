@@ -10,6 +10,8 @@ import {
 
 const LONG_TASK_BUDGET_MS = 50;
 const STYLE_LAYOUT_FRAME_BUDGET_MS = 1;
+const WELCOME_FRAME_BUDGET_MS = 1.5;
+const WELCOME_FRAME_BUDGET_PERCENTILE = 0.95;
 const routeMetrics: RouteMetrics[] = [];
 
 type LongTaskMetric = {
@@ -32,6 +34,7 @@ type RouteMetrics = {
   longTasks: LongTaskMetric[];
   pointerGlowFrameCosts: FrameCostMetric[];
   lenisFrameCosts: FrameCostMetric[];
+  welcomeFrameCosts?: FrameCostMetric[];
 };
 
 type BrowserLongTask = {
@@ -45,12 +48,14 @@ declare global {
       start(name: string): void;
       stop(): { name: string; longTasks: BrowserLongTask[] };
     };
+    __welcomeFrameCosts?: number[];
   }
 }
 
 test.beforeEach(async ({ page }) => {
   await installHighMotionTier(page);
   await installLongTaskObserver(page);
+  await page.addInitScript(() => { window.__welcomeFrameCosts = []; });
   await installDeterministicApi(page);
   await page.emulateMedia({ reducedMotion: 'no-preference' });
 });
@@ -73,7 +78,9 @@ test.afterAll(() => {
     schemaVersion: 1,
     budgets: {
       longTaskMs: LONG_TASK_BUDGET_MS,
-      styleLayoutFrameMs: STYLE_LAYOUT_FRAME_BUDGET_MS
+      styleLayoutFrameMs: STYLE_LAYOUT_FRAME_BUDGET_MS,
+      welcomeFrameMs: WELCOME_FRAME_BUDGET_MS,
+      welcomeFramePercentile: WELCOME_FRAME_BUDGET_PERCENTILE
     },
     routes: routeMetrics
   }, null, 2)}\n`);
@@ -95,13 +102,21 @@ test('welcome entrance and normal scroll stay within the long-task budget', asyn
   await page.mouse.wheel(0, 720);
   await page.waitForTimeout(900);
   const scrollTasks = await stopAnimationWindow(page, '/', 'welcome normal scroll');
+  const welcomeFrameDurations = await page.evaluate(() => window.__welcomeFrameCosts ?? []);
+  expect(welcomeFrameDurations.length, 'welcome dot-grid must report frame costs').toBeGreaterThan(0);
 
   await recordAndAssert({
     route: '/',
     name: 'welcome',
     longTasks: [...entranceTasks, ...scrollTasks],
     pointerGlowFrameCosts: [],
-    lenisFrameCosts: []
+    lenisFrameCosts: [],
+    welcomeFrameCosts: welcomeFrameDurations.map((duration, frame) => ({
+      route: '/',
+      name: 'welcome dot-grid',
+      frame,
+      duration: round(duration)
+    }))
   }, testInfo);
   assertNoUnexpectedApiRequests(page);
 });
@@ -448,6 +463,17 @@ async function recordAndAssert(metrics: RouteMetrics, testInfo: TestInfo): Promi
       frame.duration,
       `${frame.route} / ${frame.name} frame ${frame.frame}: style+layout duration ${frame.duration}ms exceeded ${STYLE_LAYOUT_FRAME_BUDGET_MS}ms`
     ).toBeLessThan(STYLE_LAYOUT_FRAME_BUDGET_MS);
+  }
+  if (metrics.welcomeFrameCosts?.length) {
+    const sortedDurations = metrics.welcomeFrameCosts
+      .map((frame) => frame.duration)
+      .sort((left, right) => left - right);
+    const percentileIndex = Math.ceil(sortedDurations.length * WELCOME_FRAME_BUDGET_PERCENTILE) - 1;
+    const percentileDuration = sortedDurations[Math.max(0, percentileIndex)] ?? Number.POSITIVE_INFINITY;
+    expect(
+      percentileDuration,
+      `${metrics.route} / welcome dot-grid p95 frame cost ${percentileDuration}ms exceeded ${WELCOME_FRAME_BUDGET_MS}ms`
+    ).toBeLessThan(WELCOME_FRAME_BUDGET_MS);
   }
 }
 

@@ -12,7 +12,8 @@
     "e2e:a11y": "playwright test e2e/accessibility.spec.ts",
     "e2e:visual": "playwright test e2e/visual-regression.spec.ts",
     "e2e:performance": "playwright test e2e/performance.spec.ts",
-    "bundle:compare": "node scripts/compare-bundle-stats.mjs --base ../artifacts/perf-audit/main-stats.json --candidate dist/testcaseiq-frontend/stats.json --max-growth 5 --report ../artifacts/perf-audit/bundle-size-report.md"
+    "bundle:compare": "node scripts/compare-bundle-stats.mjs --base ../artifacts/perf-audit/main-stats.json --candidate dist/testcaseiq-frontend/stats.json --max-growth 5 --report ../artifacts/perf-audit/bundle-size-report.md",
+    "bundle:welcome": "node scripts/verify-welcome-chunk.mjs --base ../artifacts/perf-audit/welcome-s4-baseline-stats.json --candidate dist/testcaseiq-frontend/stats.json --report ../artifacts/perf-audit/welcome-s4-bundle-report.md"
   },
   "dependencies": {
     "@angular/common": "^22.0.1",

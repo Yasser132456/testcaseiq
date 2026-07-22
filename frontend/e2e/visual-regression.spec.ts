@@ -15,6 +15,12 @@ const SCREENSHOT_OPTIONS = {
 } as const;
 const liveAuthRequests = new WeakMap<Page, string[]>();
 
+declare global {
+  interface Window {
+    __welcomeRafRequests?: number;
+  }
+}
+
 async function capture(page: Page, name: string): Promise<void> {
   expect(new URL(page.url()).searchParams.get('bg')).toBe('fallback');
   expect(await page.evaluate(() => matchMedia('(prefers-reduced-motion: reduce)').matches)).toBe(true);
@@ -28,6 +34,12 @@ test.beforeEach(async ({ page }, testInfo) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.clock.install({ time: FIXED_NOW });
   await page.addInitScript(() => {
+    const requestFrame = window.requestAnimationFrame.bind(window);
+    window.__welcomeRafRequests = 0;
+    window.requestAnimationFrame = (callback: FrameRequestCallback): number => {
+      window.__welcomeRafRequests = (window.__welcomeRafRequests ?? 0) + 1;
+      return requestFrame(callback);
+    };
     const installDeterministicMotionStyle = () => {
       const style = document.createElement('style');
       style.dataset['visualRegression'] = 'deterministic-motion';
@@ -62,17 +74,26 @@ test.afterEach(async ({ page }) => {
   assertNoUnexpectedApiRequests(page);
 });
 
-test('welcome static fallback', async ({ page }) => {
-  await gotoStable(page, '/');
+for (const viewport of [
+  { name: 'welcome-desktop-1440x900.png', width: 1_440, height: 900 },
+  { name: 'welcome-mobile-390x844.png', width: 390, height: 844 }
+] as const) {
+  test(`welcome static fallback ${viewport.width}x${viewport.height}`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await gotoStable(page, '/');
 
-  await expect(page.getByRole('heading', { name: 'AI drafts. Humans approve.' })).toBeVisible();
-  const reviewGate = page.locator('app-welcome-review-gate .wl-instrument-panel');
-  await expect(reviewGate).toBeVisible();
-  await expect(reviewGate).toHaveAttribute('aria-hidden', 'true');
-  await expect(reviewGate).toHaveAttribute('data-state', 'approved');
+    await expect(page.getByRole('heading', { name: 'AI drafts. Humans approve.' })).toBeVisible();
+    const reviewGate = page.locator('app-welcome-review-gate .wl-instrument-panel');
+    await expect(reviewGate).toBeVisible();
+    await expect(reviewGate).toHaveAttribute('aria-hidden', 'true');
+    await expect(reviewGate).toHaveAttribute('data-state', 'approved');
+    await page.evaluate(() => { window.__welcomeRafRequests = 0; });
+    await page.waitForTimeout(120);
+    expect(await page.evaluate(() => window.__welcomeRafRequests ?? 0)).toBe(0);
 
-  await capture(page, 'welcome-static.png');
-});
+    await capture(page, viewport.name);
+  });
+}
 
 test('dashboard pipeline', async ({ page }) => {
   await authenticateQualityUserFromFixture(page);
