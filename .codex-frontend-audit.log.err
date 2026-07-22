@@ -1,0 +1,28 @@
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2339: Property 'showAddStoryNudge' does not exist on type 'ProjectDetailPageComponent'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/projects/project-detail-page.component.ts:49:13:
+[37m      49 │         @if ([32mshowAddStoryNudge[37m()) {
+         ╵              [32m~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2339: Property 'onboardingProgress' does not exist on type 'ProjectDetailPageComponent'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/projects/project-detail-page.component.ts:52:45:
+[37m      52 │ ...ass="progress-pill">{{ [32monboardingProgress[37m.progressLabel() }}</s...
+         ╵                           [32m~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2339: Property 'openFirstStoryDrawer' does not exist on type 'ProjectDetailPageComponent'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/projects/project-detail-page.component.ts:57:60:
+[37m      57 │ ...ype="button" (click)="[32mopenFirstStoryDrawer[37m()">Add first story</...
+         ╵                          [32m~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2339: Property 'onboardingProgress' does not exist on type 'ProjectDetailPageComponent'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/projects/project-detail-page.component.ts:58:66:
+[37m      58 │ ...type="button" (click)="[32monboardingProgress[37m.dismiss('add-first-st...
+         ╵                           [32m~~~~~~~~~~~~~~~~~~[0m
+
+
