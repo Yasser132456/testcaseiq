@@ -1,9 +1,7 @@
-import { Component, inject, signal } from '@angular/core';
-import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
-import { filter } from 'rxjs';
+import { Component, inject } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
 import { AuthService } from './core/services/auth.service';
 import { BackgroundSceneComponent } from './shared/background/background-scene.component';
-import { BackgroundSceneRenderMode, backgroundSceneModeForRoute } from './shared/background/background-scene.service';
 import { ToastContainerComponent } from './shared/components/toast-container.component';
 
 @Component({
@@ -11,7 +9,7 @@ import { ToastContainerComponent } from './shared/components/toast-container.com
   standalone: true,
   imports: [RouterOutlet, BackgroundSceneComponent, ToastContainerComponent],
   template: `
-    <app-background-scene [mode]="backgroundMode()" />
+    <app-background-scene />
     <main class="app-content-layer">
       <router-outlet />
     </main>
@@ -39,13 +37,8 @@ import { ToastContainerComponent } from './shared/components/toast-container.com
 })
 export class AppComponent {
   private readonly authService = inject(AuthService);
-  private readonly router = inject(Router);
-  readonly backgroundMode = signal<BackgroundSceneRenderMode>(backgroundSceneModeForRoute(this.router.url));
 
   constructor() {
     this.authService.loadCurrentUser().subscribe();
-    this.router.events
-      .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
-      .subscribe((event) => this.backgroundMode.set(backgroundSceneModeForRoute(event.urlAfterRedirects || event.url)));
   }
 }

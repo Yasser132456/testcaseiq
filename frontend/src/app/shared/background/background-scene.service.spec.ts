@@ -6,7 +6,6 @@ import { MotionQualityTier, MotionService } from '../../core/motion/motion.servi
 import {
   BackgroundSceneService,
   backgroundSceneAccentNameForRoute,
-  backgroundSceneModeForRoute,
   operationAccentEnabledForMotion
 } from './background-scene.service';
 
@@ -200,16 +199,6 @@ describe('backgroundSceneAccentNameForRoute', () => {
   it('maps analysis contexts to violet and generation contexts to cyan', () => {
     expect(backgroundSceneAccentNameForRoute('/projects/7/analysis')).toBe('violet');
     expect(backgroundSceneAccentNameForRoute('/test-generation')).toBe('cyan');
-  });
-});
-
-describe('backgroundSceneModeForRoute', () => {
-  it('uses the cinematic welcome mode only on the public brand-register route', () => {
-    expect(backgroundSceneModeForRoute('/')).toBe('welcome');
-    expect(backgroundSceneModeForRoute('/?bg=fallback')).toBe('welcome');
-    expect(backgroundSceneModeForRoute('/login')).toBe('ambient');
-    expect(backgroundSceneModeForRoute('/register')).toBe('ambient');
-    expect(backgroundSceneModeForRoute('/dashboard')).toBe('ambient');
   });
 });
 

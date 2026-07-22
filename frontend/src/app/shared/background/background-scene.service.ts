@@ -8,7 +8,6 @@ import { LenisService } from '../../core/motion/lenis.service';
 import { MotionQualityTier, MotionService } from '../../core/motion/motion.service';
 
 export type BackgroundSceneMode = 'live' | 'static' | 'fallback';
-export type BackgroundSceneRenderMode = 'ambient' | 'welcome';
 export type BackgroundSceneAccentName = 'phosphor' | 'violet' | 'cyan' | 'green';
 
 export interface BackgroundSceneAccent {
@@ -44,18 +43,6 @@ interface SceneHandles {
   staticRender: boolean;
   tint: { r: number; g: number; b: number };
   vignette: { r: number; g: number; b: number };
-  welcome?: WelcomeSceneHandles;
-}
-
-interface WelcomeSceneHandles {
-  geometry: Three.BufferGeometry;
-  material: Three.ShaderMaterial;
-  points: Three.Points;
-  prism?: {
-    geometry: Three.BoxGeometry;
-    material: Three.MeshPhysicalMaterial;
-    mesh: Three.Mesh;
-  };
 }
 
 interface KillableTween {
@@ -92,11 +79,6 @@ export function backgroundSceneAccentNameForRoute(url: string): BackgroundSceneA
   }
 
   return 'phosphor';
-}
-
-export function backgroundSceneModeForRoute(url: string): BackgroundSceneRenderMode {
-  const path = url.split('?')[0].split('#')[0];
-  return path === '/' || path === '' ? 'welcome' : 'ambient';
 }
 
 @Injectable({ providedIn: 'root' })
@@ -143,8 +125,7 @@ export class BackgroundSceneService {
 
   async init(
     host: HTMLElement,
-    signal?: AbortSignal,
-    renderMode: BackgroundSceneRenderMode = 'ambient'
+    signal?: AbortSignal
   ): Promise<BackgroundSceneMode> {
     this.dispose();
 
@@ -159,7 +140,7 @@ export class BackgroundSceneService {
 
     this.accentPalette = this.readAccentPalette(THREE);
     const reducedMotion = this.motion.reducedMotion();
-    this.createScene(THREE, host, reducedMotion, renderMode);
+    this.createScene(THREE, host, reducedMotion);
 
     return reducedMotion ? 'static' : 'live';
   }
@@ -186,22 +167,9 @@ export class BackgroundSceneService {
       layer.geometry.dispose();
       layer.material.dispose();
     });
-    this.handles.welcome?.geometry.dispose();
-    this.handles.welcome?.material.dispose();
-    this.handles.welcome?.prism?.geometry.dispose();
-    this.handles.welcome?.prism?.material.dispose();
     renderer.dispose();
     renderer.domElement.remove();
     this.handles = undefined;
-  }
-
-  setWelcomeProgress(progress: number): void {
-    const welcome = this.handles?.welcome;
-    if (!welcome) {
-      return;
-    }
-
-    welcome.material.uniforms['uProgress'].value = Math.max(0, Math.min(1, progress));
   }
 
   setSceneAccent(name: BackgroundSceneAccentName): void {
@@ -243,8 +211,7 @@ export class BackgroundSceneService {
   private createScene(
     THREE: typeof Three,
     host: HTMLElement,
-    reducedMotion: boolean,
-    renderMode: BackgroundSceneRenderMode
+    reducedMotion: boolean
   ): void {
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
@@ -262,24 +229,15 @@ export class BackgroundSceneService {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, this.dprCap));
     host.appendChild(renderer.domElement);
 
-    const layers = renderMode === 'welcome' ? [] : this.buildParticleLayers(THREE, accentColor);
+    const layers = this.buildParticleLayers(THREE, accentColor);
     layers.forEach(({ points }) => scene.add(points));
-    const welcome = renderMode === 'welcome'
-      ? this.buildWelcomeScene(THREE, renderer, accentColor, reducedMotion)
-      : undefined;
-    if (welcome) {
-      scene.add(welcome.points);
-      if (welcome.prism) {
-        scene.add(welcome.prism.mesh);
-      }
-    }
 
     const resize = () => {
       const width = Math.max(host.clientWidth, 1);
       const height = Math.max(host.clientHeight, 1);
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
-      renderer.setSize(width, height, false);
+      renderer.setSize(width, height, true);
       layers.forEach(({ material }) => {
         material.uniforms['uPixelRatio'].value = Math.min(window.devicePixelRatio || 1, this.dprCap);
       });
@@ -299,8 +257,7 @@ export class BackgroundSceneService {
       scene,
       staticRender: reducedMotion,
       tint: { r: accentColor.r, g: accentColor.g, b: accentColor.b },
-      vignette: { r: accentColor.r, g: accentColor.g, b: accentColor.b },
-      welcome
+      vignette: { r: accentColor.r, g: accentColor.g, b: accentColor.b }
     };
     resize();
 
@@ -317,7 +274,7 @@ export class BackgroundSceneService {
       return;
     }
 
-    const { camera, cursorDrift, cursorLight, layers, renderer, scene, welcome } = this.handles;
+    const { camera, cursorDrift, cursorLight, layers, renderer, scene } = this.handles;
     const targetScroll = this.motion.qualityTier() === 'static'
       ? 0
       : Math.max(-0.4, Math.min(0.4, this.lenis.scrollVelocity() * 0.035));
@@ -333,14 +290,6 @@ export class BackgroundSceneService {
       layer.material.uniforms['uCursor'].value.set(cursorLight.x, cursorLight.y);
       layer.material.uniforms['uLightEnabled'].value = cursorLight.enabled;
     });
-    if (welcome) {
-      welcome.material.uniforms['uTime'].value += 0.016;
-      if (welcome.prism) {
-        welcome.prism.mesh.rotation.x += 0.0022;
-        welcome.prism.mesh.rotation.y += 0.0035;
-        welcome.prism.mesh.rotation.z += 0.0012;
-      }
-    }
     renderer.render(scene, camera);
     this.animationFrame = requestAnimationFrame(() => {
       this.animationFrame = 0;
@@ -505,118 +454,6 @@ export class BackgroundSceneService {
         speedY: band.speedY
       };
     });
-  }
-
-  private buildWelcomeScene(
-    THREE: typeof Three,
-    renderer: Three.WebGLRenderer,
-    color: Three.Color,
-    reducedMotion: boolean
-  ): WelcomeSceneHandles {
-    const particleTotal = this.motion.qualityTier() === 'high' ? 960 : 640;
-    const positions: number[] = [];
-    const targets: number[] = [];
-    const phases: number[] = [];
-
-    for (let i = 0; i < particleTotal; i += 1) {
-      const row = i % 8;
-      const column = Math.floor(i / 8) % 12;
-      const x = -9.5 - Math.random() * 4.5;
-      const y = (Math.random() - 0.5) * 5.4;
-      const z = (Math.random() - 0.5) * 3.6;
-      positions.push(x, y, z);
-      targets.push((column - 5.5) * 0.42 + 4.8, (row - 3.5) * 0.42, (Math.floor(i / 96) % 5 - 2) * 0.22);
-      phases.push(Math.random() * Math.PI * 2);
-    }
-
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-    geometry.setAttribute('targetPosition', new THREE.Float32BufferAttribute(targets, 3));
-    geometry.setAttribute('phase', new THREE.Float32BufferAttribute(phases, 1));
-
-    const material = new THREE.ShaderMaterial({
-      transparent: true,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending,
-      uniforms: {
-        uColor: { value: color.clone() },
-        uPixelRatio: { value: Math.min(window.devicePixelRatio || 1, this.dprCap) },
-        uProgress: { value: reducedMotion ? 1 : 0 },
-        uTime: { value: 0 }
-      },
-      vertexShader: `
-        uniform float uPixelRatio;
-        uniform float uProgress;
-        uniform float uTime;
-        attribute vec3 targetPosition;
-        attribute float phase;
-        varying float vOrder;
-
-        void main() {
-          float gate = smoothstep(0.08, 0.82, uProgress + sin(phase) * 0.025);
-          vec3 chaos = position;
-          chaos.x += uProgress * 8.2;
-          chaos.y += sin(uTime * 1.7 + phase) * (1.0 - gate) * 0.34;
-          chaos.z += cos(uTime * 1.3 + phase) * (1.0 - gate) * 0.28;
-          vec3 transformed = mix(chaos, targetPosition, gate);
-          vec4 mvPosition = modelViewMatrix * vec4(transformed, 1.0);
-          gl_Position = projectionMatrix * mvPosition;
-          gl_PointSize = (18.0 + gate * 10.0) * uPixelRatio * (12.0 / max(-mvPosition.z, 0.1));
-          vOrder = gate;
-        }
-      `,
-      fragmentShader: `
-        uniform vec3 uColor;
-        varying float vOrder;
-
-        void main() {
-          float d = length(gl_PointCoord - vec2(0.5));
-          if (d > 0.5) {
-            discard;
-          }
-          float alpha = smoothstep(0.5, 0.08, d) * mix(0.32, 0.82, vOrder);
-          gl_FragColor = vec4(uColor * mix(0.55, 1.35, vOrder), alpha);
-        }
-      `
-    });
-
-    const points = new THREE.Points(geometry, material);
-    const handles: WelcomeSceneHandles = { geometry, material, points };
-
-    if (this.motion.qualityTier() === 'high' && !reducedMotion) {
-      const envCanvas = this.document.createElement('canvas');
-      envCanvas.width = 32;
-      envCanvas.height = 16;
-      const context = envCanvas.getContext('2d');
-      if (context) {
-        const gradient = context.createLinearGradient(0, 0, envCanvas.width, envCanvas.height);
-        gradient.addColorStop(0, '#b8ff5a');
-        gradient.addColorStop(0.45, '#9be7ff');
-        gradient.addColorStop(1, '#c99bff');
-        context.fillStyle = gradient;
-        context.fillRect(0, 0, envCanvas.width, envCanvas.height);
-      }
-      const texture = new THREE.CanvasTexture(envCanvas);
-      const pmrem = new THREE.PMREMGenerator(renderer);
-      const envMap = pmrem.fromEquirectangular(texture).texture;
-      pmrem.dispose();
-      const prismGeometry = new THREE.BoxGeometry(1.8, 2.8, 1.8);
-      const prismMaterial = new THREE.MeshPhysicalMaterial({
-        color: color.clone(),
-        transmission: 1,
-        roughness: 0.08,
-        thickness: 1.5,
-        ior: 1.5,
-        transparent: true,
-        opacity: 0.72,
-        envMap
-      });
-      const mesh = new THREE.Mesh(prismGeometry, prismMaterial);
-      mesh.position.set(0.25, 0, -0.4);
-      handles.prism = { geometry: prismGeometry, material: prismMaterial, mesh };
-    }
-
-    return handles;
   }
 
   private setRouteAccent(url: string): void {
