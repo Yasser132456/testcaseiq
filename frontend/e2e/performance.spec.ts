@@ -49,10 +49,20 @@ declare global {
 }
 
 test.beforeEach(async ({ page }) => {
+  await installHighMotionTier(page);
   await installLongTaskObserver(page);
   await installDeterministicApi(page);
   await page.emulateMedia({ reducedMotion: 'no-preference' });
 });
+
+async function installHighMotionTier(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    Object.defineProperty(Navigator.prototype, 'hardwareConcurrency', {
+      configurable: true,
+      get: () => 8
+    });
+  });
+}
 
 test.afterAll(() => {
   const outputPath = process.env['PERF_AUDIT_OUTPUT'];
@@ -70,12 +80,13 @@ test.afterAll(() => {
 });
 
 test('welcome entrance and normal scroll stay within the long-task budget', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/login', { waitUntil: 'networkidle' });
   await settleAnimationFrames(page, 3);
 
   await page.getByRole('link', { name: /TestCaseIQ/ }).click();
   await expect(page.getByRole('heading', { name: 'AI drafts. Humans approve.' })).toBeVisible();
-  await assertRealMotionBackground(page);
+  await assertWelcomeMotionBackground(page);
   await startAnimationWindow(page, 'welcome entrance');
   await page.waitForTimeout(1_100);
   const entranceTasks = await stopAnimationWindow(page, '/', 'welcome entrance');
@@ -253,6 +264,74 @@ async function assertRealMotionBackground(page: Page): Promise<void> {
   await expect(scene).toBeVisible();
   await expect.poll(async () => scene.getAttribute('class')).not.toMatch(/is-static/);
   expect(await page.evaluate(() => matchMedia('(prefers-reduced-motion: reduce)').matches)).toBe(false);
+}
+
+async function assertWelcomeMotionBackground(page: Page): Promise<void> {
+  const canvas = page.getByTestId('welcome-background-canvas');
+  await expect(canvas).toBeVisible();
+  await expect(page.getByTestId('background-scene')).toHaveCount(0);
+  await expect.poll(async () => canvas.evaluate((element: HTMLCanvasElement) => ({
+    bufferHeight: element.height,
+    bufferWidth: element.width,
+    cssHeight: element.style.height,
+    cssWidth: element.style.width,
+    dpr: window.devicePixelRatio,
+    viewportHeight: document.documentElement.clientHeight,
+    viewportWidth: document.documentElement.clientWidth
+  }))).toEqual({
+    bufferHeight: Math.round(900 * await page.evaluate(() => window.devicePixelRatio)),
+    bufferWidth: Math.round(1440 * await page.evaluate(() => window.devicePixelRatio)),
+    cssHeight: '900px',
+    cssWidth: '1440px',
+    dpr: await page.evaluate(() => window.devicePixelRatio),
+    viewportHeight: 900,
+    viewportWidth: 1440
+  });
+  expect(await page.evaluate(() => matchMedia('(prefers-reduced-motion: reduce)').matches)).toBe(false);
+
+  const hardwareConcurrency = await page.evaluate(() => navigator.hardwareConcurrency);
+  expect(hardwareConcurrency, 'welcome cursor audit requires the high motion tier').toBeGreaterThan(2);
+  const target = await canvas.evaluate((element: HTMLCanvasElement) => {
+    const spacing = 32;
+    const columns = Math.ceil(element.clientWidth / spacing) + 1;
+    const rows = Math.ceil(element.clientHeight / spacing) + 1;
+    return {
+      x: (element.clientWidth - (columns - 1) * spacing) / 2 + Math.floor(columns / 2) * spacing,
+      y: (element.clientHeight - (rows - 1) * spacing) / 2 + Math.floor(rows / 2) * spacing
+    };
+  });
+
+  await page.mouse.move(4, 4);
+  await settleAnimationFrames(page, 6);
+  const restingEnergy = await canvasEnergy(canvas, target.x, target.y);
+  await page.mouse.move(target.x, target.y);
+  await settleAnimationFrames(page, 8);
+  const hotEnergy = await canvasEnergy(canvas, target.x, target.y);
+  expect(hotEnergy, 'dots near the pointer should visibly brighten and scale').toBeGreaterThan(restingEnergy * 1.5);
+}
+
+async function canvasEnergy(
+  canvas: ReturnType<Page['getByTestId']>,
+  cssX: number,
+  cssY: number
+): Promise<number> {
+  return canvas.evaluate((element: HTMLCanvasElement, point) => {
+    const context = element.getContext('2d');
+    if (!context) throw new Error('Welcome canvas does not expose a 2D context.');
+    const dpr = element.width / element.clientWidth;
+    const sampleSize = Math.max(1, Math.round(16 * dpr));
+    const pixels = context.getImageData(
+      Math.max(0, Math.round(point.cssX * dpr - sampleSize / 2)),
+      Math.max(0, Math.round(point.cssY * dpr - sampleSize / 2)),
+      sampleSize,
+      sampleSize
+    ).data;
+    let energy = 0;
+    for (let index = 0; index < pixels.length; index += 4) {
+      energy += pixels[index] + pixels[index + 1] + pixels[index + 2] + pixels[index + 3];
+    }
+    return energy;
+  }, { cssX, cssY });
 }
 
 async function startAnimationWindow(page: Page, name: string): Promise<void> {
