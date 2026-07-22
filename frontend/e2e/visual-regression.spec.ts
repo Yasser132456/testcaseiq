@@ -66,7 +66,10 @@ test('welcome static fallback', async ({ page }) => {
   await gotoStable(page, '/');
 
   await expect(page.getByRole('heading', { name: 'AI drafts. Humans approve.' })).toBeVisible();
-  await expect(page.getByRole('complementary', { name: 'Workflow preview' })).toBeVisible();
+  const reviewGate = page.locator('app-welcome-review-gate .wl-instrument-panel');
+  await expect(reviewGate).toBeVisible();
+  await expect(reviewGate).toHaveAttribute('aria-hidden', 'true');
+  await expect(reviewGate).toHaveAttribute('data-state', 'approved');
 
   await capture(page, 'welcome-static.png');
 });

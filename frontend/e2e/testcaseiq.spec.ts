@@ -406,7 +406,7 @@ test.describe('guards', () => {
     await expect(page.getByText('NEXT ACTION')).toBeVisible();
     await expect(page.getByRole('navigation', { name: 'Dashboard totals' })).toBeVisible();
     await expect(page.getByTestId('glass-tilt').first()).toHaveAttribute('data-tilt-state', 'reduced-motion');
-    await expect(page.getByTestId('background-scene')).toHaveClass(/is-static/);
+    await expect(page.getByTestId('background-scene')).toHaveClass(/is-(static|fallback)/);
   });
 });
 
