@@ -1,16 +1,28 @@
 import { signal } from '@angular/core';
+import { By } from '@angular/platform-browser';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { MotionService } from '../../core/motion/motion.service';
 import { AuthService } from '../../core/services/auth.service';
+import { RevealDirective } from '../../shared/directives/reveal.directive';
 import { WelcomePageComponent } from './welcome-page.component';
 
 describe('WelcomePageComponent', () => {
   let fixture: ComponentFixture<WelcomePageComponent>;
   let cursorEffectsEnabled: ReturnType<typeof signal<boolean>>;
+  let motionEnabled: ReturnType<typeof signal<boolean>>;
+  let gsapSet: jasmine.Spy;
+  let gsapTimeline: jasmine.Spy;
+  let timelineTo: jasmine.Spy;
 
   beforeEach(() => {
     cursorEffectsEnabled = signal(false);
+    motionEnabled = signal(false);
+    gsapSet = jasmine.createSpy('set');
+    timelineTo = jasmine.createSpy('to');
+    const timeline = { to: timelineTo };
+    timelineTo.and.returnValue(timeline);
+    gsapTimeline = jasmine.createSpy('timeline').and.returnValue(timeline);
 
     TestBed.configureTestingModule({
       imports: [WelcomePageComponent],
@@ -21,7 +33,7 @@ describe('WelcomePageComponent', () => {
           provide: MotionService,
           useValue: {
             qualityTier: signal('static' as const),
-            motionEnabled: signal(false),
+            motionEnabled,
             cursorEffectsEnabled,
             documentVisible: signal(true),
             reducedMotion: signal(false),
@@ -29,7 +41,8 @@ describe('WelcomePageComponent', () => {
             sceneEffectsEnabled: signal(false),
             gsap: {
               from: jasmine.createSpy('from'),
-              set: jasmine.createSpy('set')
+              set: gsapSet,
+              timeline: gsapTimeline
             }
           }
         }
@@ -62,6 +75,65 @@ describe('WelcomePageComponent', () => {
 
     expect(native.querySelector('section[aria-labelledby="workflow-title"]')?.textContent).toContain('01');
     expect(native.querySelector('section[aria-labelledby="formats-title"]')?.textContent).toContain('One suite, several exits.');
+  });
+
+  it('leaves hero content untouched when motion is disabled', () => {
+    const native = fixture.nativeElement as HTMLElement;
+
+    expect(gsapSet).not.toHaveBeenCalledWith(
+      jasmine.anything(),
+      jasmine.objectContaining({ clipPath: 'inset(0 0 100% 0)' })
+    );
+    expect(gsapTimeline).not.toHaveBeenCalled();
+    expect(native.querySelector('.wl-headline')?.textContent).toContain('Humans approve.');
+    expect(native.querySelector('.wl-sub')?.getAttribute('style')).toBeNull();
+  });
+
+  it('hides content only when the enabled hero timeline starts', () => {
+    motionEnabled.set(true);
+    gsapSet.calls.reset();
+    gsapTimeline.calls.reset();
+    timelineTo.calls.reset();
+
+    (fixture.componentInstance as unknown as { runEntrance(): void }).runEntrance();
+
+    expect(gsapSet).toHaveBeenCalledTimes(2);
+    expect(gsapSet.calls.argsFor(0)[1]).toEqual(jasmine.objectContaining({
+      y: '110%',
+      clipPath: 'inset(0 0 100% 0)'
+    }));
+    expect(gsapSet.calls.argsFor(1)[1]).toEqual(jasmine.objectContaining({ opacity: 0, y: 12 }));
+    expect(gsapTimeline).toHaveBeenCalled();
+    expect(timelineTo.calls.argsFor(0)[1]).toEqual(jasmine.objectContaining({
+      y: '0%',
+      clipPath: 'inset(0 0 0% 0)',
+      ease: 'power4.out',
+      stagger: 0.06
+    }));
+    expect(timelineTo.calls.argsFor(1)[1]).toEqual(jasmine.objectContaining({
+      opacity: 1,
+      y: 0,
+      stagger: 0.05
+    }));
+  });
+
+  it('uses the extracted review gate and reveals only the two below-fold groups', () => {
+    const native = fixture.nativeElement as HTMLElement;
+    const reveals = fixture.debugElement.queryAll(By.directive(RevealDirective));
+
+    expect(native.querySelectorAll('app-welcome-review-gate')).toHaveSize(1);
+    expect(native.querySelector('.wl-hero [tcqReveal]')).toBeNull();
+    expect(reveals).toHaveSize(9);
+
+    const workflowDelays = reveals
+      .filter((item) => item.nativeElement.classList.contains('wl-flow-card'))
+      .map((item) => item.injector.get(RevealDirective).tcqReveal);
+    const formatDelays = reveals
+      .filter((item) => item.nativeElement.classList.contains('wl-format'))
+      .map((item) => item.injector.get(RevealDirective).tcqReveal);
+
+    expect(workflowDelays).toEqual([0, 0.04, 0.08, 0.12]);
+    expect(formatDelays).toEqual([0, 0.04, 0.08, 0.12, 0.16]);
   });
 
   it('removes and rebinds magnetic listeners as cursor policy changes', () => {
