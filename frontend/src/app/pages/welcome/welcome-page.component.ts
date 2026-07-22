@@ -12,11 +12,12 @@ import {
 import { Router, RouterLink } from '@angular/router';
 import { MotionService } from '../../core/motion/motion.service';
 import { AuthService } from '../../core/services/auth.service';
+import { WelcomeBackgroundComponent } from './welcome-background.component';
 
 @Component({
   selector: 'app-welcome-page',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, WelcomeBackgroundComponent],
   templateUrl: './welcome-page.component.html',
   styleUrl: './welcome-page.component.css'
 })

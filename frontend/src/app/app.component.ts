@@ -1,15 +1,25 @@
-import { Component, inject } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { DOCUMENT } from '@angular/common';
+import { Component, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
+import { filter } from 'rxjs';
 import { AuthService } from './core/services/auth.service';
 import { BackgroundSceneComponent } from './shared/background/background-scene.component';
 import { ToastContainerComponent } from './shared/components/toast-container.component';
+
+export function usesWelcomeBackground(url: string): boolean {
+  const path = url.split('?')[0].split('#')[0];
+  return path === '' || path === '/';
+}
 
 @Component({
   selector: 'app-root',
   standalone: true,
   imports: [RouterOutlet, BackgroundSceneComponent, ToastContainerComponent],
   template: `
-    <app-background-scene />
+    @if (sharedBackgroundVisible()) {
+      <app-background-scene />
+    }
     <main class="app-content-layer">
       <router-outlet />
     </main>
@@ -37,8 +47,28 @@ import { ToastContainerComponent } from './shared/components/toast-container.com
 })
 export class AppComponent {
   private readonly authService = inject(AuthService);
+  private readonly document = inject(DOCUMENT);
+  private readonly router = inject(Router);
+  readonly sharedBackgroundVisible = signal(!usesWelcomeBackground(this.initialRouteUrl()));
 
   constructor() {
     this.authService.loadCurrentUser().subscribe();
+    this.router.events
+      .pipe(
+        filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+        takeUntilDestroyed()
+      )
+      .subscribe((event) => {
+        this.sharedBackgroundVisible.set(
+          !usesWelcomeBackground(event.urlAfterRedirects || event.url)
+        );
+      });
+  }
+
+  private initialRouteUrl(): string {
+    const location = this.document.defaultView?.location;
+    return location
+      ? `${location.pathname}${location.search}${location.hash}`
+      : this.router.url;
   }
 }

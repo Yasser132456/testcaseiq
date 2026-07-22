@@ -20,8 +20,12 @@ describe('WelcomePageComponent', () => {
         {
           provide: MotionService,
           useValue: {
+            qualityTier: signal('static' as const),
             motionEnabled: signal(false),
             cursorEffectsEnabled,
+            documentVisible: signal(true),
+            reducedMotion: signal(false),
+            forcedFallback: signal(false),
             sceneEffectsEnabled: signal(false),
             gsap: {
               from: jasmine.createSpy('from'),
@@ -49,6 +53,8 @@ describe('WelcomePageComponent', () => {
     expect(native.querySelector('.wl-ctas a[routerLink="/login"]')?.textContent).toContain('Open workspace');
     expect(native.querySelector('[data-cinematic-beat]')).toBeNull();
     expect(native.querySelector('.wl-cinema')).toBeNull();
+    expect(native.querySelector('app-welcome-background canvas')).not.toBeNull();
+    expect(native.querySelector('app-background-scene')).toBeNull();
   });
 
   it('renders workflow and formats as labelled regions', () => {
