@@ -389,6 +389,7 @@ export class WelcomeBackgroundComponent implements OnDestroy {
       const dot = this.dots[index];
       if (!dot) continue;
       const radius = 0.82 + dot.influence * 2.45;
+      context.moveTo(dot.x + radius, dot.y);
       context.arc(dot.x, dot.y, radius, 0, Math.PI * 2);
       minX = Math.min(minX, dot.x - radius);
       minY = Math.min(minY, dot.y - radius);

@@ -13,7 +13,7 @@
 | Bundle | Baseline | Candidate | Delta |
 |---|---:|---:|---:|
 | Shared main | 843,139 B | 843,139 B | 0 B |
-| Lazy welcome | 31,078 B | 33,971 B | +2,893 B |
+| Lazy welcome | 31,078 B | 33,991 B | +2,913 B |
 
 The welcome route remains lazy-loaded. The candidate welcome chunk contains zero Three.js modules, confirming that the deleted Three.js welcome branch is absent from the chunk.
 

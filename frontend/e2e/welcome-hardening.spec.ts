@@ -103,6 +103,45 @@ test('fallback and reduced motion leave one approved static frame', async ({ pag
   expect(await page.evaluate(() => window.__welcomeRafRequests ?? 0)).toBe(0);
 });
 
+test('pointer response remains a field of discrete dots', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(Navigator.prototype, 'hardwareConcurrency', {
+      configurable: true,
+      get: () => 8
+    });
+  });
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/', { waitUntil: 'networkidle' });
+  await page.evaluate(() => document.fonts.ready);
+
+  const canvas = page.getByTestId('welcome-background-canvas');
+  await expect(canvas).toBeVisible();
+  await page.mouse.move(900, 430);
+  await page.waitForTimeout(250);
+
+  const coverage = await canvas.evaluate((element: HTMLCanvasElement) => {
+    const context = element.getContext('2d');
+    if (!context) throw new Error('Welcome canvas does not expose a 2D context.');
+    const dpr = element.width / element.clientWidth;
+    const sampleSize = Math.round(360 * dpr);
+    const pixels = context.getImageData(
+      Math.round(720 * dpr),
+      Math.round(250 * dpr),
+      sampleSize,
+      sampleSize
+    ).data;
+    let paintedPixels = 0;
+    for (let index = 3; index < pixels.length; index += 4) {
+      if (pixels[index] > 0) paintedPixels += 1;
+    }
+    return paintedPixels / (pixels.length / 4);
+  });
+
+  expect(coverage, 'cursor response should remain sparse, not a connected fill').toBeGreaterThan(0.001);
+  expect(coverage, 'cursor response should remain sparse, not a connected fill').toBeLessThan(0.08);
+});
+
 test('welcome exposes one ordered heading tree and a static review-gate description', async ({ page }) => {
   await gotoStable(page, '/');
 
