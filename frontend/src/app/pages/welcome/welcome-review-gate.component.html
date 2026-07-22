@@ -1,0 +1,43 @@
+<aside
+  class="wl-instrument-panel glass-surface glass-surface--3 glass-scrim glass-scrim--3"
+  [attr.data-state]="state()"
+  [attr.data-ai-state]="aiState()"
+  [class.is-analyzing]="state() === 'analyzing'"
+  [class.is-generating]="state() === 'drafting'"
+  aria-hidden="true"
+>
+  <div class="wl-panel-topline">
+    <span class="wl-panel-status wl-pulse"></span>
+    <strong class="wl-panel-phase">{{ phaseLabels[state()] }}</strong>
+    <span>US-014</span>
+  </div>
+
+  <div class="wl-story-block">
+    <span>Story intake</span>
+    <p>As a customer, I need failed payments to explain the next step.</p>
+  </div>
+
+  <div class="wl-analysis-grid t-stagger" [class.is-shown]="state() !== 'intake'">
+    <div class="wl-chip wl-chip-purple t-stagger-line t-stagger-line--1">intent mapped</div>
+    <div class="wl-chip wl-chip-cyan t-stagger-line t-stagger-line--2">edge cases found</div>
+    <div class="wl-chip wl-chip-amber t-stagger-line t-stagger-line--3">clarify copy</div>
+  </div>
+
+  <div class="wl-bdd-panel t-stagger" [class.is-shown]="state() === 'drafting' || state() === 'approved'">
+    <div class="wl-bdd-row t-stagger-line t-stagger-line--1"><span>Given</span><p>a saved card is declined</p></div>
+    <div class="wl-bdd-row t-stagger-line t-stagger-line--2"><span>When</span><p>the payment is submitted</p></div>
+    <div class="wl-bdd-row t-stagger-line t-stagger-line--3"><span>Then</span><p>the customer sees a recoverable action</p></div>
+  </div>
+
+  <div class="wl-decision-row" [class.is-charged]="state() === 'approved'">
+    <span>Human decision</span>
+    <strong>
+      <svg class="t-success-check" [attr.data-state]="state() === 'approved' ? 'in' : 'out'" viewBox="0 0 20 20" aria-hidden="true">
+        <path d="M4 10.5 8 14l8-9" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+      </svg>
+      Approved for export
+    </strong>
+  </div>
+</aside>
+
+<span class="sr-only">Review gate active — approved for export</span>
