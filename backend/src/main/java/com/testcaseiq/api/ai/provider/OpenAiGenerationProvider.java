@@ -11,6 +11,7 @@ import com.testcaseiq.api.ai.dto.ExtractedRequirementDto;
 import com.testcaseiq.api.ai.dto.GeneratedTestCaseDto;
 import com.testcaseiq.api.ai.dto.GeneratedTestSuiteResult;
 import com.testcaseiq.api.ai.dto.GeneratedTestStepDto;
+import com.testcaseiq.api.ai.dto.RegenerateContext;
 import com.testcaseiq.api.ai.dto.StoryAnalysisRequest;
 import com.testcaseiq.api.ai.dto.StoryAnalysisResult;
 import com.testcaseiq.api.ai.dto.TestGenerationRequest;
@@ -73,6 +74,14 @@ public class OpenAiGenerationProvider implements AiGenerationProvider {
     }
 
     @Override
+    public GeneratedTestCaseDto regenerateTestCase(RegenerateContext context) {
+        String response = callProvider(buildRegenerationPrompt(context));
+        GeneratedTestCaseDto result = readResponse(response, GeneratedTestCaseDto.class, "test case regeneration");
+        validateTestCase(result);
+        return result;
+    }
+
+    @Override
     public String providerName() {
         return PROVIDER_NAME;
     }
@@ -92,6 +101,13 @@ public class OpenAiGenerationProvider implements AiGenerationProvider {
         return promptTemplates.testGenerationPrompt()
                 + "\n\n"
                 + untrustedRequirementContentBlock("Source story and extracted requirements JSON", request);
+    }
+
+    private String buildRegenerationPrompt(RegenerateContext context) {
+        return promptTemplates.testGenerationPrompt()
+                + "\n\nReturn exactly one GeneratedTestCaseDto JSON object, not a full suite. Revise the current test case using the reviewer reason."
+                + "\n\n"
+                + untrustedRequirementContentBlock("Test case regeneration context JSON", context);
     }
 
     private String untrustedRequirementContentBlock(String label, Object value) {

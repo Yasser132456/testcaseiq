@@ -110,6 +110,19 @@ describe('ReviewService', () => {
     }));
   });
 
+  it('regenerates a persisted test case with a reason', () => {
+    service.regenerate('test-case-1', 'Cover issuer decline reasons.')
+      .subscribe((testCase) => {
+        expect(testCase.id).toBe('test-case-1');
+        expect(testCase.title).toBe('Checkout happy path revised');
+      });
+
+    const request = http.expectOne('/api/test-cases/test-case-1/regenerate');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({ reason: 'Cover issuer decline reasons.' });
+    request.flush(testCaseResponse({ title: 'Checkout happy path revised' }));
+  });
+
   it('loads review history for a test case', () => {
     service.getReviewEvents('test-case-1').subscribe((events) => {
       expect(events.length).toBe(1);

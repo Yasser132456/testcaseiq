@@ -8,15 +8,18 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.testcaseiq.api.ai.service.AiGenerationService;
 import com.testcaseiq.api.audit.AuditAction;
 import com.testcaseiq.api.audit.AuditOutcome;
 import com.testcaseiq.api.audit.AuditService;
 import com.testcaseiq.api.domain.enums.ReviewStatus;
 import com.testcaseiq.api.review.dto.ReviewEventResponse;
+import com.testcaseiq.api.review.dto.RegenerateRequest;
 import com.testcaseiq.api.review.dto.TestCaseAutomationCandidateUpdateRequest;
 import com.testcaseiq.api.review.dto.TestCasePriorityUpdateRequest;
 import com.testcaseiq.api.review.dto.TestCaseResponse;
@@ -32,10 +35,16 @@ import jakarta.validation.Valid;
 public class TestCaseReviewController {
 
     private final TestCaseReviewService testCaseReviewService;
+    private final AiGenerationService aiGenerationService;
     private final AuditService auditService;
 
-    public TestCaseReviewController(TestCaseReviewService testCaseReviewService, AuditService auditService) {
+    public TestCaseReviewController(
+            TestCaseReviewService testCaseReviewService,
+            AiGenerationService aiGenerationService,
+            AuditService auditService
+    ) {
         this.testCaseReviewService = testCaseReviewService;
+        this.aiGenerationService = aiGenerationService;
         this.auditService = auditService;
     }
 
@@ -52,6 +61,17 @@ public class TestCaseReviewController {
                 ? Map.of("reviewDecision", request.status().name())
                 : Map.of();
         auditService.log(action, "TEST_CASE", testCaseId.toString(), AuditOutcome.SUCCESS, null, metadata);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/regenerate")
+    @org.springframework.security.access.prepost.PreAuthorize("!@securityEnforcement.isEnforced() or hasAnyRole('ADMIN', 'QA_ENGINEER')")
+    public ResponseEntity<TestCaseResponse> regenerate(
+            @PathVariable UUID testCaseId,
+            @Valid @RequestBody RegenerateRequest request
+    ) {
+        TestCaseResponse response = aiGenerationService.regenerateTestCase(testCaseId, request.reason(), "local-reviewer");
+        auditService.log(AuditAction.TEST_CASE_REGENERATED, "TEST_CASE", testCaseId.toString(), AuditOutcome.SUCCESS, null);
         return ResponseEntity.ok(response);
     }
 

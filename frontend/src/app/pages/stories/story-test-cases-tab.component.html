@@ -108,6 +108,7 @@
                         <button class="button danger" type="button" (click)="updateReviewStatus(testCase, 'REJECTED')" [disabled]="isReviewBusy(testCase)">Reject</button>
                         <button class="button clarification-button" type="button" (click)="updateReviewStatus(testCase, 'NEEDS_CLARIFICATION')" [disabled]="isReviewBusy(testCase)">Needs clarification</button>
                         <button class="button review-button" type="button" (click)="updateReviewStatus(testCase, 'NEEDS_REVIEW')" [disabled]="isReviewBusy(testCase)">Needs review</button>
+                        <button class="button secondary" type="button" (click)="regenerate(testCase)" [disabled]="isReviewBusy(testCase)">Regenerate</button>
                       </div>
                       <div class="review-field-grid">
                         <label>
@@ -224,8 +225,13 @@
                               <article class="review-event-row">
                                 <div>
                                   <strong>{{ formatLabel(event.actionType) }}</strong>
-                                  <p>{{ event.previousValue || 'None' }} -> {{ event.newValue || 'None' }}</p>
+                                  @if (event.actionType !== 'REGENERATED') {
+                                    <p>{{ event.previousValue || 'None' }} -> {{ event.newValue || 'None' }}</p>
+                                  }
                                   @if (event.comment) { <small>{{ event.comment }}</small> }
+                                  @if (regeneratedSnapshots(event); as diff) {
+                                    <app-diff-view [before]="diff.before" [after]="diff.after" />
+                                  }
                                 </div>
                                 <time>{{ event.createdAt | date:'medium' }}</time>
                               </article>
@@ -304,6 +310,29 @@
           <button class="button generate-button" type="button" (click)="submitGenerationOptions()" [disabled]="generatingTests()">
             {{ generatingTests() ? 'Generating...' : 'Generate' }}
           </button>
+        </div>
+      </section>
+    </div>
+  }
+
+  @if (rejectDialogTestCase(); as rejectingCase) {
+    <div class="generation-dialog-backdrop" role="presentation" (click)="closeRejectDialog()">
+      <section class="generation-dialog" role="dialog" aria-modal="true" aria-labelledby="reject-dialog-title" (click)="$event.stopPropagation()">
+        <div class="section-header">
+          <h3 id="reject-dialog-title">Reject test case</h3>
+          <button class="button secondary small" type="button" (click)="closeRejectDialog()">Close</button>
+        </div>
+        <label>
+          <span>Reason</span>
+          <textarea rows="4" [value]="rejectReason()" (input)="updateRejectReason($any($event.target).value)"></textarea>
+        </label>
+        <label class="checkbox-field">
+          <input type="checkbox" [checked]="rejectRegenerate()" (change)="updateRejectRegenerate($any($event.target).checked)" />
+          <span>Regenerate after reject</span>
+        </label>
+        <div class="generation-dialog-actions">
+          <button class="button secondary" type="button" (click)="closeRejectDialog()">Cancel</button>
+          <button class="button danger" type="button" (click)="submitRejectDialog()" [disabled]="isReviewBusy(rejectingCase)">Reject</button>
         </div>
       </section>
     </div>

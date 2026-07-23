@@ -15,6 +15,7 @@ describe('StoryTestCasesTabComponent', () => {
       'updateRisk',
       'updateAutomationCandidate',
       'updateTestCase',
+      'regenerate',
       'getReviewEvents'
     ]);
     const toastService = jasmine.createSpyObj<ToastService>('ToastService', ['show']);

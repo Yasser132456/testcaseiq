@@ -18,6 +18,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.testcaseiq.api.ai.dto.AmbiguityDetectionResult;
 import com.testcaseiq.api.ai.dto.CoverageItemDto;
@@ -31,6 +32,7 @@ import com.testcaseiq.api.ai.dto.GeneratedTestSuiteResult;
 import com.testcaseiq.api.ai.dto.QaValidationResult;
 import com.testcaseiq.api.ai.dto.RequirementExtractionResult;
 import com.testcaseiq.api.ai.dto.TestGenerationOptions;
+import com.testcaseiq.api.ai.dto.RegenerateContext;
 import com.testcaseiq.api.ai.dto.StoryAnalysisRequest;
 import com.testcaseiq.api.ai.dto.StoryAnalysisResult;
 import com.testcaseiq.api.ai.dto.TestGenerationRequest;
@@ -58,6 +60,7 @@ import com.testcaseiq.api.domain.model.TestStep;
 import com.testcaseiq.api.domain.model.TestSuite;
 import com.testcaseiq.api.domain.repository.AiJobRepository;
 import com.testcaseiq.api.domain.repository.StoryRepository;
+import com.testcaseiq.api.domain.repository.TestCaseRepository;
 import com.testcaseiq.api.ai.service.TestCaseQualityScoringService;
 
 @ExtendWith(MockitoExtension.class)
@@ -72,6 +75,9 @@ class AiGenerationServiceTests {
     @Mock
     private AiGenerationProvider aiGenerationProvider;
 
+    @Mock
+    private TestCaseRepository testCaseRepository;
+
     private AiGenerationService aiGenerationService;
 
     @BeforeEach
@@ -79,6 +85,7 @@ class AiGenerationServiceTests {
         aiGenerationService = new AiGenerationService(
                 storyRepository,
                 aiJobRepository,
+                testCaseRepository,
                 aiGenerationProvider,
                 new AiOutputValidationService(),
                 new TestCaseQualityScoringService(),
@@ -292,6 +299,83 @@ class AiGenerationServiceTests {
         assertThat(suiteResponse.testCases().get(0).testData().get(0).id()).isEqualTo(testCase.getTestDataEntries().get(0).getId());
     }
 
+    @Test
+    void regenerateTestCaseKeepsIdAndReviewStatusReplacesStepsRecomputesScoreAndRecordsSnapshots() throws Exception {
+        Story story = story();
+        Ambiguity answered = new Ambiguity("Which decline codes are in scope?", AmbiguitySeverity.MEDIUM);
+        answered.resolve("Use insufficient funds and expired card.", "qa");
+        story.addAmbiguity(answered);
+        TestSuite suite = new TestSuite("Checkout suite");
+        TestCase testCase = new TestCase("Card declined", TestCaseType.NEGATIVE);
+        ReflectionTestUtils.setField(testCase, "id", UUID.randomUUID());
+        testCase.setDescription("Old decline path.");
+        testCase.setTestLayer(TestLayer.UI);
+        testCase.setPriority(Priority.MEDIUM);
+        testCase.setRiskLevel(RiskLevel.MEDIUM);
+        testCase.setReviewStatus(ReviewStatus.NEEDS_CLARIFICATION);
+        testCase.setExpectedResult("Given a declined payment");
+        testCase.setQualityScore(31);
+        testCase.addStep(new TestStep(1, "Submit an expired card.", "A generic error appears."));
+        testCase.addTestData(new TestData("oldCard", "{\"state\":\"expired\"}"));
+        suite.addTestCase(testCase);
+        story.addTestSuite(suite);
+        GeneratedTestCaseDto regenerated = new GeneratedTestCaseDto(
+                "Card declined (revised: issuer response)",
+                "Covers issuer-specific decline messaging.",
+                TestCaseType.NEGATIVE,
+                TestLayer.UI,
+                Priority.HIGH,
+                RiskLevel.HIGH,
+                true,
+                0.92,
+                "Given issuer decline details are available",
+                List.of("REQ-1"),
+                List.of(
+                        new GeneratedTestStepDto(1, "Submit a card declined for insufficient funds.", "The issuer decline reason is displayed."),
+                        new GeneratedTestStepDto(2, "Retry with an expired card.", "The expired-card correction is displayed.")
+                ),
+                List.of(new GeneratedTestDataDto("declinedCards", "{\"codes\":[\"insufficient_funds\",\"expired_card\"]}")),
+                "Reviewer requested issuer-specific decline coverage.",
+                "Declined payments show actionable reasons"
+        );
+        when(testCaseRepository.findById(testCase.getId())).thenReturn(Optional.of(testCase));
+        when(aiGenerationProvider.regenerateTestCase(any(RegenerateContext.class))).thenReturn(regenerated);
+        when(testCaseRepository.save(testCase)).thenReturn(testCase);
+        ArgumentCaptor<RegenerateContext> contextCaptor = ArgumentCaptor.forClass(RegenerateContext.class);
+
+        var response = aiGenerationService.regenerateTestCase(
+                testCase.getId(),
+                "Issuer response is unclear.",
+                "qa-reviewer"
+        );
+
+        assertThat(response.id()).isEqualTo(testCase.getId());
+        assertThat(response.reviewStatus()).isEqualTo(ReviewStatus.NEEDS_CLARIFICATION);
+        assertThat(response.title()).isEqualTo("Card declined (revised: issuer response)");
+        assertThat(response.steps()).hasSize(2);
+        assertThat(response.steps().get(0).action()).contains("insufficient funds");
+        assertThat(testCase.getTestDataEntries()).singleElement()
+                .satisfies(testData -> assertThat(testData.getName()).isEqualTo("declinedCards"));
+        assertThat(testCase.getQualityScore()).isGreaterThan(31);
+        assertThat(testCase.getConfidenceLevel()).isNotNull();
+        assertThat(testCase.getReviewEvents()).singleElement().satisfies(event -> {
+            assertThat(event.getActionType()).isEqualTo("REGENERATED");
+            assertThat(event.getReviewer()).isEqualTo("qa-reviewer");
+            assertThat(event.getComment()).isEqualTo("Issuer response is unclear.");
+            JsonNode before = readJson(event.getPreviousValue());
+            JsonNode after = readJson(event.getNewValue());
+            assertThat(before.get("title").asText()).isEqualTo("Card declined");
+            assertThat(after.get("title").asText()).isEqualTo("Card declined (revised: issuer response)");
+            assertThat(before.get("steps")).hasSize(1);
+            assertThat(after.get("steps")).hasSize(2);
+        });
+        verify(aiGenerationProvider).regenerateTestCase(contextCaptor.capture());
+        assertThat(contextCaptor.getValue().testCaseId()).isEqualTo(testCase.getId());
+        assertThat(contextCaptor.getValue().clarifications()).singleElement()
+                .satisfies(clarification -> assertThat(clarification.answer()).contains("insufficient funds"));
+        verify(testCaseRepository).save(testCase);
+    }
+
     private Story story() {
         Project project = new Project("Platform", "platform");
         Story story = new Story("Create project", StoryType.USER_STORY);
@@ -403,5 +487,13 @@ class AiGenerationServiceTests {
                         ReflectionTestUtils.setField(testData, "id", UUID.randomUUID()));
             });
         });
+    }
+
+    private JsonNode readJson(String value) {
+        try {
+            return new ObjectMapper().readTree(value);
+        } catch (Exception exception) {
+            throw new AssertionError(exception);
+        }
     }
 }

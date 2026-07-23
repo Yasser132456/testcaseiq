@@ -138,19 +138,26 @@ describe('ReviewBoardPageComponent', () => {
 
     expect(reviewService.updateReviewStatus).toHaveBeenCalledOnceWith('tc-1', {
       status: 'APPROVED',
-      comment: null
+      comment: null,
+      regenerate: false
     });
   });
 
   it('removes a rejection optimistically and exposes its verdict state without waiting for the API', () => {
     reviewService.updateReviewStatus.and.returnValue(new Subject());
+    spyOn(window, 'prompt').and.returnValue('Missing issuer decline coverage.');
+    spyOn(window, 'confirm').and.returnValue(true);
     const rejectButton = Array.from(fixture.nativeElement.querySelectorAll('.review-sticky-actions button'))
       .find((button) => (button as HTMLButtonElement).textContent?.includes('Reject')) as HTMLButtonElement;
 
     rejectButton.click();
     fixture.detectChanges();
 
-    expect(reviewService.updateReviewStatus).toHaveBeenCalledWith('tc-1', { status: 'REJECTED', comment: null });
+    expect(reviewService.updateReviewStatus).toHaveBeenCalledWith('tc-1', {
+      status: 'REJECTED',
+      comment: 'Missing issuer decline coverage.',
+      regenerate: true
+    });
     expect(testCaseItems().length).toBe(2);
     expect((fixture.nativeElement.querySelector('.review-detail-panel') as HTMLElement).classList).toContain('is-verdict-reject');
   });

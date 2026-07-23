@@ -8,6 +8,11 @@ public record TestCaseReviewStatusUpdateRequest(
         @NotNull(message = "Review status is required")
         ReviewStatus status,
 
-        String comment
+        String comment,
+
+        boolean regenerate
 ) {
+    public TestCaseReviewStatusUpdateRequest(ReviewStatus status, String comment) {
+        this(status, comment, false);
+    }
 }
