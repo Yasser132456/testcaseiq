@@ -6,6 +6,7 @@ import {
   PriorityUpdateRequest,
   ReviewEvent,
   ReviewStatusUpdateRequest,
+  RegenerateRequest,
   RiskUpdateRequest,
   TestCaseResponse,
   TestCaseUpdateRequest
@@ -56,6 +57,11 @@ export class ReviewService {
 
   updateTestCase(testCaseId: string, request: TestCaseUpdateRequest): Observable<TestCaseResponse> {
     return this.http.patch<TestCaseResponse>(`${this.baseUrl}/${testCaseId}`, request);
+  }
+
+  regenerate(testCaseId: string, reason: string): Observable<TestCaseResponse> {
+    const request: RegenerateRequest = { reason };
+    return this.http.post<TestCaseResponse>(`${this.baseUrl}/${testCaseId}/regenerate`, request);
   }
 
   getReviewEvents(testCaseId: string): Observable<ReviewEvent[]> {

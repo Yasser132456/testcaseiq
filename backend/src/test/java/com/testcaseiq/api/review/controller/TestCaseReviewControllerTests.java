@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -34,6 +35,7 @@ import com.testcaseiq.api.review.dto.TestCaseResponse;
 import com.testcaseiq.api.review.dto.TestCaseReviewStatusUpdateRequest;
 import com.testcaseiq.api.review.dto.TestCaseRiskUpdateRequest;
 import com.testcaseiq.api.audit.AuditService;
+import com.testcaseiq.api.ai.service.AiGenerationService;
 import com.testcaseiq.api.review.service.TestCaseReviewService;
 
 @WebMvcTest(TestCaseReviewController.class)
@@ -48,6 +50,9 @@ class TestCaseReviewControllerTests {
 
     @MockBean
     private AuditService auditService;
+
+    @MockBean
+    private AiGenerationService aiGenerationService;
 
     @Test
     void updatesReviewStatus() throws Exception {
@@ -153,6 +158,39 @@ class TestCaseReviewControllerTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].actionType").value("REVIEW_STATUS_UPDATED"));
+    }
+
+    @Test
+    void regeneratesTestCase() throws Exception {
+        UUID testCaseId = UUID.randomUUID();
+        when(aiGenerationService.regenerateTestCase(eq(testCaseId), eq("Focus on issuer decline reasons."), eq("local-reviewer")))
+                .thenReturn(response(testCaseId, ReviewStatus.NEEDS_CLARIFICATION, Priority.HIGH, RiskLevel.HIGH));
+
+        mockMvc.perform(post("/api/test-cases/{testCaseId}/regenerate", testCaseId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "reason": "Focus on issuer decline reasons."
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.reviewStatus").value("NEEDS_CLARIFICATION"))
+                .andExpect(jsonPath("$.riskLevel").value("HIGH"));
+    }
+
+    @Test
+    void rejectsBlankRegenerationReason() throws Exception {
+        UUID testCaseId = UUID.randomUUID();
+
+        mockMvc.perform(post("/api/test-cases/{testCaseId}/regenerate", testCaseId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "reason": " "
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors.reason").value("Regeneration reason is required"));
     }
 
     @Test

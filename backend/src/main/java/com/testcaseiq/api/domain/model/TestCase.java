@@ -270,4 +270,9 @@ public class TestCase extends AuditableEntity {
         testSteps.clear();
         replacementSteps.forEach(this::addStep);
     }
+
+    public void replaceTestData(List<TestData> replacementTestData) {
+        testDataEntries.clear();
+        replacementTestData.forEach(this::addTestData);
+    }
 }

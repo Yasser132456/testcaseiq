@@ -16,6 +16,7 @@ import com.testcaseiq.api.ai.dto.GeneratedTestDataDto;
 import com.testcaseiq.api.ai.dto.GeneratedTestStepDto;
 import com.testcaseiq.api.ai.dto.GeneratedTestSuiteResult;
 import com.testcaseiq.api.ai.dto.QaValidationResult;
+import com.testcaseiq.api.ai.dto.RegenerateContext;
 import com.testcaseiq.api.ai.dto.RequirementExtractionResult;
 import com.testcaseiq.api.ai.dto.StoryAnalysisRequest;
 import com.testcaseiq.api.ai.dto.StoryAnalysisResult;
@@ -214,6 +215,38 @@ public class MockAiGenerationProvider implements AiGenerationProvider {
         );
     }
 
+    @Override
+    public GeneratedTestCaseDto regenerateTestCase(RegenerateContext context) {
+        String title = safe(context.currentTitle()).isBlank() ? "Generated test case" : context.currentTitle().trim();
+        String reason = safe(context.reason()).trim();
+        String reasonSummary = firstWords(reason, 5);
+        String storyTitle = safe(context.storyTitle()).isBlank() ? "story" : context.storyTitle().trim();
+        String clarificationSummary = context.clarifications() == null || context.clarifications().isEmpty()
+                ? "No answered clarifications were provided."
+                : "Answered clarification: " + context.clarifications().getFirst().answer();
+
+        return new GeneratedTestCaseDto(
+                title + " (revised: " + reasonSummary + ")",
+                "Revised manual test for \"" + storyTitle + "\". Reason: " + reason,
+                TestCaseType.FUNCTIONAL,
+                TestLayer.UI,
+                Priority.HIGH,
+                RiskLevel.MEDIUM,
+                true,
+                0.9,
+                "Given " + storyTitle + " requires review updates\nWhen the tester covers " + reasonSummary + "\nThen the revised expectation is verified",
+                List.of(),
+                List.of(
+                        new GeneratedTestStepDto(1, "Review the current behavior for \"" + storyTitle + "\".", "The tester understands the existing workflow."),
+                        new GeneratedTestStepDto(2, "Exercise the scenario requested by the reviewer: " + reason + ".", "The revised behavior is observable and specific."),
+                        new GeneratedTestStepDto(3, "Confirm the result using answered clarification context.", clarificationSummary)
+                ),
+                List.of(new GeneratedTestDataDto("regenerationReason", "{\"reason\":\"" + jsonEscape(reason) + "\"}")),
+                "Regenerated deterministically from reviewer feedback.",
+                reason
+        );
+    }
+
     private GeneratedTestCaseDto focusTestCase(
             FocusArea focusArea,
             String title,
@@ -353,5 +386,15 @@ public class MockAiGenerationProvider implements AiGenerationProvider {
 
     private String safe(String value) {
         return value == null ? "" : value;
+    }
+
+    private String firstWords(String value, int limit) {
+        String[] words = safe(value).trim().split("\\s+");
+        if (words.length == 0 || words[0].isBlank()) {
+            return "review feedback";
+        }
+        return java.util.Arrays.stream(words)
+                .limit(limit)
+                .collect(java.util.stream.Collectors.joining(" "));
     }
 }

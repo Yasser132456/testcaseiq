@@ -1,6 +1,7 @@
 package com.testcaseiq.api.review.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -15,6 +16,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import com.testcaseiq.api.ai.service.AiGenerationService;
+import com.testcaseiq.api.common.error.BadRequestException;
 import com.testcaseiq.api.domain.enums.Priority;
 import com.testcaseiq.api.domain.enums.ReviewStatus;
 import com.testcaseiq.api.domain.enums.RiskLevel;
@@ -38,11 +41,14 @@ class TestCaseReviewServiceTests {
     @Mock
     private ReviewEventRepository reviewEventRepository;
 
+    @Mock
+    private AiGenerationService aiGenerationService;
+
     private TestCaseReviewService service;
 
     @BeforeEach
     void setUp() {
-        service = new TestCaseReviewService(testCaseRepository, reviewEventRepository);
+        service = new TestCaseReviewService(testCaseRepository, reviewEventRepository, aiGenerationService);
     }
 
     @Test
@@ -59,6 +65,32 @@ class TestCaseReviewServiceTests {
         assertThat(testCase.getReviewEvents().get(0).getPreviousValue()).isEqualTo("NEEDS_REVIEW");
         assertThat(testCase.getReviewEvents().get(0).getNewValue()).isEqualTo("APPROVED");
         verify(testCaseRepository).save(testCase);
+    }
+
+    @Test
+    void rejectsRejectedStatusWithoutComment() {
+        TestCase testCase = testCase();
+
+        assertThatThrownBy(() -> service.updateReviewStatus(
+                testCase.getId(),
+                new TestCaseReviewStatusUpdateRequest(ReviewStatus.REJECTED, " ", false)
+        ))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessage("A review comment is required when rejecting or requesting clarification");
+    }
+
+    @Test
+    void rejectedStatusCanChainRegenerationFromComment() {
+        TestCase testCase = testCase();
+        when(testCaseRepository.findById(testCase.getId())).thenReturn(Optional.of(testCase));
+        when(testCaseRepository.save(testCase)).thenReturn(testCase);
+
+        service.updateReviewStatus(
+                testCase.getId(),
+                new TestCaseReviewStatusUpdateRequest(ReviewStatus.REJECTED, "Cover the denied-card branch.", true)
+        );
+
+        verify(aiGenerationService).regenerateTestCase(testCase.getId(), "Cover the denied-card branch.", "local-reviewer");
     }
 
     @Test

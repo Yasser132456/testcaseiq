@@ -36,6 +36,11 @@ export interface TestStepUpdateRequest {
 export interface ReviewStatusUpdateRequest {
   status: ReviewStatus;
   comment?: string | null;
+  regenerate?: boolean;
+}
+
+export interface RegenerateRequest {
+  reason: string;
 }
 
 export interface PriorityUpdateRequest {

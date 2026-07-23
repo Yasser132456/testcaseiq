@@ -23,6 +23,7 @@ import com.testcaseiq.api.ai.dto.GeneratedTestDataDto;
 import com.testcaseiq.api.ai.dto.GeneratedTestStepDto;
 import com.testcaseiq.api.ai.dto.GeneratedTestSuiteResult;
 import com.testcaseiq.api.ai.dto.QaValidationResult;
+import com.testcaseiq.api.ai.dto.RegenerateContext;
 import com.testcaseiq.api.ai.dto.RequirementExtractionResult;
 import com.testcaseiq.api.ai.dto.ResolvedClarification;
 import com.testcaseiq.api.ai.dto.StoryAnalysisRequest;
@@ -45,6 +46,7 @@ import com.testcaseiq.api.domain.model.AiJob;
 import com.testcaseiq.api.domain.model.Ambiguity;
 import com.testcaseiq.api.domain.model.CoverageItem;
 import com.testcaseiq.api.domain.model.Requirement;
+import com.testcaseiq.api.domain.model.ReviewEvent;
 import com.testcaseiq.api.domain.model.Story;
 import com.testcaseiq.api.domain.model.TestCase;
 import com.testcaseiq.api.domain.model.TestData;
@@ -52,6 +54,9 @@ import com.testcaseiq.api.domain.model.TestStep;
 import com.testcaseiq.api.domain.model.TestSuite;
 import com.testcaseiq.api.domain.repository.AiJobRepository;
 import com.testcaseiq.api.domain.repository.StoryRepository;
+import com.testcaseiq.api.domain.repository.TestCaseRepository;
+import com.testcaseiq.api.review.dto.TestCaseResponse;
+import com.testcaseiq.api.review.dto.TestStepResponse;
 
 @Service
 public class AiGenerationService {
@@ -61,6 +66,7 @@ public class AiGenerationService {
 
     private final StoryRepository storyRepository;
     private final AiJobRepository aiJobRepository;
+    private final TestCaseRepository testCaseRepository;
     private final AiGenerationProvider aiGenerationProvider;
     private final AiOutputValidationService aiOutputValidationService;
     private final TestCaseQualityScoringService qualityScoringService;
@@ -69,6 +75,7 @@ public class AiGenerationService {
     public AiGenerationService(
             StoryRepository storyRepository,
             AiJobRepository aiJobRepository,
+            TestCaseRepository testCaseRepository,
             AiGenerationProvider aiGenerationProvider,
             AiOutputValidationService aiOutputValidationService,
             TestCaseQualityScoringService qualityScoringService,
@@ -76,6 +83,7 @@ public class AiGenerationService {
     ) {
         this.storyRepository = storyRepository;
         this.aiJobRepository = aiJobRepository;
+        this.testCaseRepository = testCaseRepository;
         this.aiGenerationProvider = aiGenerationProvider;
         this.aiOutputValidationService = aiOutputValidationService;
         this.qualityScoringService = qualityScoringService;
@@ -159,6 +167,53 @@ public class AiGenerationService {
                 .sorted(Comparator.comparing(TestSuite::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder())))
                 .map(testSuite -> toGeneratedSuiteResult(story, testSuite))
                 .toList();
+    }
+
+    @Transactional
+    public TestCaseResponse regenerateTestCase(UUID testCaseId, String reason, String actor) {
+        TestCase testCase = testCaseRepository.findById(testCaseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Test case not found: " + testCaseId));
+        Story story = testCase.getTestSuite().getStory();
+        String beforeSnapshot = toJson(toSnapshot(testCase));
+
+        GeneratedTestCaseDto regenerated = aiGenerationProvider.regenerateTestCase(new RegenerateContext(
+                testCase.getId(),
+                story.getTitle(),
+                story.getStoryText(),
+                testCase.getTitle(),
+                reason,
+                story.getAmbiguities().stream()
+                        .filter(ambiguity -> ambiguity.getResolutionStatus() == AmbiguityResolutionStatus.ANSWERED)
+                        .map(ambiguity -> new ResolvedClarification(
+                                ambiguity.getQuestion(),
+                                ambiguity.getResolutionNotes()
+                        ))
+                        .toList()
+        ));
+
+        testCase.setTitle(regenerated.title());
+        testCase.setDescription(regenerated.description());
+        testCase.setExpectedResult(regenerated.bddScenario());
+        testCase.replaceSteps(regenerated.steps().stream()
+                .map(step -> new TestStep(step.order(), step.action(), step.expectedResult()))
+                .toList());
+        testCase.replaceTestData(regenerated.testData().stream()
+                .map(testData -> new TestData(testData.name(), testData.valueJson()))
+                .toList());
+        int qualityScore = qualityScoringService.score(regenerated);
+        testCase.setQualityScore(qualityScore);
+        testCase.setConfidenceLevel(qualityScoringService.confidenceLevel(qualityScore));
+        testCase.setGenerationRationale(regenerated.generationRationale());
+        testCase.setLinkedAcceptanceCriteriaText(regenerated.linkedAcceptanceCriteriaText());
+
+        ReviewEvent reviewEvent = new ReviewEvent(testCase.getReviewStatus(), actor);
+        reviewEvent.setActionType("REGENERATED");
+        reviewEvent.setPreviousValue(beforeSnapshot);
+        reviewEvent.setNewValue(toJson(toSnapshot(testCase)));
+        reviewEvent.setComment(reason);
+        testCase.addReviewEvent(reviewEvent);
+
+        return toTestCaseResponse(testCaseRepository.save(testCase));
     }
 
     private Story findStory(UUID storyId) {
@@ -565,5 +620,62 @@ public class AiGenerationService {
 
     private GeneratedTestDataDto toGeneratedTestData(TestData testData) {
         return new GeneratedTestDataDto(testData.getId(), testData.getName(), testData.getDataValueJson());
+    }
+
+    private TestCaseSnapshot toSnapshot(TestCase testCase) {
+        return new TestCaseSnapshot(
+                testCase.getTitle(),
+                testCase.getDescription(),
+                testCase.getExpectedResult(),
+                testCase.getTestSteps().stream()
+                        .map(step -> new TestStepSnapshot(step.getStepOrder(), step.getAction(), step.getExpectedResult()))
+                        .toList()
+        );
+    }
+
+    private TestCaseResponse toTestCaseResponse(TestCase testCase) {
+        return new TestCaseResponse(
+                testCase.getId(),
+                testCase.getTestSuite().getId(),
+                testCase.getTitle(),
+                testCase.getDescription(),
+                testCase.getType(),
+                testCase.getTestLayer(),
+                testCase.getPriority(),
+                testCase.getRiskLevel(),
+                testCase.getReviewStatus(),
+                testCase.isAutomationCandidate(),
+                testCase.getPreconditions(),
+                testCase.getExpectedResult(),
+                testCase.getRequirements().stream()
+                        .map(Requirement::getSourceReference)
+                        .filter(reference -> reference != null)
+                        .toList(),
+                testCase.getTestSteps().stream()
+                        .map(testStep -> new TestStepResponse(
+                                testStep.getId(),
+                                testStep.getStepOrder(),
+                                testStep.getAction(),
+                                testStep.getExpectedResult()
+                        ))
+                        .toList(),
+                testCase.getCreatedAt(),
+                testCase.getUpdatedAt()
+        );
+    }
+
+    private record TestCaseSnapshot(
+            String title,
+            String description,
+            String expectedResult,
+            List<TestStepSnapshot> steps
+    ) {
+    }
+
+    private record TestStepSnapshot(
+            int order,
+            String action,
+            String expectedResult
+    ) {
     }
 }

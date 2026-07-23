@@ -18,6 +18,7 @@ import { ToastService } from '../../core/services/toast.service';
 import { StateMessageComponent } from '../../shared/components/state-message.component';
 import { EmptyStateComponent } from '../../shared/empty-state/empty-state.component';
 import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
+import { DiffSnapshot, DiffViewComponent } from '../../shared/components/diff-view.component';
 
 interface ReviewDraft {
   title?: string;
@@ -34,7 +35,7 @@ export function generatedRowDelayMs(index: number, total: number): number {
 @Component({
   selector: 'app-story-test-cases-tab',
   standalone: true,
-  imports: [DatePipe, RouterLink, StateMessageComponent, EmptyStateComponent, SkeletonComponent],
+  imports: [DatePipe, RouterLink, StateMessageComponent, EmptyStateComponent, SkeletonComponent, DiffViewComponent],
   templateUrl: './story-test-cases-tab.component.html'
 })
 export class StoryTestCasesTabComponent {
@@ -68,6 +69,9 @@ export class StoryTestCasesTabComponent {
   readonly reviewEvents = signal<ReviewEvent[]>([]);
   readonly reviewHistoryLoading = signal(false);
   readonly reviewHistoryError = signal('');
+  readonly rejectDialogTestCase = signal<GeneratedTestCase | null>(null);
+  readonly rejectReason = signal('');
+  readonly rejectRegenerate = signal(false);
   readonly allReviewed = computed(() => (
     this.hasTestSuites() && this.testSuites().every((suite) => (
       suite.testCases.every((testCase) => testCase.reviewStatus !== 'NEEDS_REVIEW')
@@ -177,8 +181,94 @@ export class StoryTestCasesTabComponent {
   updateReviewStatus(testCase: GeneratedTestCase, status: ReviewStatus): void {
     const testCaseId = this.persistedTestCaseId(testCase);
     if (!testCaseId || this.isReviewBusy(testCase)) return;
+    if (status === 'REJECTED') {
+      this.openRejectDialog(testCase);
+      return;
+    }
+    if (status === 'NEEDS_CLARIFICATION') {
+      const reason = window.prompt('Reason for clarification request', this.reviewDraft(testCase)?.comment ?? '');
+      if (reason === null) return;
+      if (!reason.trim()) {
+        this.reviewError.set('A reason is required.');
+        this.toastService.show('A reason is required.', 'error');
+        return;
+      }
+      this.updateReviewDraft(testCase, 'comment', reason);
+      this.sendReviewStatusUpdate(testCase, status, reason, false);
+      return;
+    }
+    this.sendReviewStatusUpdate(testCase, status, this.reviewDraft(testCase)?.comment || null, false);
+  }
+
+  regenerate(testCase: GeneratedTestCase): void {
+    const testCaseId = this.persistedTestCaseId(testCase);
+    if (!testCaseId || this.isReviewBusy(testCase)) return;
+    const reason = window.prompt('Reason for regeneration', this.reviewDraft(testCase)?.comment ?? '');
+    if (reason === null) return;
+    if (!reason.trim()) {
+      this.reviewError.set('A regeneration reason is required.');
+      this.toastService.show('A regeneration reason is required.', 'error');
+      return;
+    }
+    this.beginReviewUpdate(testCaseId, 'regenerate');
+    this.reviewService.regenerate(testCaseId, reason.trim()).subscribe({
+      next: (updatedTestCase) => this.completeReviewUpdate(testCase, updatedTestCase, 'Test case was regenerated.'),
+      error: () => this.failReviewUpdate(testCaseId, 'The test case could not be regenerated.')
+    });
+  }
+
+  openRejectDialog(testCase: GeneratedTestCase): void {
+    this.rejectDialogTestCase.set(testCase);
+    this.rejectReason.set(this.reviewDraft(testCase)?.comment ?? '');
+    this.rejectRegenerate.set(false);
+  }
+
+  closeRejectDialog(): void {
+    this.rejectDialogTestCase.set(null);
+    this.rejectReason.set('');
+    this.rejectRegenerate.set(false);
+  }
+
+  updateRejectReason(value: string): void {
+    this.rejectReason.set(value);
+  }
+
+  updateRejectRegenerate(value: boolean): void {
+    this.rejectRegenerate.set(value);
+  }
+
+  submitRejectDialog(): void {
+    const testCase = this.rejectDialogTestCase();
+    const reason = this.rejectReason().trim();
+    if (!testCase) return;
+    if (!reason) {
+      this.reviewError.set('A rejection reason is required.');
+      this.toastService.show('A rejection reason is required.', 'error');
+      return;
+    }
+    const regenerate = this.rejectRegenerate();
+    this.closeRejectDialog();
+    this.updateReviewDraft(testCase, 'comment', reason);
+    this.sendReviewStatusUpdate(testCase, 'REJECTED', reason, regenerate);
+  }
+
+  regeneratedSnapshots(event: ReviewEvent): { before: DiffSnapshot; after: DiffSnapshot } | null {
+    if (event.actionType !== 'REGENERATED' || !event.previousValue || !event.newValue) return null;
+    try {
+      return {
+        before: JSON.parse(event.previousValue) as DiffSnapshot,
+        after: JSON.parse(event.newValue) as DiffSnapshot
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  private sendReviewStatusUpdate(testCase: GeneratedTestCase, status: ReviewStatus, comment: string | null, regenerate: boolean): void {
+    const testCaseId = this.persistedTestCaseId(testCase);
+    if (!testCaseId || this.isReviewBusy(testCase)) return;
     this.beginReviewUpdate(testCaseId, 'review-status');
-    this.reviewService.updateReviewStatus(testCaseId, { status, comment: this.reviewDraft(testCase)?.comment || null }).subscribe({
+    this.reviewService.updateReviewStatus(testCaseId, { status, comment, regenerate }).subscribe({
       next: (updatedTestCase) => this.completeReviewUpdate(testCase, updatedTestCase, 'Review status was updated.'),
       error: () => this.failReviewUpdate(testCaseId, 'The review status could not be updated.')
     });

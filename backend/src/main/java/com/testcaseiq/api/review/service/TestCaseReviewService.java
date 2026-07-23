@@ -7,6 +7,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.testcaseiq.api.ai.service.AiGenerationService;
 import com.testcaseiq.api.common.error.BadRequestException;
 import com.testcaseiq.api.common.error.ResourceNotFoundException;
 import com.testcaseiq.api.domain.enums.Priority;
@@ -35,10 +36,16 @@ public class TestCaseReviewService {
 
     private final TestCaseRepository testCaseRepository;
     private final ReviewEventRepository reviewEventRepository;
+    private final AiGenerationService aiGenerationService;
 
-    public TestCaseReviewService(TestCaseRepository testCaseRepository, ReviewEventRepository reviewEventRepository) {
+    public TestCaseReviewService(
+            TestCaseRepository testCaseRepository,
+            ReviewEventRepository reviewEventRepository,
+            AiGenerationService aiGenerationService
+    ) {
         this.testCaseRepository = testCaseRepository;
         this.reviewEventRepository = reviewEventRepository;
+        this.aiGenerationService = aiGenerationService;
     }
 
     @Transactional
@@ -46,11 +53,19 @@ public class TestCaseReviewService {
         if (request.status() == ReviewStatus.EXPORTED) {
             throw new BadRequestException("Review status EXPORTED cannot be set manually in this sprint");
         }
+        if ((request.status() == ReviewStatus.REJECTED || request.status() == ReviewStatus.NEEDS_CLARIFICATION)
+                && (request.comment() == null || request.comment().isBlank())) {
+            throw new BadRequestException("A review comment is required when rejecting or requesting clarification");
+        }
         TestCase testCase = findTestCase(testCaseId);
         ReviewStatus previousStatus = testCase.getReviewStatus();
         testCase.setReviewStatus(request.status());
         addReviewEvent(testCase, request.status(), "REVIEW_STATUS_UPDATED", previousStatus, request.status(), request.comment());
-        return toTestCaseResponse(testCaseRepository.save(testCase));
+        TestCase savedTestCase = testCaseRepository.save(testCase);
+        if (request.regenerate() && (request.status() == ReviewStatus.REJECTED || request.status() == ReviewStatus.NEEDS_CLARIFICATION)) {
+            return aiGenerationService.regenerateTestCase(testCaseId, request.comment(), LOCAL_REVIEWER);
+        }
+        return toTestCaseResponse(savedTestCase);
     }
 
     @Transactional

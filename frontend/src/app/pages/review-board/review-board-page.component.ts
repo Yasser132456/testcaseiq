@@ -415,6 +415,19 @@ export class ReviewBoardPageComponent implements OnInit, OnDestroy {
     if (!item || this.reviewBusy()) {
       return;
     }
+    let comment: string | null = null;
+    let regenerate = false;
+    if (status === 'REJECTED') {
+      const reason = window.prompt('Reason for rejection');
+      if (reason === null) return;
+      if (!reason.trim()) {
+        this.reviewError.set('A rejection reason is required.');
+        this.toastService.show('A rejection reason is required.', 'error');
+        return;
+      }
+      comment = reason.trim();
+      regenerate = window.confirm('Regenerate this test case after rejecting it?');
+    }
     this.reviewBusy.set(true);
     this.pendingAction.set(status);
     this.approveState.set('default');
@@ -436,7 +449,7 @@ export class ReviewBoardPageComponent implements OnInit, OnDestroy {
         this.selectedCaseId.set(this.reviewCases()[0]?.testCase.id ?? null);
       }
     });
-    this.reviewService.updateReviewStatus(item.testCase.id, { status, comment: null }).subscribe({
+    this.reviewService.updateReviewStatus(item.testCase.id, { status, comment, regenerate }).subscribe({
       next: () => {
         this.sessionReviewCount.update((count) => count + 1);
         if (status === 'APPROVED') {
