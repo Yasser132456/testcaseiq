@@ -15,6 +15,7 @@ const MOCK_METRICS: DashboardMetrics = {
   pendingReviewTestCases: 14,
   draftTestCases: 5,
   totalExports: 6,
+  storiesWithUncoveredHighRiskRequirements: 2,
   approvalRate: 62.5,
   rejectionRate: 11.1,
   pendingReviewRate: 19.4,

@@ -14,6 +14,7 @@ public record DashboardMetricsResponse(
         long pendingReviewTestCases,
         long draftTestCases,
         long totalExports,
+        long storiesWithUncoveredHighRiskRequirements,
         double approvalRate,
         double rejectionRate,
         double pendingReviewRate,

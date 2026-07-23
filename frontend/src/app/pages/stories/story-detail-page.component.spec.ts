@@ -3,6 +3,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { AnalysisService } from '../../core/services/analysis.service';
+import { AmbiguityService } from '../../core/services/ambiguity.service';
+import { CoverageReportResponse } from '../../core/models/coverage.model';
 import { GeneratedTestCase, GeneratedTestSuiteResult, ReviewStatus } from '../../core/models/generated-test.model';
 import { TestCaseResponse } from '../../core/models/review.model';
 import { Story, StoryStatus } from '../../core/models/story.model';
@@ -11,6 +13,7 @@ import { StoryService } from '../../core/services/story.service';
 import { TestGenerationService } from '../../core/services/test-generation.service';
 import { ReviewOperationState, StoryAiOperationState } from '../../core/motion/async-operation-state';
 import { BackgroundSceneService } from '../../shared/background/background-scene.service';
+import { CoverageService } from '../../core/services/coverage.service';
 import { StoryDetailPageComponent } from './story-detail-page.component';
 
 describe('StoryDetailPageComponent tabs and review workflow', () => {
@@ -18,6 +21,8 @@ describe('StoryDetailPageComponent tabs and review workflow', () => {
   let storyService: jasmine.SpyObj<StoryService>;
   let reviewService: jasmine.SpyObj<ReviewService>;
   let analysisService: jasmine.SpyObj<AnalysisService>;
+  let ambiguityService: jasmine.SpyObj<AmbiguityService>;
+  let coverageService: jasmine.SpyObj<CoverageService>;
   let testGenerationService: jasmine.SpyObj<TestGenerationService>;
   let analysisState: ReturnType<typeof signal<StoryAiOperationState>>;
   let generationState: ReturnType<typeof signal<StoryAiOperationState>>;
@@ -43,8 +48,12 @@ describe('StoryDetailPageComponent tabs and review workflow', () => {
     generationState = signal({ phase: 'idle', storyId: null, sequence: 0 });
     reviewOperationState = signal({ phase: 'idle', testCaseId: null, verdict: null, sequence: 0 });
     analysisService = jasmine.createSpyObj<AnalysisService>('AnalysisService', ['getAnalysis', 'analyzeStory']);
+    ambiguityService = jasmine.createSpyObj<AmbiguityService>('AmbiguityService', ['list', 'resolve']);
+    coverageService = jasmine.createSpyObj<CoverageService>('CoverageService', ['getReport']);
     testGenerationService = jasmine.createSpyObj<TestGenerationService>('TestGenerationService', ['getTestSuites', 'generateTestCases']);
     analysisService.getAnalysis.and.returnValue(throwError(() => new Error('No analysis yet.')));
+    ambiguityService.list.and.returnValue(of([]));
+    coverageService.getReport.and.returnValue(of(coverageReportFixture()));
     testGenerationService.getTestSuites.and.returnValue(of([suiteFixture()]));
     Object.defineProperty(analysisService, 'operationState', { value: analysisState.asReadonly() });
     Object.defineProperty(testGenerationService, 'operationState', { value: generationState.asReadonly() });
@@ -58,6 +67,8 @@ describe('StoryDetailPageComponent tabs and review workflow', () => {
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'story-1' } } } },
         { provide: StoryService, useValue: storyService },
         { provide: AnalysisService, useValue: analysisService },
+        { provide: AmbiguityService, useValue: ambiguityService },
+        { provide: CoverageService, useValue: coverageService },
         { provide: TestGenerationService, useValue: testGenerationService },
         { provide: ReviewService, useValue: reviewService },
         { provide: BackgroundSceneService, useValue: backgroundScene }
@@ -78,9 +89,21 @@ describe('StoryDetailPageComponent tabs and review workflow', () => {
     expect(header.querySelector('.workflow-progress')).not.toBeNull();
     expect(tabs.map((tab) => tab.textContent?.trim())).toEqual([
       'Story',
+      'Coverage',
       'Test Cases (2)',
       'History (1 pending)'
     ]);
+  });
+
+  it('opens the generation dialog with targeted guidance from a coverage gap', () => {
+    clickTab('Coverage');
+    const action = fixture.nativeElement.querySelector('.coverage-gap-action') as HTMLButtonElement;
+    action.click();
+    fixture.detectChanges();
+
+    expect(tabButton('Test Cases')?.classList).toContain('active');
+    const guidance = fixture.nativeElement.querySelector('.generation-dialog textarea') as HTMLTextAreaElement;
+    expect(guidance.value).toBe('Cover requirement REQ-2: Expired cards are declined');
   });
 
   it('shows a Review Board banner on the test cases tab when one test case needs review', () => {
@@ -264,6 +287,38 @@ describe('StoryDetailPageComponent tabs and review workflow', () => {
       qaValidation: { requirementQualityScore: 0.9, testabilityScore: 0.9, warnings: [] },
       provider: 'mock-ai-provider',
       generatedAt: '2026-06-14T00:00:00Z'
+    };
+  }
+
+  function coverageReportFixture(): CoverageReportResponse {
+    return {
+      storyId: 'story-1',
+      requirements: [
+        {
+          reference: 'REQ-1',
+          title: 'Checkout succeeds',
+          riskLevel: 'HIGH',
+          linkedCases: [{ id: 'test-case-1', title: 'Checkout happy path', status: 'NEEDS_REVIEW' }],
+          covered: true
+        },
+        {
+          reference: 'REQ-2',
+          title: 'Expired cards are declined',
+          riskLevel: 'CRITICAL',
+          linkedCases: [],
+          covered: false
+        }
+      ],
+      gaps: [
+        {
+          key: 'REQ-2',
+          description: 'Expired cards are declined',
+          riskLevel: 'CRITICAL',
+          kind: 'REQUIREMENT'
+        }
+      ],
+      coveredCount: 1,
+      totalRequirements: 2
     };
   }
 

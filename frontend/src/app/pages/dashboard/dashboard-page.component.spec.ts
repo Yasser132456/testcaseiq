@@ -20,6 +20,7 @@ const MOCK_METRICS: DashboardMetrics = {
   pendingReviewTestCases: 14,
   draftTestCases: 5,
   totalExports: 6,
+  storiesWithUncoveredHighRiskRequirements: 2,
   approvalRate: 62.5,
   rejectionRate: 11.1,
   pendingReviewRate: 19.4,
@@ -65,6 +66,7 @@ const ZERO_METRICS: DashboardMetrics = {
   pendingReviewTestCases: 0,
   draftTestCases: 0,
   totalExports: 0,
+  storiesWithUncoveredHighRiskRequirements: 0,
   approvalRate: 0,
   rejectionRate: 0,
   pendingReviewRate: 0,
@@ -221,6 +223,7 @@ describe('DashboardPageComponent', () => {
     expect(element.textContent).toContain('Approval');
     expect(element.textContent).toContain('STORY COVERAGE');
     expect(element.textContent).toContain('75% stories have tests');
+    expect(element.textContent).toContain('2 stories have uncovered high-risk requirements');
   });
 
   it('shows recent activity items', () => {
