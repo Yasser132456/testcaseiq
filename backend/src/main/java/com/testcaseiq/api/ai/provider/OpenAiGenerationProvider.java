@@ -63,6 +63,8 @@ public class OpenAiGenerationProvider implements AiGenerationProvider {
         return new GeneratedTestSuiteResult(
                 result.storyId(),
                 result.suiteName(),
+                result.description(),
+                request.focusAreas(),
                 result.testCases(),
                 result.qaValidation(),
                 PROVIDER_NAME,

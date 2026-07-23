@@ -8,9 +8,11 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 import com.testcaseiq.api.ai.dto.GeneratedTestSuiteResult;
+import com.testcaseiq.api.ai.dto.ResolvedClarification;
 import com.testcaseiq.api.ai.dto.StoryAnalysisRequest;
 import com.testcaseiq.api.ai.dto.StoryAnalysisResult;
 import com.testcaseiq.api.ai.dto.TestGenerationRequest;
+import com.testcaseiq.api.domain.enums.FocusArea;
 import com.testcaseiq.api.domain.enums.StoryType;
 import com.testcaseiq.api.domain.enums.TestCaseType;
 
@@ -79,7 +81,10 @@ class MockAiGenerationProviderTests {
                 storyId,
                 "Create story",
                 "As a tester, I want to create stories so that requirements are traceable.",
-                analysis.requirements().requirements()
+                analysis.requirements().requirements(),
+                List.of(),
+                null,
+                List.of()
         ));
 
         assertThat(result.storyId()).isEqualTo(storyId);
@@ -108,7 +113,15 @@ class MockAiGenerationProviderTests {
                 StoryType.USER_STORY,
                 List.of()
         ));
-        TestGenerationRequest request = new TestGenerationRequest(storyId, title, rawText, analysis.requirements().requirements());
+        TestGenerationRequest request = new TestGenerationRequest(
+                storyId,
+                title,
+                rawText,
+                analysis.requirements().requirements(),
+                List.of(),
+                null,
+                List.of()
+        );
 
         GeneratedTestSuiteResult first = provider.generateTestCases(request);
         GeneratedTestSuiteResult second = provider.generateTestCases(request);
@@ -124,5 +137,30 @@ class MockAiGenerationProviderTests {
         assertThat(first.testCases())
                 .anySatisfy(testCase -> assertThat(testCase.steps())
                         .anySatisfy(step -> assertThat(step.action()).contains("coordinator", "reason")));
+    }
+
+    @Test
+    void generateTestCasesAddsOneDeterministicCasePerFocusAreaAndGuidanceToDescription() {
+        UUID storyId = UUID.fromString("3316ebd1-9d3b-4b06-98ef-2163e152e0ad");
+        TestGenerationRequest request = new TestGenerationRequest(
+                storyId,
+                "Mobile checkout",
+                "As a buyer, I want to check out so that I can complete an order.",
+                List.of(),
+                List.of(new ResolvedClarification("Which wallet?", "Apple Pay is in scope.")),
+                "Keep scenarios short enough for smoke runs.",
+                List.of(FocusArea.MOBILE, FocusArea.ACCESSIBILITY)
+        );
+
+        GeneratedTestSuiteResult first = provider.generateTestCases(request);
+        GeneratedTestSuiteResult second = provider.generateTestCases(request);
+
+        assertThat(first).usingRecursiveComparison().isEqualTo(second);
+        assertThat(first.description()).contains("Keep scenarios short enough for smoke runs.");
+        assertThat(first.testCases()).hasSize(5);
+        assertThat(first.testCases()).extracting("title")
+                .endsWith("[MOBILE] Mobile checkout", "[ACCESSIBILITY] Mobile checkout");
+        assertThat(first.testCases().subList(3, 5)).extracting("type")
+                .containsExactly(TestCaseType.FUNCTIONAL, TestCaseType.ACCESSIBILITY);
     }
 }

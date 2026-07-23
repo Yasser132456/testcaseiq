@@ -34,7 +34,7 @@ describe('TestGenerationService', () => {
     request.flush([suiteResponse()]);
   });
 
-  it('generates test cases for a story', () => {
+  it('generates test cases for a story without options', () => {
     expect(service.operationState().phase).toBe('idle');
 
     service.generateTestCases('story-1').subscribe((suite) => {
@@ -49,13 +49,28 @@ describe('TestGenerationService', () => {
 
     const request = http.expectOne('/api/stories/story-1/generate-tests');
     expect(request.request.method).toBe('POST');
-    expect(request.request.body).toEqual({});
+    expect(request.request.body).toBeNull();
     request.flush(suiteResponse());
 
     expect(service.operationState()).toEqual(jasmine.objectContaining({
       phase: 'success',
       storyId: 'story-1'
     }));
+  });
+
+  it('generates test cases with guidance and focus areas', () => {
+    service.generateTestCases('story-1', {
+      guidance: 'Keep this focused on smoke coverage.',
+      focusAreas: ['NEGATIVE', 'SECURITY']
+    }).subscribe();
+
+    const request = http.expectOne('/api/stories/story-1/generate-tests');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({
+      guidance: 'Keep this focused on smoke coverage.',
+      focusAreas: ['NEGATIVE', 'SECURITY']
+    });
+    request.flush(suiteResponse());
   });
 
   it('exposes a settled error state when generation fails', () => {

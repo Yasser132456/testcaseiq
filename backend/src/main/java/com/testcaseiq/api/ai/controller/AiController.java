@@ -8,11 +8,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.testcaseiq.api.ai.dto.GeneratedTestSuiteResult;
 import com.testcaseiq.api.ai.dto.StoryAnalysisResult;
+import com.testcaseiq.api.ai.dto.TestGenerationOptions;
 import com.testcaseiq.api.ai.provider.AiProviderProperties;
 import com.testcaseiq.api.ai.service.AiGenerationService;
 import com.testcaseiq.api.audit.AuditAction;
@@ -50,15 +52,20 @@ public class AiController {
 
     @PostMapping("/generate-tests")
     @org.springframework.security.access.prepost.PreAuthorize("!@securityEnforcement.isEnforced() or hasAnyRole('ADMIN', 'QA_ENGINEER')")
-    public ResponseEntity<GeneratedTestSuiteResult> generateTests(@PathVariable UUID storyId) {
+    public ResponseEntity<GeneratedTestSuiteResult> generateTests(
+            @PathVariable UUID storyId,
+            @RequestBody(required = false) TestGenerationOptions options
+    ) {
+        TestGenerationOptions safeOptions = options == null ? new TestGenerationOptions(null, List.of()) : options;
         long openBlocking = ambiguityService.countOpenBlocking(storyId);
         if (openBlocking > 0) {
             throw new BadRequestException("Resolve " + openBlocking + " blocking clarifying question(s) before generating tests.");
         }
-        ResponseEntity<GeneratedTestSuiteResult> result = ResponseEntity.ok(aiGenerationService.generateTestCases(storyId));
+        ResponseEntity<GeneratedTestSuiteResult> result = ResponseEntity.ok(aiGenerationService.generateTestCases(storyId, safeOptions));
         auditService.log(AuditAction.TEST_GENERATION_REQUESTED, "STORY", storyId.toString(), AuditOutcome.SUCCESS, null,
                 Map.of("storyId", storyId.toString(),
-                        "aiProvider", aiProviderProperties.getProvider().name().toLowerCase()));
+                        "aiProvider", aiProviderProperties.getProvider().name().toLowerCase(),
+                        "focusAreasCount", String.valueOf(safeOptions.focusAreas().size())));
         return result;
     }
 

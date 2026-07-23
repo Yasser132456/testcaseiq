@@ -13,6 +13,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -29,6 +30,7 @@ import com.testcaseiq.api.ai.dto.GeneratedTestStepDto;
 import com.testcaseiq.api.ai.dto.GeneratedTestSuiteResult;
 import com.testcaseiq.api.ai.dto.QaValidationResult;
 import com.testcaseiq.api.ai.dto.RequirementExtractionResult;
+import com.testcaseiq.api.ai.dto.TestGenerationOptions;
 import com.testcaseiq.api.ai.dto.StoryAnalysisRequest;
 import com.testcaseiq.api.ai.dto.StoryAnalysisResult;
 import com.testcaseiq.api.ai.dto.TestGenerationRequest;
@@ -36,6 +38,7 @@ import com.testcaseiq.api.ai.provider.AiGenerationProvider;
 import com.testcaseiq.api.ai.provider.AiProviderException;
 import com.testcaseiq.api.ai.validation.AiOutputValidationService;
 import com.testcaseiq.api.domain.enums.AiJobStatus;
+import com.testcaseiq.api.domain.enums.FocusArea;
 import com.testcaseiq.api.domain.enums.AmbiguitySeverity;
 import com.testcaseiq.api.domain.enums.CoverageCategory;
 import com.testcaseiq.api.domain.enums.Priority;
@@ -47,6 +50,7 @@ import com.testcaseiq.api.domain.enums.StoryType;
 import com.testcaseiq.api.domain.enums.TestCaseType;
 import com.testcaseiq.api.domain.enums.TestLayer;
 import com.testcaseiq.api.domain.model.Project;
+import com.testcaseiq.api.domain.model.Ambiguity;
 import com.testcaseiq.api.domain.model.Story;
 import com.testcaseiq.api.domain.model.TestCase;
 import com.testcaseiq.api.domain.model.TestData;
@@ -139,6 +143,45 @@ class AiGenerationServiceTests {
         assertThat(story.getAiJobs().get(0).getStatus()).isEqualTo(AiJobStatus.COMPLETED);
         assertThat(story.getAiJobs().get(0).getProviderName()).isEqualTo("mock-ai-provider");
         verify(storyRepository).save(story);
+    }
+
+    @Test
+    void generateTestCasesCarriesAnsweredClarificationsGuidanceAndFocusAreas() {
+        Story story = story();
+        story.addRequirement(requirement());
+        Ambiguity answered = new Ambiguity("Which browsers are supported?", AmbiguitySeverity.MEDIUM);
+        answered.resolve("Chrome and Safari must be covered.", "qa");
+        Ambiguity open = new Ambiguity("What is the timeout?", AmbiguitySeverity.LOW);
+        Ambiguity dismissed = new Ambiguity("Should this cover beta users?", AmbiguitySeverity.LOW);
+        dismissed.dismiss("qa");
+        story.addAmbiguity(answered);
+        story.addAmbiguity(open);
+        story.addAmbiguity(dismissed);
+        GeneratedTestSuiteResult result = generatedSuiteResult(story.getId());
+        when(storyRepository.findById(story.getId())).thenReturn(Optional.of(story));
+        when(aiGenerationProvider.generateTestCases(any(TestGenerationRequest.class))).thenReturn(result);
+        when(aiGenerationProvider.providerName()).thenReturn("mock-ai-provider");
+        when(storyRepository.save(story)).thenAnswer(invocation -> {
+            assignGeneratedIds(story);
+            return story;
+        });
+        ArgumentCaptor<TestGenerationRequest> captor = ArgumentCaptor.forClass(TestGenerationRequest.class);
+
+        aiGenerationService.generateTestCases(story.getId(), new TestGenerationOptions(
+                "Prioritize regression smoke coverage.",
+                List.of(FocusArea.ACCESSIBILITY, FocusArea.SECURITY)
+        ));
+
+        verify(aiGenerationProvider).generateTestCases(captor.capture());
+        TestGenerationRequest request = captor.getValue();
+        assertThat(request.clarifications())
+                .singleElement()
+                .satisfies(clarification -> {
+                    assertThat(clarification.question()).isEqualTo("Which browsers are supported?");
+                    assertThat(clarification.answer()).isEqualTo("Chrome and Safari must be covered.");
+                });
+        assertThat(request.guidance()).isEqualTo("Prioritize regression smoke coverage.");
+        assertThat(request.focusAreas()).containsExactly(FocusArea.ACCESSIBILITY, FocusArea.SECURITY);
     }
 
     @Test

@@ -23,7 +23,7 @@
         <button
           class="button generate-button"
           type="button"
-          (click)="generateRequested.emit()"
+          (click)="openGenerateDialog()"
           [disabled]="generatingTests() || blockingOpenCount() > 0"
           [attr.title]="generationBlockedTooltip()"
         >
@@ -45,6 +45,9 @@
               <span class="badge status-badge">{{ suite.testCases.length }} test cases</span>
               @if (suite.generatedAt) {
                 <span class="badge">Generated {{ suite.generatedAt | date:'medium' }}</span>
+              }
+              @for (focusArea of suiteFocusAreas(suite); track focusArea) {
+                <span class="badge cyan-badge">{{ formatLabel(focusArea) }}</span>
               }
             </div>
           </div>
@@ -269,6 +272,40 @@
           <a class="button approve-button" routerLink="/export">Export &rarr;</a>
         </div>
       }
+    </div>
+  }
+
+  @if (generateDialogOpen()) {
+    <div class="generation-dialog-backdrop" role="presentation" (click)="closeGenerateDialog()">
+      <section class="generation-dialog" role="dialog" aria-modal="true" aria-labelledby="generation-dialog-title" (click)="$event.stopPropagation()">
+        <div class="section-header">
+          <h3 id="generation-dialog-title">Generate test cases</h3>
+          <button class="button secondary small" type="button" (click)="closeGenerateDialog()">Close</button>
+        </div>
+        <label>
+          <span>Guidance</span>
+          <textarea rows="4" [value]="generationGuidance()" (input)="updateGenerationGuidance($any($event.target).value)"></textarea>
+        </label>
+        <div class="focus-area-picker" role="group" aria-label="Focus areas">
+          @for (focusArea of focusAreaOptions; track focusArea) {
+            <button
+              class="badge focus-chip"
+              type="button"
+              [class.cyan-badge]="isFocusAreaSelected(focusArea)"
+              [attr.aria-pressed]="isFocusAreaSelected(focusArea)"
+              (click)="toggleFocusArea(focusArea)"
+            >
+              {{ formatLabel(focusArea) }}
+            </button>
+          }
+        </div>
+        <div class="generation-dialog-actions">
+          <button class="button secondary" type="button" (click)="closeGenerateDialog()">Cancel</button>
+          <button class="button generate-button" type="button" (click)="submitGenerationOptions()" [disabled]="generatingTests()">
+            {{ generatingTests() ? 'Generating...' : 'Generate' }}
+          </button>
+        </div>
+      </section>
     </div>
   }
 </section>
