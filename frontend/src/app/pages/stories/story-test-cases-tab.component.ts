@@ -45,6 +45,7 @@ export class StoryTestCasesTabComponent {
   readonly error = input('');
   readonly canEdit = input(false);
   readonly generatingTests = input(false);
+  readonly blockingOpenCount = input(0);
   readonly streamGeneratedRows = input(false);
   readonly generateRequested = output<void>();
   readonly testCaseUpdated = output<{ original: GeneratedTestCase; updated: TestCaseResponse }>();
@@ -68,6 +69,10 @@ export class StoryTestCasesTabComponent {
 
   hasTestSuites(): boolean {
     return this.testSuites().some((suite) => suite.testCases.length > 0);
+  }
+
+  generationBlockedTooltip(): string | null {
+    return this.blockingOpenCount() > 0 ? `Resolve ${this.blockingOpenCount()} blocking question(s) first` : null;
   }
 
   totalTestCases(): number {

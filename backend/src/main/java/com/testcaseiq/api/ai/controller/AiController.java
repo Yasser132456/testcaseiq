@@ -18,6 +18,8 @@ import com.testcaseiq.api.ai.service.AiGenerationService;
 import com.testcaseiq.api.audit.AuditAction;
 import com.testcaseiq.api.audit.AuditOutcome;
 import com.testcaseiq.api.audit.AuditService;
+import com.testcaseiq.api.common.error.BadRequestException;
+import com.testcaseiq.api.story.AmbiguityService;
 
 @RestController
 @RequestMapping("/api/stories/{storyId}")
@@ -26,12 +28,14 @@ public class AiController {
     private final AiGenerationService aiGenerationService;
     private final AuditService auditService;
     private final AiProviderProperties aiProviderProperties;
+    private final AmbiguityService ambiguityService;
 
     public AiController(AiGenerationService aiGenerationService, AuditService auditService,
-                        AiProviderProperties aiProviderProperties) {
+                        AiProviderProperties aiProviderProperties, AmbiguityService ambiguityService) {
         this.aiGenerationService = aiGenerationService;
         this.auditService = auditService;
         this.aiProviderProperties = aiProviderProperties;
+        this.ambiguityService = ambiguityService;
     }
 
     @PostMapping("/analyze")
@@ -47,6 +51,10 @@ public class AiController {
     @PostMapping("/generate-tests")
     @org.springframework.security.access.prepost.PreAuthorize("!@securityEnforcement.isEnforced() or hasAnyRole('ADMIN', 'QA_ENGINEER')")
     public ResponseEntity<GeneratedTestSuiteResult> generateTests(@PathVariable UUID storyId) {
+        long openBlocking = ambiguityService.countOpenBlocking(storyId);
+        if (openBlocking > 0) {
+            throw new BadRequestException("Resolve " + openBlocking + " blocking clarifying question(s) before generating tests.");
+        }
         ResponseEntity<GeneratedTestSuiteResult> result = ResponseEntity.ok(aiGenerationService.generateTestCases(storyId));
         auditService.log(AuditAction.TEST_GENERATION_REQUESTED, "STORY", storyId.toString(), AuditOutcome.SUCCESS, null,
                 Map.of("storyId", storyId.toString(),

@@ -33,3 +33,6 @@ backend/.mvn/wrapper/maven-wrapper.jar
 
 # Graphify
 graphify-out/
+
+#Handoffs
+docs/handoff/

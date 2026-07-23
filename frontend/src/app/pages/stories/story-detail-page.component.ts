@@ -11,11 +11,13 @@ import {
   RequirementType,
   StoryAnalysisResult
 } from '../../core/models/analysis.model';
+import { AmbiguityResponse, AmbiguityResolutionStatus } from '../../core/models/ambiguity.model';
 import { GeneratedTestCase, GeneratedTestSuiteResult } from '../../core/models/generated-test.model';
 import { MotionService } from '../../core/motion/motion.service';
 import { TestCaseResponse } from '../../core/models/review.model';
 import { STORY_TYPES, Story, StoryStatus, StoryType } from '../../core/models/story.model';
 import { AnalysisService } from '../../core/services/analysis.service';
+import { AmbiguityService } from '../../core/services/ambiguity.service';
 import { AuthService } from '../../core/services/auth.service';
 import { OnboardingProgressService } from '../../core/services/onboarding-progress.service';
 import { StoryService } from '../../core/services/story.service';
@@ -59,6 +61,7 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly storyService = inject(StoryService);
   private readonly analysisService = inject(AnalysisService);
+  private readonly ambiguityService = inject(AmbiguityService);
   private readonly testGenerationService = inject(TestGenerationService);
   private readonly toastService = inject(ToastService);
   private readonly authService = inject(AuthService);
@@ -89,6 +92,9 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
   readonly story = signal<Story | null>(null);
   readonly pageTitle = computed(() => this.story()?.title ?? 'Story');
   readonly analysis = signal<StoryAnalysisResult | null>(null);
+  readonly ambiguities = signal<AmbiguityResponse[]>([]);
+  readonly ambiguityNotes = signal<Record<string, string>>({});
+  readonly ambiguityResolving = signal<Record<string, boolean>>({});
   readonly testSuites = signal<GeneratedTestSuiteResult[]>([]);
   readonly activeTab = signal<StoryDetailTab>('story');
   readonly loading = signal(true);
@@ -112,6 +118,7 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
   readonly error = signal('');
   readonly analysisError = signal('');
   readonly testGenerationError = signal('');
+  readonly ambiguityError = signal('');
   readonly saveError = signal('');
   readonly saveMessage = signal('');
   readonly analysisExpanded = signal(false);
@@ -126,6 +133,10 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
   readonly totalTestCases = computed(() => this.testSuites().reduce((total, suite) => total + suite.testCases.length, 0));
   readonly pendingReviewCount = computed(() => this.allTestCases().filter((testCase) => testCase.reviewStatus === 'NEEDS_REVIEW').length);
   readonly allTestCases = computed(() => this.testSuites().flatMap((suite) => suite.testCases));
+  readonly openQuestionCount = computed(() => this.ambiguities().filter((ambiguity) => ambiguity.status === 'OPEN').length);
+  readonly blockingOpenCount = computed(() => this.ambiguities().filter((ambiguity) => (
+    ambiguity.status === 'OPEN' && ambiguity.severity === 'CRITICAL'
+  )).length);
   readonly displayStatus = computed<StoryDisplayStatus>(() => this.story() ? this.displayStoryStatus(this.story()!) : 'DRAFT');
   readonly projectName = computed(() => this.projectContext?.name || 'Project');
   readonly showAnalyzeNudge = computed(() => this.onboardingProgress.shouldShowNudge(
@@ -233,6 +244,7 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
       next: (analysis) => {
         this.analyzeTimer = this.stopTimer(this.analyzeTimer);
         this.analysis.set(analysis);
+        this.loadAmbiguities();
         if (this.analysisToastId !== null) this.toastService.settleProgress(this.analysisToastId, 'Story analysis complete.', 'success');
         this.analysisToastId = null;
         this.analysisExpanded.set(true);
@@ -251,6 +263,12 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
 
   generateTestCases(): void {
     if (!this.storyId || this.generatingTests()) return;
+    if (this.blockingOpenCount() > 0) {
+      const message = `Resolve ${this.blockingOpenCount()} blocking question(s) first`;
+      this.testGenerationError.set(message);
+      this.toastService.show(message, 'warning');
+      return;
+    }
     this.generateTimer = this.startTimer(this.generateElapsed);
     this.generationToastId = this.toastService.showProgress('Generating test cases...');
     this.testGenerationError.set('');
@@ -297,8 +315,41 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
   ambiguitiesBySeverity(severity: AmbiguitySeverity) { return this.analysis()?.ambiguities?.ambiguities?.filter((ambiguity) => ambiguity.severity === severity) ?? []; }
   coverageByCategory(category: CoverageCategory) { return this.analysis()?.coveragePlan?.coverageItems?.filter((coverage) => coverage.category === category) ?? []; }
   severityClass(severity: AmbiguitySeverity): string { return `severity-${severity.toLowerCase()}`; }
+  ambiguityNote(ambiguityId: string): string { return this.ambiguityNotes()[ambiguityId] ?? ''; }
+  isAmbiguityResolving(ambiguityId: string): boolean { return !!this.ambiguityResolving()[ambiguityId]; }
   formatScore(score: number | null | undefined): string { return score === null || score === undefined || score <= 0 ? 'N/A' : `${Math.round(score * 100)}%`; }
   formatLabel(value: string): string { return value.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase()); }
+
+  updateAmbiguityNote(ambiguityId: string, value: string): void {
+    this.ambiguityNotes.update((notes) => ({ ...notes, [ambiguityId]: value }));
+  }
+
+  resolveAmbiguity(ambiguity: AmbiguityResponse, status: AmbiguityResolutionStatus): void {
+    if (!this.storyId || ambiguity.status !== 'OPEN' || this.isAmbiguityResolving(ambiguity.id)) return;
+    const resolutionNotes = this.ambiguityNote(ambiguity.id);
+    if (status === 'ANSWERED' && !resolutionNotes.trim()) {
+      this.ambiguityError.set('Resolution notes are required when answering a clarifying question.');
+      this.toastService.show('Resolution notes are required when answering a clarifying question.', 'error');
+      return;
+    }
+    this.ambiguityResolving.update((resolving) => ({ ...resolving, [ambiguity.id]: true }));
+    this.ambiguityError.set('');
+    this.ambiguityService.resolve(this.storyId, ambiguity.id, {
+      resolutionNotes: resolutionNotes || null,
+      status
+    }).subscribe({
+      next: () => {
+        this.toastService.show(status === 'ANSWERED' ? 'Clarifying question answered.' : 'Clarifying question dismissed.', 'success');
+        this.finishAmbiguityResolution(ambiguity.id);
+        this.loadAmbiguities();
+      },
+      error: () => {
+        this.ambiguityError.set('The clarifying question could not be updated.');
+        this.toastService.show('The clarifying question could not be updated.', 'error');
+        this.finishAmbiguityResolution(ambiguity.id);
+      }
+    });
+  }
 
   onTestCaseUpdated(event: { original: GeneratedTestCase; updated: TestCaseResponse }): void {
     this.replaceGeneratedTestCase(event.updated, event.original);
@@ -322,6 +373,7 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
         this.form.patchValue({ title: story.title, rawText: story.rawText, type: story.type, status: story.status });
         this.loading.set(false);
         this.loadAnalysis();
+        this.loadAmbiguities();
         this.loadTestSuites();
       },
       error: () => {
@@ -365,6 +417,32 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
         this.testSuitesLoading.set(false);
         this.animateWorkflowStep();
       }
+    });
+  }
+
+  private loadAmbiguities(): void {
+    if (!this.storyId) return;
+    this.ambiguityError.set('');
+    this.ambiguityService.list(this.storyId).subscribe({
+      next: (ambiguities) => {
+        this.ambiguities.set(ambiguities);
+        this.ambiguityNotes.set(ambiguities.reduce<Record<string, string>>((notes, ambiguity) => ({
+          ...notes,
+          [ambiguity.id]: ambiguity.resolutionNotes ?? notes[ambiguity.id] ?? ''
+        }), this.ambiguityNotes()));
+      },
+      error: () => {
+        this.ambiguities.set([]);
+        this.ambiguityError.set('Clarifying questions could not be loaded.');
+      }
+    });
+  }
+
+  private finishAmbiguityResolution(ambiguityId: string): void {
+    this.ambiguityResolving.update((resolving) => {
+      const next = { ...resolving };
+      delete next[ambiguityId];
+      return next;
     });
   }
 

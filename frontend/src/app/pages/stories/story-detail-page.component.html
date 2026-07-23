@@ -156,6 +156,58 @@
             </section>
           }
 
+          @if (ambiguities().length > 0 || ambiguityError()) {
+            <section class="panel ambiguity-checklist-panel">
+              <div class="section-header">
+                <div>
+                  <h3>Open questions ({{ openQuestionCount() }})</h3>
+                  @if (blockingOpenCount() > 0) {
+                    <span class="muted-text">{{ blockingOpenCount() }} blocking question(s) must be resolved before generation.</span>
+                  }
+                </div>
+              </div>
+              @if (ambiguityError()) {
+                <app-state-message title="Questions unavailable" [message]="ambiguityError()" tone="error" />
+              }
+              <div class="ambiguity-checklist">
+                @for (ambiguity of ambiguities(); track ambiguity.id) {
+                  <article class="ambiguity-checklist-row" [class.is-resolved]="ambiguity.status !== 'OPEN'">
+                    <div class="ambiguity-question-copy">
+                      <div class="badge-row">
+                        <span class="badge" [class]="severityClass(ambiguity.severity)">{{ ambiguity.severity }}</span>
+                        <span class="badge status-badge">{{ formatLabel(ambiguity.status) }}</span>
+                      </div>
+                      <strong>{{ ambiguity.question }}</strong>
+                      <p>{{ ambiguity.context || 'No context provided.' }}</p>
+                      @if (ambiguity.resolvedBy) {
+                        <small>Resolved by {{ ambiguity.resolvedBy }} @if (ambiguity.resolvedAt) { <span>on {{ ambiguity.resolvedAt | date:'medium' }}</span> }</small>
+                      }
+                    </div>
+                    <div class="ambiguity-resolution-controls">
+                      <label>
+                        <span>Resolution notes</span>
+                        <textarea
+                          rows="3"
+                          [value]="ambiguityNote(ambiguity.id)"
+                          (input)="updateAmbiguityNote(ambiguity.id, $any($event.target).value)"
+                          [disabled]="!canEdit() || ambiguity.status !== 'OPEN' || isAmbiguityResolving(ambiguity.id)"
+                        ></textarea>
+                      </label>
+                      @if (canEdit() && ambiguity.status === 'OPEN') {
+                        <div class="ambiguity-action-row">
+                          <button class="button small" type="button" (click)="resolveAmbiguity(ambiguity, 'ANSWERED')" [disabled]="isAmbiguityResolving(ambiguity.id)">
+                            {{ isAmbiguityResolving(ambiguity.id) ? 'Saving...' : 'Answer' }}
+                          </button>
+                          <button class="button secondary small" type="button" (click)="resolveAmbiguity(ambiguity, 'DISMISSED')" [disabled]="isAmbiguityResolving(ambiguity.id)">Dismiss</button>
+                        </div>
+                      }
+                    </div>
+                  </article>
+                }
+              </div>
+            </section>
+          }
+
           <section
             class="panel analysis-panel"
             data-ai-state="analysis"
@@ -380,6 +432,7 @@
             [error]="testGenerationError()"
             [canEdit]="canEdit()"
             [generatingTests]="generatingTests()"
+            [blockingOpenCount]="blockingOpenCount()"
             [streamGeneratedRows]="generationPhase() === 'success'"
             (generateRequested)="generateTestCases()"
             (testCaseUpdated)="onTestCaseUpdated($event)"

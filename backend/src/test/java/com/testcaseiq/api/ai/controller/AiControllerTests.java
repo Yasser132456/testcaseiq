@@ -35,6 +35,7 @@ import com.testcaseiq.api.ai.provider.AiProviderException;
 import com.testcaseiq.api.ai.provider.AiProviderProperties;
 import com.testcaseiq.api.ai.service.AiGenerationService;
 import com.testcaseiq.api.audit.AuditService;
+import com.testcaseiq.api.story.AmbiguityService;
 import com.testcaseiq.api.common.error.ResourceNotFoundException;
 import com.testcaseiq.api.domain.enums.AmbiguitySeverity;
 import com.testcaseiq.api.domain.enums.CoverageCategory;
@@ -61,6 +62,9 @@ class AiControllerTests {
     @MockBean
     private AiProviderProperties aiProviderProperties;
 
+    @MockBean
+    private AmbiguityService ambiguityService;
+
     @BeforeEach
     void setupProviderMock() {
         given(aiProviderProperties.getProvider()).willReturn(AiProviderProperties.Provider.MOCK);
@@ -81,6 +85,7 @@ class AiControllerTests {
     @Test
     void generateTestsReturnsGeneratedSuite() throws Exception {
         UUID storyId = UUID.randomUUID();
+        when(ambiguityService.countOpenBlocking(storyId)).thenReturn(0L);
         when(aiGenerationService.generateTestCases(storyId)).thenReturn(generatedSuiteResult(storyId));
 
         mockMvc.perform(post("/api/stories/{storyId}/generate-tests", storyId))
@@ -93,6 +98,16 @@ class AiControllerTests {
                 .andExpect(jsonPath("$.testCases[0].steps[0].id").exists())
                 .andExpect(jsonPath("$.testCases[0].testData[0].id").exists())
                 .andExpect(jsonPath("$.testCases[0].steps", hasSize(1)));
+    }
+
+    @Test
+    void generateTestsReturnsBadRequestWhenOpenBlockingAmbiguityExists() throws Exception {
+        UUID storyId = UUID.randomUUID();
+        when(ambiguityService.countOpenBlocking(storyId)).thenReturn(2L);
+
+        mockMvc.perform(post("/api/stories/{storyId}/generate-tests", storyId))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Resolve 2 blocking clarifying question(s) before generating tests."));
     }
 
     @Test
@@ -145,6 +160,7 @@ class AiControllerTests {
     @Test
     void endpointReturnsCleanErrorWhenAiOutputValidationFails() throws Exception {
         UUID storyId = UUID.randomUUID();
+        when(ambiguityService.countOpenBlocking(storyId)).thenReturn(0L);
         when(aiGenerationService.generateTestCases(storyId))
                 .thenThrow(new AiProviderException("AI output validation failed: TEST_SUITE_NAME_REQUIRED at suiteName"));
 
