@@ -1,5 +1,8 @@
 package com.testcaseiq.api.domain.model;
 
+import java.time.Instant;
+
+import com.testcaseiq.api.domain.enums.AmbiguityResolutionStatus;
 import com.testcaseiq.api.domain.enums.AmbiguitySeverity;
 
 import jakarta.persistence.Column;
@@ -37,8 +40,19 @@ public class Ambiguity extends AuditableEntity {
     @Column(nullable = false)
     private boolean resolved;
 
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    @Column(name = "resolution_status", nullable = false, length = 32)
+    private AmbiguityResolutionStatus resolutionStatus = AmbiguityResolutionStatus.OPEN;
+
     @Column(name = "resolution_notes", columnDefinition = "text")
     private String resolutionNotes;
+
+    @Column(name = "resolved_by", length = 255)
+    private String resolvedBy;
+
+    @Column(name = "resolved_at")
+    private Instant resolvedAt;
 
     protected Ambiguity() {
     }
@@ -76,12 +90,34 @@ public class Ambiguity extends AuditableEntity {
         return resolutionNotes;
     }
 
+    public AmbiguityResolutionStatus getResolutionStatus() {
+        return resolutionStatus;
+    }
+
+    public String getResolvedBy() {
+        return resolvedBy;
+    }
+
+    public Instant getResolvedAt() {
+        return resolvedAt;
+    }
+
     public void setContext(String context) {
         this.context = context;
     }
 
-    public void resolve(String resolutionNotes) {
+    public void resolve(String resolutionNotes, String actor) {
         this.resolved = true;
+        this.resolutionStatus = AmbiguityResolutionStatus.ANSWERED;
         this.resolutionNotes = resolutionNotes;
+        this.resolvedBy = actor;
+        this.resolvedAt = Instant.now();
+    }
+
+    public void dismiss(String actor) {
+        this.resolved = true;
+        this.resolutionStatus = AmbiguityResolutionStatus.DISMISSED;
+        this.resolvedBy = actor;
+        this.resolvedAt = Instant.now();
     }
 }

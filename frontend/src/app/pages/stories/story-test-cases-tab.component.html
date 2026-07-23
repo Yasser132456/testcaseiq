@@ -20,7 +20,13 @@
         message="Generate mock manual tests from this story. The result will include test objectives, steps, data, BDD text, and requirement links."
       />
       @if (canEdit()) {
-        <button class="button generate-button" type="button" (click)="generateRequested.emit()" [disabled]="generatingTests()">
+        <button
+          class="button generate-button"
+          type="button"
+          (click)="generateRequested.emit()"
+          [disabled]="generatingTests() || blockingOpenCount() > 0"
+          [attr.title]="generationBlockedTooltip()"
+        >
           {{ generatingTests() ? 'Generating...' : 'Generate Test Cases' }}
         </button>
       }
