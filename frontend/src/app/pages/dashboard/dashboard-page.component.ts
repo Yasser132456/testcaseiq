@@ -69,11 +69,11 @@ type PipelineNode = {
                 @if (nextActionKind() === 'start') {
                   <a class="button" routerLink="/projects">Get started</a>
                 }
-                @if (nextActionKind() === 'review') {
-                  <a class="button" routerLink="/review-board">Review Board</a>
-                  <a class="button secondary" routerLink="/dashboard" fragment="coverage" (click)="scrollToCoverage($event)">
-                    View coverage &rarr;
-                  </a>
+            @if (nextActionKind() === 'review') {
+              <a class="button" routerLink="/review-board">Review Board</a>
+              <a class="button secondary" routerLink="/dashboard" fragment="coverage" (click)="scrollToCoverage($event)">
+                View coverage &rarr;
+              </a>
                 }
                 @if (nextActionKind() === 'export') {
                   <a class="button" routerLink="/export">Export</a>
@@ -138,6 +138,12 @@ type PipelineNode = {
                 <span>Avg {{ avgCasesPerSuite() }} cases / suite</span>
               </div>
             </div>
+            @if (metrics()!.storiesWithUncoveredHighRiskRequirements > 0) {
+              <div class="inline-note amber-note">
+                <strong>{{ metrics()!.storiesWithUncoveredHighRiskRequirements }} stories have uncovered high-risk requirements</strong>
+                <a routerLink="/stories" [queryParams]="{ coverage: 'high-risk-gaps' }">View stories &rarr;</a>
+              </div>
+            }
           </section>
         </div>
 

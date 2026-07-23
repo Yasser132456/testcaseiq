@@ -49,7 +49,7 @@ class DashboardControllerTests {
     private UserAccountRepository userAccountRepository;
 
     private static final DashboardMetricsResponse METRICS = new DashboardMetricsResponse(
-            3, 12, 9, 3, 18, 72, 45, 8, 14, 5, 6,
+            3, 12, 9, 3, 18, 72, 45, 8, 14, 5, 6, 2,
             62.5, 11.1, 19.4, 62.5,
             List.of(new DashboardMetricsResponse.RecentProjectItem(
                     "11111111-1111-1111-1111-111111111111", "Claims Portal", "CLAIMS",
@@ -62,7 +62,7 @@ class DashboardControllerTests {
     );
 
     private static final DashboardMetricsResponse ZERO_METRICS = new DashboardMetricsResponse(
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0.0, 0.0, 0.0, 0.0, List.of(), List.of()
     );
 

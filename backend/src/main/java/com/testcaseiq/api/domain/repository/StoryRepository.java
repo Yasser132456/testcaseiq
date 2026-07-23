@@ -19,4 +19,13 @@ public interface StoryRepository extends JpaRepository<Story, UUID> {
 
     @Query("SELECT COUNT(DISTINCT s) FROM Story s WHERE s.testSuites IS NOT EMPTY")
     long countStoriesWithTestSuites();
+
+    @Query("""
+            SELECT COUNT(DISTINCT s)
+            FROM Story s
+            JOIN s.requirements r
+            WHERE r.riskLevel IN (com.testcaseiq.api.domain.enums.RiskLevel.HIGH, com.testcaseiq.api.domain.enums.RiskLevel.CRITICAL)
+            AND r.testCases IS EMPTY
+            """)
+    long countStoriesWithUncoveredHighRiskRequirements();
 }

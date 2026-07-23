@@ -54,6 +54,7 @@ public class DashboardService {
         long pendingReview = testCaseRepository.countByReviewStatus(ReviewStatus.NEEDS_REVIEW);
         long draft = testCaseRepository.countByReviewStatus(ReviewStatus.DRAFT);
         long totalExports = exportJobRepository.count();
+        long storiesWithUncoveredHighRiskRequirements = storyRepository.countStoriesWithUncoveredHighRiskRequirements();
 
         List<RecentProjectItem> recentProjects = projectRepository.findTop3ByOrderByUpdatedAtDesc()
                 .stream()
@@ -92,6 +93,7 @@ public class DashboardService {
                 pendingReview,
                 draft,
                 totalExports,
+                storiesWithUncoveredHighRiskRequirements,
                 rate(approved, totalTestCases),
                 rate(rejected, totalTestCases),
                 rate(pendingReview, totalTestCases),

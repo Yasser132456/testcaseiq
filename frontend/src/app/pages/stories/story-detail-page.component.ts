@@ -13,12 +13,14 @@ import {
 } from '../../core/models/analysis.model';
 import { AmbiguityResponse, AmbiguityResolutionStatus } from '../../core/models/ambiguity.model';
 import { GeneratedTestCase, GeneratedTestSuiteResult, TestGenerationOptions } from '../../core/models/generated-test.model';
+import { CoverageReportResponse } from '../../core/models/coverage.model';
 import { MotionService } from '../../core/motion/motion.service';
 import { TestCaseResponse } from '../../core/models/review.model';
 import { STORY_TYPES, Story, StoryStatus, StoryType } from '../../core/models/story.model';
 import { AnalysisService } from '../../core/services/analysis.service';
 import { AmbiguityService } from '../../core/services/ambiguity.service';
 import { AuthService } from '../../core/services/auth.service';
+import { CoverageService } from '../../core/services/coverage.service';
 import { OnboardingProgressService } from '../../core/services/onboarding-progress.service';
 import { StoryService } from '../../core/services/story.service';
 import { TestGenerationService } from '../../core/services/test-generation.service';
@@ -30,9 +32,11 @@ import { SkeletonComponent } from '../../shared/skeleton/skeleton.component';
 import { VtNameDirective } from '../../shared/directives/vt-name.directive';
 import { RevealDirective } from '../../shared/directives/reveal.directive';
 import { StoryReviewTabComponent } from './story-review-tab.component';
+import { StoryCoverageMatrixComponent } from './story-coverage-matrix.component';
+import { TargetedGenerationRequest } from './story-test-cases-tab.component';
 import { StoryTestCasesTabComponent } from './story-test-cases-tab.component';
 
-type StoryDetailTab = 'story' | 'test-cases' | 'review';
+type StoryDetailTab = 'story' | 'coverage' | 'test-cases' | 'review';
 type StoryDisplayStatus = 'DRAFT' | 'ANALYZED' | 'TESTS_GENERATED' | 'NEEDS_REVIEW' | 'ALL_REVIEWED';
 
 @Component({
@@ -49,6 +53,7 @@ type StoryDisplayStatus = 'DRAFT' | 'ANALYZED' | 'TESTS_GENERATED' | 'NEEDS_REVI
     VtNameDirective,
     RevealDirective,
     StoryTestCasesTabComponent,
+    StoryCoverageMatrixComponent,
     StoryReviewTabComponent
   ],
   templateUrl: './story-detail-page.component.html',
@@ -62,6 +67,7 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
   private readonly storyService = inject(StoryService);
   private readonly analysisService = inject(AnalysisService);
   private readonly ambiguityService = inject(AmbiguityService);
+  private readonly coverageService = inject(CoverageService);
   private readonly testGenerationService = inject(TestGenerationService);
   private readonly toastService = inject(ToastService);
   private readonly authService = inject(AuthService);
@@ -93,6 +99,7 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
   readonly pageTitle = computed(() => this.story()?.title ?? 'Story');
   readonly analysis = signal<StoryAnalysisResult | null>(null);
   readonly ambiguities = signal<AmbiguityResponse[]>([]);
+  readonly coverageReport = signal<CoverageReportResponse | null>(null);
   readonly ambiguityNotes = signal<Record<string, string>>({});
   readonly ambiguityResolving = signal<Record<string, boolean>>({});
   readonly testSuites = signal<GeneratedTestSuiteResult[]>([]);
@@ -100,6 +107,7 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
   readonly loading = signal(true);
   readonly analysisLoading = signal(false);
   readonly testSuitesLoading = signal(false);
+  readonly coverageLoading = signal(false);
   readonly analysisOperationState = this.analysisService.operationState;
   readonly generationOperationState = this.testGenerationService.operationState;
   readonly analysisPhase = computed(() => (
@@ -119,11 +127,13 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
   readonly analysisError = signal('');
   readonly testGenerationError = signal('');
   readonly ambiguityError = signal('');
+  readonly coverageError = signal('');
   readonly saveError = signal('');
   readonly saveMessage = signal('');
   readonly analysisExpanded = signal(false);
   readonly storySummaryExpanded = signal(true);
   readonly editFormExpanded = signal(false);
+  readonly targetedGenerationRequest = signal<TargetedGenerationRequest | null>(null);
 
   readonly canEdit = computed(() => {
     if (!this.authService.isAuthenticated()) return true;
@@ -281,6 +291,7 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
         this.onboardingProgress.complete('generation-completed');
         this.updateStoryStatus('TESTS_GENERATED');
         this.activeTab.set('test-cases');
+        this.loadCoverageReport();
         this.animateWorkflowStep();
       },
       error: () => {
@@ -353,7 +364,16 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
 
   onTestCaseUpdated(event: { original: GeneratedTestCase; updated: TestCaseResponse }): void {
     this.replaceGeneratedTestCase(event.updated, event.original);
+    this.loadCoverageReport();
     this.animateWorkflowStep();
+  }
+
+  onGenerateTargetedCase(guidance: string): void {
+    this.targetedGenerationRequest.set({
+      guidance,
+      sequence: (this.targetedGenerationRequest()?.sequence ?? 0) + 1
+    });
+    this.activeTab.set('test-cases');
   }
 
   onVerdictOptimistic(event: { original: GeneratedTestCase; status: 'APPROVED' | 'REJECTED' }): void {
@@ -374,6 +394,7 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
         this.loading.set(false);
         this.loadAnalysis();
         this.loadAmbiguities();
+        this.loadCoverageReport();
         this.loadTestSuites();
       },
       error: () => {
@@ -416,6 +437,23 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
         this.testSuites.set([]);
         this.testSuitesLoading.set(false);
         this.animateWorkflowStep();
+      }
+    });
+  }
+
+  private loadCoverageReport(): void {
+    if (!this.storyId) return;
+    this.coverageLoading.set(true);
+    this.coverageError.set('');
+    this.coverageService.getReport(this.storyId).subscribe({
+      next: (report) => {
+        this.coverageReport.set(report);
+        this.coverageLoading.set(false);
+      },
+      error: () => {
+        this.coverageReport.set(null);
+        this.coverageError.set('Coverage could not be loaded.');
+        this.coverageLoading.set(false);
       }
     });
   }

@@ -10,6 +10,7 @@ export interface DashboardMetrics {
   pendingReviewTestCases: number;
   draftTestCases: number;
   totalExports: number;
+  storiesWithUncoveredHighRiskRequirements: number;
   approvalRate: number;
   rejectionRate: number;
   pendingReviewRate: number;

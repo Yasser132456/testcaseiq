@@ -77,6 +77,7 @@
 
     <nav class="detail-tabs" aria-label="Story sections">
       <button class="tab-btn" type="button" [class.active]="activeTab() === 'story'" (click)="setTab('story')">Story</button>
+      <button class="tab-btn" type="button" [class.active]="activeTab() === 'coverage'" (click)="setTab('coverage')">Coverage</button>
       <button class="tab-btn" type="button" [class.active]="activeTab() === 'test-cases'" (click)="setTab('test-cases')">Test Cases ({{ totalTestCases() }})</button>
       <button class="tab-btn" type="button" [class.active]="activeTab() === 'review'" (click)="setTab('review')">History ({{ pendingReviewCount() }} pending)</button>
     </nav>
@@ -390,6 +391,16 @@
         </div>
       }
 
+      @if (activeTab() === 'coverage') {
+        <app-story-coverage-matrix
+          [report]="coverageReport()"
+          [loading]="coverageLoading()"
+          [error]="coverageError()"
+          [canEdit]="canEdit()"
+          (generateTargetedCase)="onGenerateTargetedCase($event)"
+        />
+      }
+
       @if (activeTab() === 'test-cases') {
         <div
           class="test-cases-tab-panel"
@@ -435,6 +446,7 @@
             [generatingTests]="generatingTests()"
             [blockingOpenCount]="blockingOpenCount()"
             [streamGeneratedRows]="generationPhase() === 'success'"
+            [targetedGenerationRequest]="targetedGenerationRequest()"
             (generateRequested)="generateTestCases($event)"
             (testCaseUpdated)="onTestCaseUpdated($event)"
           />

@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, computed, inject, input, output, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { LucideClipboardList } from '@lucide/angular';
 import { Priority, RiskLevel } from '../../core/models/analysis.model';
@@ -27,6 +27,11 @@ interface ReviewDraft {
   steps?: Record<number, Partial<GeneratedTestStep>>;
 }
 
+export interface TargetedGenerationRequest {
+  guidance: string;
+  sequence: number;
+}
+
 export function generatedRowDelayMs(index: number, total: number): number {
   if (index <= 0 || total <= 1) return 0;
   return Math.round(index * Math.min(40, 600 / (total - 1)));
@@ -51,6 +56,7 @@ export class StoryTestCasesTabComponent {
   readonly generatingTests = input(false);
   readonly blockingOpenCount = input(0);
   readonly streamGeneratedRows = input(false);
+  readonly targetedGenerationRequest = input<TargetedGenerationRequest | null>(null);
   readonly generateRequested = output<TestGenerationOptions>();
   readonly testCaseUpdated = output<{ original: GeneratedTestCase; updated: TestCaseResponse }>();
   readonly LucideClipboardList = LucideClipboardList;
@@ -77,6 +83,16 @@ export class StoryTestCasesTabComponent {
       suite.testCases.every((testCase) => testCase.reviewStatus !== 'NEEDS_REVIEW')
     ))
   ));
+
+  constructor() {
+    effect(() => {
+      const request = this.targetedGenerationRequest();
+      if (!request) return;
+      this.generationGuidance.set(request.guidance);
+      this.selectedFocusAreas.set([]);
+      this.generateDialogOpen.set(true);
+    });
+  }
 
   hasTestSuites(): boolean {
     return this.testSuites().some((suite) => suite.testCases.length > 0);
