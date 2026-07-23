@@ -14,6 +14,13 @@ export type TestCaseType =
 
 export type TestLayer = 'UI' | 'API' | 'DATABASE' | 'INTEGRATION' | 'E2E' | 'UNIT' | 'SYSTEM';
 
+export type FocusArea = 'NEGATIVE' | 'BOUNDARY' | 'MOBILE' | 'ACCESSIBILITY' | 'PERFORMANCE' | 'SECURITY';
+
+export interface TestGenerationOptions {
+  guidance?: string | null;
+  focusAreas?: FocusArea[];
+}
+
 export type ReviewStatus =
   | 'DRAFT'
   | 'NEEDS_REVIEW'
@@ -26,6 +33,8 @@ export interface GeneratedTestSuiteResult {
   id: string | null;
   storyId: string;
   suiteName: string;
+  description?: string | null;
+  focusAreas?: FocusArea[];
   testCases: GeneratedTestCase[];
   qaValidation: {
     requirementQualityScore: number;

@@ -12,7 +12,7 @@ import {
   StoryAnalysisResult
 } from '../../core/models/analysis.model';
 import { AmbiguityResponse, AmbiguityResolutionStatus } from '../../core/models/ambiguity.model';
-import { GeneratedTestCase, GeneratedTestSuiteResult } from '../../core/models/generated-test.model';
+import { GeneratedTestCase, GeneratedTestSuiteResult, TestGenerationOptions } from '../../core/models/generated-test.model';
 import { MotionService } from '../../core/motion/motion.service';
 import { TestCaseResponse } from '../../core/models/review.model';
 import { STORY_TYPES, Story, StoryStatus, StoryType } from '../../core/models/story.model';
@@ -69,7 +69,7 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
   private readonly motion = inject(MotionService);
   readonly onboardingProgress = inject(OnboardingProgressService);
   private readonly projectContext = (this.router.getCurrentNavigation()?.extras.state?.['projectContext'] ?? window.history.state?.projectContext) as { name?: string } | null;
-  private storyId = '';
+  storyId = '';
   private stickyObserver?: IntersectionObserver;
   private analyzeTimer: ReturnType<typeof setInterval> | null = null;
   private generateTimer: ReturnType<typeof setInterval> | null = null;
@@ -261,7 +261,7 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
     });
   }
 
-  generateTestCases(): void {
+  generateTestCases(options?: TestGenerationOptions): void {
     if (!this.storyId || this.generatingTests()) return;
     if (this.blockingOpenCount() > 0) {
       const message = `Resolve ${this.blockingOpenCount()} blocking question(s) first`;
@@ -272,7 +272,7 @@ export class StoryDetailPageComponent implements AfterViewInit, OnDestroy {
     this.generateTimer = this.startTimer(this.generateElapsed);
     this.generationToastId = this.toastService.showProgress('Generating test cases...');
     this.testGenerationError.set('');
-    this.testGenerationService.generateTestCases(this.storyId).subscribe({
+    this.testGenerationService.generateTestCases(this.storyId, options).subscribe({
       next: (suite) => {
         this.generateTimer = this.stopTimer(this.generateTimer);
         this.testSuites.set([suite, ...this.testSuites()]);

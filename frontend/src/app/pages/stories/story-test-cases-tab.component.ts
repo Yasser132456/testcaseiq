@@ -8,6 +8,8 @@ import {
   GeneratedTestData,
   GeneratedTestStep,
   GeneratedTestSuiteResult,
+  FocusArea,
+  TestGenerationOptions,
   ReviewStatus
 } from '../../core/models/generated-test.model';
 import { ReviewEvent, TestCaseResponse } from '../../core/models/review.model';
@@ -40,6 +42,7 @@ export class StoryTestCasesTabComponent {
   private readonly toastService = inject(ToastService);
 
   readonly storyTitle = input('');
+  readonly storyId = input('');
   readonly testSuites = input.required<GeneratedTestSuiteResult[]>();
   readonly loading = input(false);
   readonly error = input('');
@@ -47,12 +50,16 @@ export class StoryTestCasesTabComponent {
   readonly generatingTests = input(false);
   readonly blockingOpenCount = input(0);
   readonly streamGeneratedRows = input(false);
-  readonly generateRequested = output<void>();
+  readonly generateRequested = output<TestGenerationOptions>();
   readonly testCaseUpdated = output<{ original: GeneratedTestCase; updated: TestCaseResponse }>();
   readonly LucideClipboardList = LucideClipboardList;
 
   readonly priorityOptions: Priority[] = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
   readonly riskOptions: RiskLevel[] = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
+  readonly focusAreaOptions: FocusArea[] = ['NEGATIVE', 'BOUNDARY', 'MOBILE', 'ACCESSIBILITY', 'PERFORMANCE', 'SECURITY'];
+  readonly generateDialogOpen = signal(false);
+  readonly generationGuidance = signal('');
+  readonly selectedFocusAreas = signal<FocusArea[]>([]);
   readonly reviewMessage = signal('');
   readonly reviewError = signal('');
   readonly reviewBusyByTestCaseId = signal<Record<string, string>>({});
@@ -69,6 +76,41 @@ export class StoryTestCasesTabComponent {
 
   hasTestSuites(): boolean {
     return this.testSuites().some((suite) => suite.testCases.length > 0);
+  }
+
+  openGenerateDialog(): void {
+    this.restoreGenerationOptions();
+    this.generateDialogOpen.set(true);
+  }
+
+  closeGenerateDialog(): void {
+    this.generateDialogOpen.set(false);
+  }
+
+  updateGenerationGuidance(value: string): void {
+    this.generationGuidance.set(value);
+  }
+
+  toggleFocusArea(focusArea: FocusArea): void {
+    this.selectedFocusAreas.update((selected) => (
+      selected.includes(focusArea)
+        ? selected.filter((value) => value !== focusArea)
+        : [...selected, focusArea]
+    ));
+  }
+
+  isFocusAreaSelected(focusArea: FocusArea): boolean {
+    return this.selectedFocusAreas().includes(focusArea);
+  }
+
+  submitGenerationOptions(): void {
+    const options: TestGenerationOptions = {
+      guidance: this.generationGuidance().trim() || null,
+      focusAreas: this.selectedFocusAreas()
+    };
+    this.persistGenerationOptions(options);
+    this.generateDialogOpen.set(false);
+    this.generateRequested.emit(options);
   }
 
   generationBlockedTooltip(): string | null {
@@ -234,6 +276,10 @@ export class StoryTestCasesTabComponent {
     return value.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase());
   }
 
+  suiteFocusAreas(suite: GeneratedTestSuiteResult): FocusArea[] {
+    return suite.focusAreas ?? [];
+  }
+
   private persistedTestCaseId(testCase: GeneratedTestCase): string | null {
     if (!testCase.id) {
       this.reviewError.set('This generated test case does not have a persisted backend ID yet.');
@@ -241,6 +287,41 @@ export class StoryTestCasesTabComponent {
       return null;
     }
     return testCase.id;
+  }
+
+  private restoreGenerationOptions(): void {
+    const stored = this.readStoredGenerationOptions();
+    this.generationGuidance.set(stored.guidance ?? '');
+    this.selectedFocusAreas.set(stored.focusAreas ?? []);
+  }
+
+  private persistGenerationOptions(options: TestGenerationOptions): void {
+    const key = this.generationOptionsStorageKey();
+    if (!key) return;
+    try {
+      localStorage.setItem(key, JSON.stringify(options));
+    } catch {
+      return;
+    }
+  }
+
+  private readStoredGenerationOptions(): TestGenerationOptions {
+    const key = this.generationOptionsStorageKey();
+    if (!key) return { guidance: null, focusAreas: [] };
+    try {
+      const parsed = JSON.parse(localStorage.getItem(key) ?? '{}') as TestGenerationOptions;
+      return {
+        guidance: parsed.guidance ?? null,
+        focusAreas: (parsed.focusAreas ?? []).filter((focusArea): focusArea is FocusArea =>
+          this.focusAreaOptions.includes(focusArea as FocusArea))
+      };
+    } catch {
+      return { guidance: null, focusAreas: [] };
+    }
+  }
+
+  private generationOptionsStorageKey(): string | null {
+    return this.storyId() ? `testcaseiq:generation-options:${this.storyId()}` : null;
   }
 
   private beginReviewUpdate(testCaseId: string, action: string): void {

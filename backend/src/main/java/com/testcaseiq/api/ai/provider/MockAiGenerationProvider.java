@@ -22,6 +22,7 @@ import com.testcaseiq.api.ai.dto.StoryAnalysisResult;
 import com.testcaseiq.api.ai.dto.TestGenerationRequest;
 import com.testcaseiq.api.domain.enums.AmbiguitySeverity;
 import com.testcaseiq.api.domain.enums.CoverageCategory;
+import com.testcaseiq.api.domain.enums.FocusArea;
 import com.testcaseiq.api.domain.enums.Priority;
 import com.testcaseiq.api.domain.enums.RequirementType;
 import com.testcaseiq.api.domain.enums.RiskLevel;
@@ -136,7 +137,7 @@ public class MockAiGenerationProvider implements AiGenerationProvider {
                 .toList();
         List<String> linkedReferences = requirementReferences.isEmpty() ? List.of("REQ-1") : requirementReferences;
 
-        List<GeneratedTestCaseDto> testCases = List.of(
+        List<GeneratedTestCaseDto> testCases = new ArrayList<>(List.of(
                 new GeneratedTestCaseDto(
                         "Complete primary workflow successfully",
                         "Manual functional test covering \"" + title + "\" for " + actor + ".",
@@ -197,16 +198,80 @@ public class MockAiGenerationProvider implements AiGenerationProvider {
                         "Addresses the boundary coverage gap from the story acceptance criteria.",
                         boundaryCriterion
                 )
-        );
+        ));
+        List<FocusArea> focusAreas = request.focusAreas() == null ? List.of() : request.focusAreas();
+        focusAreas.forEach(focusArea -> testCases.add(focusTestCase(focusArea, title, actor, goal, linkedReferences)));
 
         return new GeneratedTestSuiteResult(
                 request.storyId(),
                 "Mock AI Regression Suite",
+                suiteDescription(request.guidance()),
+                focusAreas,
                 testCases,
                 new QaValidationResult(0.84, 0.87, List.of("Review generated edge cases against final acceptance criteria.")),
                 PROVIDER_NAME,
                 deterministicInstant(request.storyId())
         );
+    }
+
+    private GeneratedTestCaseDto focusTestCase(
+            FocusArea focusArea,
+            String title,
+            String actor,
+            String goal,
+            List<String> linkedReferences
+    ) {
+        String focusLabel = focusArea.name();
+        return new GeneratedTestCaseDto(
+                "[" + focusLabel + "] " + title,
+                "Focused manual test for " + focusLabel.toLowerCase(Locale.ROOT) + " coverage in \"" + title + "\".",
+                focusType(focusArea),
+                focusLayer(focusArea),
+                Priority.MEDIUM,
+                focusRisk(focusArea),
+                focusArea == FocusArea.PERFORMANCE || focusArea == FocusArea.SECURITY,
+                0.8,
+                "Given " + actor + " is exercising \"" + title + "\"\nWhen they " + goal + " with " + focusLabel.toLowerCase(Locale.ROOT) + " concerns in scope\nThen the " + focusLabel.toLowerCase(Locale.ROOT) + " expectation is verified",
+                linkedReferences,
+                List.of(
+                        new GeneratedTestStepDto(1, "Prepare " + focusLabel.toLowerCase(Locale.ROOT) + " test conditions for \"" + title + "\".", "The focused test context is ready."),
+                        new GeneratedTestStepDto(2, "Execute the workflow while observing " + focusLabel.toLowerCase(Locale.ROOT) + " behavior.", "The behavior is visible and reviewable."),
+                        new GeneratedTestStepDto(3, "Record whether the " + focusLabel.toLowerCase(Locale.ROOT) + " expectation is met.", "The result can be traced to the selected focus area.")
+                ),
+                List.of(new GeneratedTestDataDto(
+                        focusLabel.toLowerCase(Locale.ROOT) + "FocusInput",
+                        "{\"story\":\"" + jsonEscape(title) + "\",\"focusArea\":\"" + focusLabel + "\"}"
+                )),
+                "Added because " + focusLabel + " was selected as a generation focus area.",
+                focusLabel + " focus"
+        );
+    }
+
+    private TestCaseType focusType(FocusArea focusArea) {
+        return switch (focusArea) {
+            case NEGATIVE -> TestCaseType.NEGATIVE;
+            case BOUNDARY -> TestCaseType.BOUNDARY;
+            case ACCESSIBILITY -> TestCaseType.ACCESSIBILITY;
+            case PERFORMANCE -> TestCaseType.PERFORMANCE;
+            case SECURITY -> TestCaseType.SECURITY;
+            case MOBILE -> TestCaseType.FUNCTIONAL;
+        };
+    }
+
+    private TestLayer focusLayer(FocusArea focusArea) {
+        return focusArea == FocusArea.SECURITY || focusArea == FocusArea.PERFORMANCE ? TestLayer.API : TestLayer.UI;
+    }
+
+    private RiskLevel focusRisk(FocusArea focusArea) {
+        return focusArea == FocusArea.SECURITY || focusArea == FocusArea.PERFORMANCE ? RiskLevel.HIGH : RiskLevel.MEDIUM;
+    }
+
+    private String suiteDescription(String guidance) {
+        String trimmedGuidance = safe(guidance).trim();
+        if (trimmedGuidance.isBlank()) {
+            return "Generated by " + PROVIDER_NAME + ".";
+        }
+        return "Generated by " + PROVIDER_NAME + ". Guidance: " + trimmedGuidance;
     }
 
     private String extractActor(String rawText) {

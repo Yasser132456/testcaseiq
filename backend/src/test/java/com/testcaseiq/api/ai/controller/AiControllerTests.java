@@ -2,7 +2,9 @@ package com.testcaseiq.api.ai.controller;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -18,6 +20,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.http.MediaType;
 
 import com.testcaseiq.api.ai.dto.AmbiguityDetectionResult;
 import com.testcaseiq.api.ai.dto.CoverageItemDto;
@@ -31,6 +34,7 @@ import com.testcaseiq.api.ai.dto.GeneratedTestSuiteResult;
 import com.testcaseiq.api.ai.dto.QaValidationResult;
 import com.testcaseiq.api.ai.dto.RequirementExtractionResult;
 import com.testcaseiq.api.ai.dto.StoryAnalysisResult;
+import com.testcaseiq.api.ai.dto.TestGenerationOptions;
 import com.testcaseiq.api.ai.provider.AiProviderException;
 import com.testcaseiq.api.ai.provider.AiProviderProperties;
 import com.testcaseiq.api.ai.service.AiGenerationService;
@@ -39,6 +43,7 @@ import com.testcaseiq.api.story.AmbiguityService;
 import com.testcaseiq.api.common.error.ResourceNotFoundException;
 import com.testcaseiq.api.domain.enums.AmbiguitySeverity;
 import com.testcaseiq.api.domain.enums.CoverageCategory;
+import com.testcaseiq.api.domain.enums.FocusArea;
 import com.testcaseiq.api.domain.enums.Priority;
 import com.testcaseiq.api.domain.enums.RequirementType;
 import com.testcaseiq.api.domain.enums.ReviewStatus;
@@ -86,7 +91,8 @@ class AiControllerTests {
     void generateTestsReturnsGeneratedSuite() throws Exception {
         UUID storyId = UUID.randomUUID();
         when(ambiguityService.countOpenBlocking(storyId)).thenReturn(0L);
-        when(aiGenerationService.generateTestCases(storyId)).thenReturn(generatedSuiteResult(storyId));
+        when(aiGenerationService.generateTestCases(eq(storyId), org.mockito.ArgumentMatchers.any(TestGenerationOptions.class)))
+                .thenReturn(generatedSuiteResult(storyId));
 
         mockMvc.perform(post("/api/stories/{storyId}/generate-tests", storyId))
                 .andExpect(status().isOk())
@@ -98,6 +104,30 @@ class AiControllerTests {
                 .andExpect(jsonPath("$.testCases[0].steps[0].id").exists())
                 .andExpect(jsonPath("$.testCases[0].testData[0].id").exists())
                 .andExpect(jsonPath("$.testCases[0].steps", hasSize(1)));
+    }
+
+    @Test
+    void generateTestsAcceptsOptionsBody() throws Exception {
+        UUID storyId = UUID.randomUUID();
+        when(ambiguityService.countOpenBlocking(storyId)).thenReturn(0L);
+        when(aiGenerationService.generateTestCases(eq(storyId), org.mockito.ArgumentMatchers.any(TestGenerationOptions.class)))
+                .thenReturn(generatedSuiteResult(storyId));
+
+        mockMvc.perform(post("/api/stories/{storyId}/generate-tests", storyId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "guidance": "Bias toward smoke coverage.",
+                                  "focusAreas": ["SECURITY", "PERFORMANCE"]
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.suiteName").value("Mock AI Regression Suite"));
+
+        verify(aiGenerationService).generateTestCases(eq(storyId), org.mockito.ArgumentMatchers.argThat(options ->
+                "Bias toward smoke coverage.".equals(options.guidance())
+                        && options.focusAreas().equals(List.of(FocusArea.SECURITY, FocusArea.PERFORMANCE))
+        ));
     }
 
     @Test
@@ -161,7 +191,7 @@ class AiControllerTests {
     void endpointReturnsCleanErrorWhenAiOutputValidationFails() throws Exception {
         UUID storyId = UUID.randomUUID();
         when(ambiguityService.countOpenBlocking(storyId)).thenReturn(0L);
-        when(aiGenerationService.generateTestCases(storyId))
+        when(aiGenerationService.generateTestCases(eq(storyId), org.mockito.ArgumentMatchers.any(TestGenerationOptions.class)))
                 .thenThrow(new AiProviderException("AI output validation failed: TEST_SUITE_NAME_REQUIRED at suiteName"));
 
         mockMvc.perform(post("/api/stories/{storyId}/generate-tests", storyId))

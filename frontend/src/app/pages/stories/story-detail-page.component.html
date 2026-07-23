@@ -426,6 +426,7 @@
             </div>
           }
           <app-story-test-cases-tab
+            [storyId]="storyId"
             [storyTitle]="story()?.title ?? ''"
             [testSuites]="testSuites()"
             [loading]="testSuitesLoading()"
@@ -434,7 +435,7 @@
             [generatingTests]="generatingTests()"
             [blockingOpenCount]="blockingOpenCount()"
             [streamGeneratedRows]="generationPhase() === 'success'"
-            (generateRequested)="generateTestCases()"
+            (generateRequested)="generateTestCases($event)"
             (testCaseUpdated)="onTestCaseUpdated($event)"
           />
           @if (testGenerationError()) {

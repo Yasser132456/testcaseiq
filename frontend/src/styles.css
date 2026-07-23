@@ -216,8 +216,14 @@ body,p,li,td,.body-text{font-size:0.875rem;font-weight:400}
  .coverage-tile span{color:var(--cyan);font-weight:700;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.06em}
  .coverage-tile.empty{opacity:0.62}
  .suite-stack{display:grid;gap:1rem}
- .test-suite-card{display:grid;gap:1rem;padding:1.25rem;border:1px solid var(--cyan-border);border-radius:10px;background:var(--glass-bg-2);backdrop-filter:var(--glass-blur-md);-webkit-backdrop-filter:var(--glass-blur-md);box-shadow:var(--glass-border-highlight);transition:border-color var(--dur) var(--ease),transform var(--dur-slow) var(--ease),box-shadow var(--dur-slow) var(--ease);animation:fadeInUp var(--dur-slow) var(--ease) both}
- .test-suite-card:hover{border-color:rgba(34,211,238,0.5);transform:translateY(-2px);box-shadow:var(--glass-border-highlight),var(--glass-shadow)}
+.test-suite-card{display:grid;gap:1rem;padding:1.25rem;border:1px solid var(--cyan-border);border-radius:10px;background:var(--glass-bg-2);backdrop-filter:var(--glass-blur-md);-webkit-backdrop-filter:var(--glass-blur-md);box-shadow:var(--glass-border-highlight);transition:border-color var(--dur) var(--ease),transform var(--dur-slow) var(--ease),box-shadow var(--dur-slow) var(--ease);animation:fadeInUp var(--dur-slow) var(--ease) both}
+.test-suite-card:hover{border-color:rgba(34,211,238,0.5);transform:translateY(-2px);box-shadow:var(--glass-border-highlight),var(--glass-shadow)}
+.generation-dialog-backdrop{position:fixed;inset:0;z-index:var(--z-modal);display:grid;place-items:center;padding:var(--space-base);background:rgba(0,0,0,0.58);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.generation-dialog{display:grid;gap:var(--space-base);width:min(100%,34rem);padding:var(--space-lg);border:1px solid var(--cyan-border);border-radius:10px;background:var(--glass-bg-3);box-shadow:var(--glass-shadow),var(--glass-border-highlight)}
+.focus-area-picker{display:flex;flex-wrap:wrap;gap:0.5rem}
+.focus-chip{cursor:pointer}
+.focus-chip[aria-pressed='true']{border-color:var(--cyan-border);color:var(--cyan);background:var(--cyan-bg)}
+.generation-dialog-actions{display:flex;justify-content:flex-end;gap:var(--space-sm);flex-wrap:wrap}
  .suite-summary,.test-case-header,.evidence-row{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem}
  .suite-summary h4,.suite-summary p,.test-case-header h5,.test-case-header p,.test-detail-section h6,.test-detail-section p{margin:0}
  .suite-summary p,.test-case-header p,.test-detail-section p,.evidence-row > span{color:var(--text-2)}
